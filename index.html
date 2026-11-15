@@ -147,6 +147,31 @@ table.pt td.pn2{white-space:normal;min-width:130px}
 table.pt td.pn2 small{display:block;color:var(--muted);font-weight:500;font-size:11px}
 .addb{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:2px 6px;cursor:pointer}
 .addb.on{background:var(--accent);color:#fff}
+/* weather */
+.wx{font-size:12px;color:var(--muted);margin-top:6px}
+.wx b{color:var(--text)}
+.wx .warn{color:#d98a00;font-weight:700}
+/* pick'em cards */
+.pkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:10px}
+.pk{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px}
+.pk.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.pk img{width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--panel2);margin:0 auto}
+.pk .nm{font-weight:700;font-size:14px;line-height:1.2}
+.pk .mt{font-size:11px;color:var(--muted)}
+.pk .ln{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:800;line-height:1.1;margin-top:2px}
+.pk .st{font-size:12px;font-weight:600;color:var(--muted)}
+.pk .hr{font-size:11px}
+.pk .ml{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.pk .ml button{font:inherit;font-size:13px;font-weight:800;border-radius:9px;padding:8px 0;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
+.pk .ml button.on.more{background:var(--good);border-color:var(--good);color:#fff}
+.pk .ml button.on.less{background:var(--live);border-color:var(--live);color:#fff}
+.viewtog{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-right:8px}
+.viewtog button{font:inherit;font-size:12px;font-weight:700;border:0;padding:6px 12px;background:var(--panel);color:var(--text);cursor:pointer}
+.viewtog button.on{background:var(--text);color:var(--bg)}
+.dayh{font-size:13px;font-weight:800;margin:20px 0 8px;display:flex;gap:8px;align-items:center}
+.dayh .hol{font-size:11px;font-weight:700;background:color-mix(in srgb,var(--live) 16%,transparent);color:var(--live);border-radius:999px;padding:2px 8px}
+.sg{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit}
+.sg .tm{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);padding-top:2px}
 /* bet tracker */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -179,6 +204,8 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
     <div class="tabs nav">
       <button class="oddsbtn" id="bestopen" style="background:var(--good);border-color:var(--good)">Best bets</button>
       <button class="oddsbtn" id="propsopen">Player props</button>
+      <button class="tab" id="schedopen">Schedule &amp; holidays</button>
+      <button class="tab" id="futopen">Futures</button>
       <button class="oddsbtn" id="oddsopen">Best odds &amp; parlay<span class="n" id="slipcount" hidden></span></button>
       <button class="tab" id="betsopen">My bets</button>
     </div>
@@ -230,6 +257,23 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
     <div class="tabs" id="ppgames"></div>
   </div></div>
   <div class="wrap" id="ppbody"></div>
+</div>
+
+<div class="gv" id="sc" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="scback">‹ Games</button><b style="font-size:16px">Schedule &amp; holidays</b></div>
+    <div class="tabs" id="scsports"></div>
+    <div class="tabs" id="scrange"></div>
+  </div></div>
+  <div class="wrap" id="scbody"></div>
+</div>
+
+<div class="gv" id="fu" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="fuback">‹ Games</button><b style="font-size:16px">Futures</b></div>
+    <div class="tabs" id="fulist"></div>
+  </div></div>
+  <div class="wrap" id="fubody"></div>
 </div>
 
 <div class="gv" id="mb" hidden>
@@ -558,6 +602,7 @@ function card(g){
     ${spark(ev.id,hc,ev.date)}
     <div class="detail"><table>${detailRows.map(([a,b])=>`<tr><td>${a}</td><td>${b}</td></tr>`).join('')}</table>
       <div class="why">${explain(g)}</div></div>
+    ${WX_SPORTS.has(sport.key)&&!fin?`<div class="wx" data-wx="${sport.key}|${ev.id}"></div>`:''}
     ${PROP_SPORTS[sport.key]?`<a class="propbtn" href="#g/${sport.key}/${ev.id}">Player props &amp; stats ›</a>`:''}
   </div>`;
 }
@@ -584,6 +629,7 @@ function render(){
     if(gs.length) html+=`<h2 class="sec">${title} · ${gs.length}</h2><div class="grid">${gs.map(card).join('')}</div>`;
   }
   $('#list').innerHTML = html || `<div class="empty">No ${tab==='all'?'':BY_KEY[tab].label+' '}games on ${dayLabel(dayOffset).toLowerCase()}.${errors.length?`<br><span class="err">${esc(errors.join(', '))}</span>`:''}</div>`;
+  fillWeather($('#list'), id=>lastGames.find(g=>g.ev.id===id)?.ev);
   const tr=trackRecord();
   const rec=$('#record');
   if(tr){ rec.hidden=false; rec.innerHTML=`
@@ -911,12 +957,12 @@ function renderGV(){
     <span class="gvst ${live?'live':''}">${live?'● ':''}${esc(st?.type?.shortDetail||'')}${g&&GV.state!=='post'?` · ${esc(h.team.abbreviation)} ${pct(g.out.home)} to win`:''}</span>`;
   const tabs=[['away',a.team.abbreviation+' players'],['home',h.team.abbreviation+' players'],['line','Line, injuries & news'],['team','Team stats']];
   $('#gvtabs').innerHTML=tabs.map(([k,l])=>`<button class="tab ${GV.tab===k?'on':''}" data-gt="${k}">${esc(l)}</button>`).join('');
-  let body='';
-  if(GV.tab==='line') body=lineTab();
-  else if(GV.tab==='team') body=teamStatsTab();
+  let body=WX_SPORTS.has(GV.sport.key)&&GV.state!=='post'?`<div class="wx" data-wx="${GV.sport.key}|${GV.id}" style="margin-top:12px"></div>`:'';
+  if(GV.tab==='line') body+=lineTab();
+  else if(GV.tab==='team') body+=teamStatsTab();
   else {
     GV.side=GV.tab; const list=sortPlayers(GV.players[GV.tab]||[]);
-    body=`<div class="note">Averages and hit rates come from each player's ESPN game log this season. Lines start at the player's median; type in the book's line to see how often he's cleared it. Over L5 / L10 / Season = games over the line.</div>`;
+    body+=`<div class="note">Averages and hit rates come from each player's ESPN game log this season. Lines start at the player's median; type in the book's line to see how often he's cleared it. Over L5 / L10 / Season = games over the line.</div>`;
     if(isBB(GV.sport)){ const q=GV.quarters[GV.tab];
       body+= q==='loading' ? '<div class="note">Loading last 5 games by quarter…</div>' : q ? '' : `<button class="tbtn" data-q="${GV.tab}">Points by quarter (last 5 games)</button>`; }
     body+= list.length? list.map(playerCard).join('') : '<div class="empty">No players listed yet.</div>';
@@ -925,6 +971,7 @@ function renderGV(){
   body+=`<footer>Stats, lines, injuries and news: ESPN public data. Hit rates describe the past; they don't predict the next game. For entertainment and analysis, not betting advice.</footer>`;
   if(document.activeElement?.closest?.('#gv input')) return;
   const y=$('#gv').scrollTop; $('#gvbody').innerHTML=body; $('#gv').scrollTop=y;
+  fillWeather($('#gvbody'), ()=>({date:GV.comp?.date||GV.d.header?.competitions?.[0]?.date, competitions:[{venue:GV.d.gameInfo?.venue}]}));
   for(const pid of GV.open){ const p=(GV.players[GV.side]||[]).find(x=>x.id===pid); if(p && !p.splitsHTML && GV.tab===GV.side) loadSplits(p); }
 }
 function sortPlayers(list){
@@ -1451,7 +1498,7 @@ function ppRows(){
       rows.push({p,label,vals,a,l5:avg(vals.slice(0,5)),line,b,h5:hit(vals.slice(0,5)),h10:hit(vals.slice(0,10)),hs:hit(vals),n10:Math.min(10,vals.length)});
     }
   }
-  return rows.filter(r=>!PP.onlyBook||r.b).sort((x,y)=>(y.h10-x.h10)||(y.hs-x.hs)||(y.a-x.a));
+  return (ppRows.cache=rows.filter(r=>!PP.onlyBook||r.b).sort((x,y)=>(y.h10-x.h10)||(y.hs-x.hs)||(y.a-x.a)));
 }
 function renderPP(){
   if($('#pp').hidden) return;
@@ -1469,7 +1516,10 @@ function renderPP(){
   else h+=`<div class="note">Lines below are each player's median until you add your odds key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>; then real sportsbook lines and prices show here.</div>`;
   if(PP.msg) h+=`<div class="empty">${esc(PP.msg)}</div>`;
   const rows=ppRows();
-  if(rows.length){
+  h=h.replace('<div class="bookchips" style="margin-top:12px">',`<div style="margin-top:12px"><span class="viewtog"><button data-ppv="cards" class="${PP.view!=='table'?'on':''}">Cards</button><button data-ppv="table" class="${PP.view==='table'?'on':''}">Table</button></span></div><div class="bookchips">`);
+  if(rows.length && PP.view!=='table'){
+    h+=`<div class="pkgrid">${rows.slice(0,150).map(pkCard).join('')}</div>${rows.length>150?`<div class="note">Showing 150 of ${rows.length}. Pick a stat or a game to narrow it.</div>`:''}`;
+  } else if(rows.length){
     h+=`<div class="pc"><div class="tscroll"><table class="pt"><tr><th>Player</th><th>Prop</th><th>Line</th><th>Over L5</th><th>L10</th><th>Season</th><th>Avg</th><th>L5 avg</th><th>Best over</th><th>Best under</th></tr>
       ${rows.slice(0,300).map(r=>{ const c=v=>v==null?'–':`${Math.round(v*100)}%`, cls=v=>v==null?'':v>=0.6?'hi':v<=0.4?'lo':'';
         const ov=r.b?.over, un=r.b?.under, onO=ov&&OB.slip.some(l=>l.id===ov.id), onU=un&&OB.slip.some(l=>l.id===un.id);
@@ -1483,8 +1533,56 @@ function renderPP(){
   if(PP.loading) h+=`<div class="note">Loading player game logs (${PP.players.filter(p=>p.log!==undefined).length}/${PP.players.length})…</div>${skel(2)}`;
   if(Object.keys(PP.book).length) h+=`<div class="note">Want a combo? Lines loaded here are now in the <a href="#odds" style="color:var(--accent)">combo shuffler</a> under Best odds &amp; parlay (pick the same sport there).</div>`;
   h+=`<footer>Hit rates describe past games against today's line; they don't predict the next one, and books set lines knowing these numbers. Player stats: ESPN. Lines: The Odds API. Not betting advice.</footer>`;
+  h+=entryTray()+'<div style="height:30vh"></div>';
   const y=$('#pp').scrollTop; $('#ppbody').innerHTML=h; $('#pp').scrollTop=y;
   if(PP.loading && !PP._tick){ PP._tick=setTimeout(()=>{ PP._tick=null; if(PP.loading) renderPP(); },1500); }
+}
+/* ---------- Pick'em cards + entry ---------- */
+PP.view=store.get('wc_ppview','cards'); PP.entry=store.get('wc_entry',[]); PP.mult=store.get('wc_mult',{});
+const LEAGUE_IMG={nba:'nba',wnba:'wnba',nfl:'nfl',ncaaf:'college-football',ncaam:'mens-college-basketball'};
+const headOf=p=>(typeof p.head==='string'&&p.head)||p.head?.href||`https://a.espncdn.com/i/headshots/${LEAGUE_IMG[PP.sport]||'nba'}/players/full/${p.id}.png`;
+// Chance of going over: the market's fair chance when a sportsbook line is loaded, otherwise his hit rates
+// (season 50%, last 10 30%, last 5 20%) pulled toward 50% when he has few games.
+function overChance(r){
+  if(r.b?.over?.fair) return r.b.over.fair;
+  const raw=0.5*(r.hs??0.5)+0.3*(r.h10??r.hs??0.5)+0.2*(r.h5??r.hs??0.5), n=r.vals.length;
+  return clamp((raw*n+0.5*6)/(n+6),0.02,0.98);
+}
+const pickKey=r=>r.p.id+'|'+r.label;
+function pkCard(r){
+  const k=pickKey(r), sel=PP.entry.find(e=>e.k===k), p=overChance(r);
+  const when=r.p.state==='in'?'<span style="color:var(--live)">live</span>':new Date(r.p.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'});
+  return `<div class="pk ${sel?'sel':''}">
+    <img src="${esc(headOf(r.p))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+    <div class="nm">${esc(r.p.name)}</div>
+    <div class="mt">${esc(r.p.team)} ${r.p.at} ${esc(r.p.opp)} · ${when}</div>
+    <div class="ln">${f1(r.line)}</div><div class="st">${esc(r.label)}${r.b?'':' <span title="his median; load book lines for real ones">(median)</span>'}</div>
+    <div class="hr">L10 <b class="${r.h10>=0.6?'hi':r.h10<=0.4?'lo':''}">${r.vals.slice(0,10).filter(v=>v>r.line).length}/${r.n10}</b> · avg ${f1(r.a)} · more ${pct(p)}</div>
+    <div class="ml"><button class="less ${sel?.side==='less'?'on':''}" data-pk="${esc(k)}" data-side="less">Less</button><button class="more ${sel?.side==='more'?'on':''}" data-pk="${esc(k)}" data-side="more">More</button></div>
+  </div>`;
+}
+function togglePick(k,side){
+  const r=ppRows.cache?.find(x=>pickKey(x)===k); const i=PP.entry.findIndex(e=>e.k===k);
+  if(i>=0 && PP.entry[i].side===side) PP.entry.splice(i,1);
+  else if(i>=0) PP.entry[i].side=side;
+  else if(r){ if(PP.entry.length>=6){ alert('An entry can have at most 6 picks.'); return; }
+    if(PP.entry.some(e=>e.pid===r.p.id)){ alert('That player is already in your entry. Most pick’em apps allow one pick per player.'); return; }
+    PP.entry.push({k, pid:r.p.id, side, name:r.p.name, label:r.label, line:r.line, pOver:overChance(r), game:`${r.p.team} ${r.p.at} ${r.p.opp}`, start:r.p.start}); }
+  store.set('wc_entry',PP.entry); renderPP();
+}
+function entryTray(){
+  const E=PP.entry; if(!E.length) return '';
+  const probs=E.map(e=>e.side==='more'?e.pOver:1-e.pOver), all=probs.reduce((t,v)=>t*v,1);
+  const mult=+(PP.mult[E.length]||0), ev=mult?all*mult-1:null;
+  const games=new Set(E.map(e=>e.game));
+  return `<div class="slip" style="position:sticky;bottom:0;margin:16px -16px 0"><h3><span>Your entry · ${E.length} pick${E.length>1?'s':''}</span><button class="back" id="entryclear" style="font-size:12px">Clear</button></h3>
+    ${E.map((e,i)=>`<div class="leg"><div><b>${esc(e.name)} ${e.side==='more'?'More':'Less'} ${f1(e.line)} ${esc(e.label)}</b><div class="note" style="margin:2px 0 0">${esc(e.game)} · chance ${pct(probs[i])}</div></div><button class="x" data-pk="${esc(e.k)}" data-side="${e.side}">✕</button></div>`).join('')}
+    <div class="note">Chance all ${E.length} hit: <b>${pct(all)}</b> (about 1 in ${Math.max(1,Math.round(1/all))}). You need a payout of at least <b>${(1/all).toFixed(2)}×</b> to break even.</div>
+    <div class="note">Your app's payout for ${E.length} picks: <input type="number" id="entrymult" step="0.25" min="1" value="${mult||''}" placeholder="e.g. 3" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">×
+      ${ev!=null?` · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar`:''}</div>
+    ${games.size<E.length?'<div class="note lo">Some picks are from the same game; their results move together, so the real chance can differ.</div>':''}
+    <div class="note">Chances come from sportsbook fair odds when loaded, otherwise from his hit rates; lines here may differ from your app's, so check before entering.</div>
+    <button class="tbtn" id="entrycopy">Copy entry</button> <span class="note" id="entrycopied"></span></div>`;
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
 $('#ppback').onclick=()=>{ if(location.hash) history.back(); else closeProps(); };
@@ -1493,9 +1591,15 @@ $('#ppgames').addEventListener('click',e=>{ const b=e.target.closest('[data-ppg]
 $('#pp').addEventListener('click',e=>{
   const pr=e.target.closest('[data-ppp]'); if(pr){ PP.prop=pr.dataset.ppp||null; renderPP(); return; }
   if(e.target.id==='ppbook'){ loadPPBook(); return; }
+  const v=e.target.closest('[data-ppv]'); if(v){ PP.view=v.dataset.ppv; store.set('wc_ppview',PP.view); renderPP(); return; }
+  const pk=e.target.closest('[data-pk]'); if(pk){ togglePick(pk.dataset.pk, pk.dataset.side); return; }
+  if(e.target.id==='entryclear'){ PP.entry=[]; store.set('wc_entry',PP.entry); renderPP(); return; }
+  if(e.target.id==='entrycopy'){ const t=PP.entry.map((x,i)=>`${i+1}. ${x.name} ${x.side==='more'?'More':'Less'} ${f1(x.line)} ${x.label} (${x.game})`).join('\n');
+    navigator.clipboard?.writeText(t).then(()=>$('#entrycopied').textContent='Copied',()=>$('#entrycopied').textContent=t); return; }
   const ad=e.target.closest('[data-ppadd]'); if(ad){ const prev=OB.sport; OB.sport=PP.sport; toggleLeg(ad.dataset.ppadd); OB.sport=prev; renderPP(); return; }
 });
-$('#pp').addEventListener('change',e=>{ if(e.target.id==='pponlybook'){ PP.onlyBook=e.target.checked; renderPP(); } });
+$('#pp').addEventListener('change',e=>{ if(e.target.id==='pponlybook'){ PP.onlyBook=e.target.checked; renderPP(); }
+  if(e.target.id==='entrymult'){ PP.mult[PP.entry.length]=+e.target.value||0; store.set('wc_mult',PP.mult); renderPP(); } });
 
 /* ================= Best bets =================
    For every upcoming game: each bet's edge = (market's no-vig fair chance × best payout) − 1.
@@ -1571,7 +1675,169 @@ $('#bb').addEventListener('click',e=>{
   const a=e.target.closest('[data-bbadd]'); if(a){ toggleLeg(a.dataset.bbadd); renderBest(); return; }
 });
 
+/* ================= Weather (Open-Meteo, free, no key) =================
+   Outdoor games only; forecasts reach about 16 days ahead. Stadium city from ESPN's venue. */
+const WX_SPORTS=new Set(['nfl','ncaaf','mlb','epl','ucl','laliga','mls']);
+const US_ST={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'District of Columbia',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+const geoCache=store.get('wc_geo',{}), wxMem={};
+async function geocode(addr){
+  const city=addr?.city; if(!city) return null;
+  const key=[city,addr.state||'',addr.country||''].join('|'); if(geoCache[key]!==undefined) return geoCache[key];
+  const d=await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=10&language=en&format=json`);
+  const res=d.results||[], st=US_ST[addr.state]||addr.state, us=/^(USA|United States)$/i.test(addr.country||'')||!!US_ST[addr.state];
+  const hit=res.find(r=>us? r.country_code==='US' && (!st||r.admin1===st) : true) || res.find(r=>us?r.country_code==='US':true) || null;
+  geoCache[key]=hit?{lat:hit.latitude,lon:hit.longitude}:null; store.set('wc_geo',geoCache); return geoCache[key];
+}
+const WX_CODE=c=>c==null?'':c===0?'☀️ Clear':c<=3?'⛅ Cloudy':c<=48?'🌫 Fog':c<=57?'🌦 Drizzle':c<=67?'🌧 Rain':c<=77?'❄️ Snow':c<=82?'🌧 Showers':c<=86?'🌨 Snow showers':'⛈ Storms';
+async function weatherFor(sportKey, ev){
+  if(!WX_SPORTS.has(sportKey)) return null;
+  const comp=ev.competitions?.[0]||ev, v=comp.venue||{}, start=new Date(ev.date);
+  if(v.indoor) return {indoor:true, venue:v.fullName};
+  const days=(start-Date.now())/864e5; if(days>15.5 || days<-0.3) return null;
+  const g=await geocode(v.address); if(!g) return null;
+  const ck=g.lat.toFixed(2)+','+g.lon.toFixed(2);
+  if(!wxMem[ck] || Date.now()-wxMem[ck].t>3600e3) wxMem[ck]={t:Date.now(), p:getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat}&longitude=${g.lon}&hourly=temperature_2m,precipitation_probability,wind_speed_10m,wind_gusts_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=GMT&forecast_days=16`)};
+  const d=await wxMem[ck].p, H=d.hourly; if(!H?.time) return null;
+  const target=start.toISOString().slice(0,13); let i=H.time.findIndex(t=>t.startsWith(target)); if(i<0) return null;
+  return {venue:v.fullName, temp:H.temperature_2m[i], rain:H.precipitation_probability?.[i], wind:H.wind_speed_10m[i], gust:H.wind_gusts_10m?.[i], code:H.weather_code?.[i]};
+}
+function wxText(w){
+  if(!w) return '';
+  if(w.indoor) return `🏟 Indoors${w.venue?' · '+esc(w.venue):''} · weather won't matter`;
+  const warn=[]; if(w.wind>=15||w.gust>=25) warn.push('windy: tends to cut passing and kicking, lower totals');
+  if(w.temp<=32) warn.push('freezing'); if(w.rain>=50) warn.push('likely rain or snow: sloppier, lower-scoring games');
+  return `${WX_CODE(w.code)} · <b>${Math.round(w.temp)}°F</b> · wind ${Math.round(w.wind)} mph${w.gust?` (gusts ${Math.round(w.gust)})`:''} · ${w.rain??0}% precip at kickoff${warn.length?` · <span class="warn">${warn.join('; ')}</span>`:''}`;
+}
+// Fill any [data-wx="sport|eventId"] placeholders on screen.
+const wxDone={};
+async function fillWeather(root, lookup){
+  for(const el of root.querySelectorAll('[data-wx]')){
+    const [sk,id]=el.dataset.wx.split('|'); const ev=lookup(id); if(!ev) continue;
+    if(wxDone[id]!==undefined){ el.innerHTML=wxDone[id]; continue; }
+    weatherFor(sk,ev).then(w=>{ wxDone[id]=wxText(w); el.innerHTML=wxDone[id]; }).catch(()=>{ wxDone[id]=''; });
+  }
+}
+
+/* ================= Schedule: weeks ahead + holiday games ================= */
+const SC={sport:store.get('wc_scsport','nfl'), range:'7', games:[], loading:false, msg:''};
+const SC_SPORTS=['nfl','nba','ncaaf','ncaam','nhl','mlb','wnba','epl','ucl','laliga','mls'];
+function nthWeekday(y,m,wd,n){ const d=new Date(y,m,1); const off=(wd-d.getDay()+7)%7; return new Date(y,m,1+off+7*(n-1)); }
+function lastWeekday(y,m,wd){ const d=new Date(y,m+1,0); return new Date(y,m,d.getDate()-((d.getDay()-wd+7)%7)); }
+function holidays(days=150){
+  const now=new Date(); now.setHours(0,0,0,0); const end=new Date(+now+days*864e5), out=[];
+  for(const y of [now.getFullYear(), now.getFullYear()+1]){
+    const th=nthWeekday(y,10,4,4);
+    out.push(['Thanksgiving',th],['Black Friday',new Date(y,10,th.getDate()+1)],['Christmas Eve',new Date(y,11,24)],['Christmas',new Date(y,11,25)],
+      ["New Year's Eve",new Date(y,11,31)],["New Year's Day",new Date(y,0,1)],['MLK Day',nthWeekday(y,0,1,3)],['Super Bowl Sunday (est.)',nthWeekday(y,1,0,2)],
+      ["Presidents' Day",nthWeekday(y,1,1,3)],['Easter Sunday',null],['Memorial Day',lastWeekday(y,4,1)],['Fourth of July',new Date(y,6,4)],['Labor Day',nthWeekday(y,8,1,1)]);
+  }
+  return out.filter(([,d])=>d&&d>=now&&d<=end).sort((a,b)=>a[1]-b[1]);
+}
+const ymdOf=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+function openSched(){ $('#sc').hidden=false; document.body.style.overflow='hidden'; if(!SC.games.length) loadSched(); else renderSched(); }
+function closeSched(){ $('#sc').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+async function loadSched(){
+  SC.loading=true; SC.games=[]; SC.msg=''; renderSched();
+  let jobs=[];
+  if(SC.range==='hol'){ const hs=holidays(); SC.hols=hs;
+    for(const [name,d] of hs) for(const sk of ['nfl','nba','ncaaf','ncaam','nhl']) jobs.push({sk,date:ymdOf(d),hol:name}); }
+  else { const n=+SC.range; for(let i=0;i<n;i++){ const d=new Date(); d.setDate(d.getDate()+i); jobs.push({sk:SC.sport,date:ymdOf(d)}); } }
+  let fails=0, done=0;
+  await pool(jobs,6,async j=>{ try{ const items=await fetchSport(BY_KEY[j.sk], j.date);
+      for(const {ev} of items) if(!SC.games.some(g=>g.ev.id===ev.id)) SC.games.push({sk:j.sk, ev, hol:j.hol}); }
+    catch(e){ fails++; } if(++done%6===0) renderSched(); });
+  SC.loading=false; if(fails===jobs.length) SC.msg="Couldn't reach ESPN for the schedule.";
+  renderSched();
+}
+function renderSched(){
+  if($('#sc').hidden) return;
+  $('#scsports').innerHTML=SC.range==='hol'?'<span class="note" style="margin:6px 0">Holiday games across NFL, NBA, college football, college basketball and NHL</span>'
+    :SC_SPORTS.map(k=>`<button class="tab ${SC.sport===k?'on':''}" data-scs="${k}">${BY_KEY[k].label}</button>`).join('');
+  $('#scrange').innerHTML=[['7','Next 7 days'],['14','Next 2 weeks'],['28','Next 4 weeks'],['hol','🎄 Holiday games']].map(([k,l])=>`<button class="tab ${SC.range===k?'on':''}" data-scr="${k}">${l}</button>`).join('');
+  let h='';
+  if(SC.msg) h+=`<div class="empty">${esc(SC.msg)}</div>`;
+  const games=SC.games.filter(g=>(g.ev.competitions[0].status||g.ev.status).type.state!=='post').sort((a,b)=>new Date(a.ev.date)-new Date(b.ev.date));
+  const hol=Object.fromEntries((SC.hols||holidays()).map(([n,d])=>[d.toDateString(),n]));
+  const byDay={}; for(const g of games){ const k=new Date(g.ev.date).toDateString(); if(SC.range==='hol' && !hol[k]) continue; (byDay[k] ||= []).push(g); }
+  for(const [day,gs] of Object.entries(byDay)){
+    h+=`<div class="dayh">${new Date(day).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}${hol[day]?`<span class="hol">${esc(hol[day])}</span>`:''}<span class="note" style="margin:0">${gs.length} game${gs.length>1?'s':''}</span></div>`;
+    for(const g of gs){
+      const c=g.ev.competitions[0], a=c.competitors.find(x=>x.homeAway==='away'), hm=c.competitors.find(x=>x.homeAway==='home'), o=parseOdds(c);
+      const note=(c.notes||[])[0]?.headline, link=PROP_SPORTS[g.sk]?`href="#g/${g.sk}/${g.ev.id}"`:'';
+      h+=`<a class="sg" ${link}><span class="tm">${new Date(g.ev.date).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span>
+        <span><b>${esc(a.team.shortDisplayName||a.team.displayName)} @ ${esc(hm.team.shortDisplayName||hm.team.displayName)}</b> <span class="badge">${BY_KEY[g.sk].label}</span>
+        ${note?`<div class="note" style="margin:2px 0">${esc(note)}</div>`:''}
+        <div class="note" style="margin:2px 0">${esc(c.venue?.fullName||'')}${o?.spread!=null?` · ${esc(hm.team.abbreviation)} ${fmtLine(o.spread)}`:''}${o?.total?` · total ${o.total}`:''}${(c.broadcasts||[]).length?` · ${esc(c.broadcasts.flatMap(b=>b.names||[]).join(', '))}`:''}</div>
+        ${WX_SPORTS.has(g.sk)?`<div class="wx" data-wx="${g.sk}|${g.ev.id}"></div>`:''}</span></a>`;
+    }
+  }
+  if(!games.length && !SC.loading && !SC.msg) h+=`<div class="empty">No ${SC.range==='hol'?'holiday':BY_KEY[SC.sport].label} games scheduled in this window yet. Schedules for some leagues are only posted a few weeks ahead.</div>`;
+  if(SC.loading) h+=`<div class="note">Loading schedule…</div>${skel(3)}`;
+  h+=`<footer>Schedule: ESPN. Weather: Open-Meteo forecast at kickoff for outdoor stadiums, available about 16 days ahead; forecasts change, so check again on game day.</footer>`;
+  const y=$('#sc').scrollTop; $('#scbody').innerHTML=h; $('#sc').scrollTop=y;
+  fillWeather($('#scbody'), id=>SC.games.find(g=>g.ev.id===id)?.ev);
+}
+$('#schedopen').onclick=()=>{ location.hash='#schedule'; };
+$('#scback').onclick=()=>{ if(location.hash) history.back(); else closeSched(); };
+$('#scsports').addEventListener('click',e=>{ const b=e.target.closest('[data-scs]'); if(!b) return; SC.sport=b.dataset.scs; store.set('wc_scsport',SC.sport); loadSched(); });
+$('#scrange').addEventListener('click',e=>{ const b=e.target.closest('[data-scr]'); if(!b) return; SC.range=b.dataset.scr; loadSched(); });
+
+/* ================= Futures (championship winners etc.) via The Odds API outrights ================= */
+const FU={list:null, sel:store.get('wc_fusel',null), data:{}, err:null, loading:false};
+function openFut(){ $('#fu').hidden=false; document.body.style.overflow='hidden'; renderFut(); if(OB.key && !FU.list) loadFutList(); }
+function closeFut(){ $('#fu').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+async function loadFutList(){
+  FU.loading=true; renderFut();
+  try{ const s=await oddsGet('sports',{},3600e3); FU.list=s.filter(x=>x.has_outrights && x.active!==false); FU.err=null;
+    if(!FU.sel || !FU.list.some(x=>x.key===FU.sel)) FU.sel=(FU.list.find(x=>/super_bowl/.test(x.key))||FU.list[0])?.key||null;
+    if(FU.sel && !FU.data[FU.sel]) await loadFut(FU.sel, true); }
+  catch(e){ FU.err=e.message; }
+  FU.loading=false; renderFut();
+}
+async function loadFut(k, quiet){
+  if(!quiet){ FU.loading=true; renderFut(); }
+  try{ FU.data[k]=await oddsGet(`sports/${k}/odds`, {regions:'us',markets:'outrights',oddsFormat:'american'}, 1800e3); FU.err=null; }
+  catch(e){ FU.err=e.message; }
+  if(!quiet){ FU.loading=false; renderFut(); }
+}
+function renderFut(){
+  if($('#fu').hidden) return;
+  if(!OB.key){ $('#fulist').innerHTML=''; $('#fubody').innerHTML=`<div class="pc" style="margin-top:14px"><b>Add your odds key first</b><div class="note">Futures prices (Super Bowl, NBA Finals, World Series, Stanley Cup, college championships and more) come from The Odds API. Paste your key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>.</div></div>`; return; }
+  const L=FU.list||[];
+  const pretty=t=>t.replace(/ Winner$/,'').replace('Championship','Champ.');
+  $('#fulist').innerHTML=L.map(s=>`<button class="tab ${FU.sel===s.key?'on':''}" data-fu="${esc(s.key)}">${esc(pretty(s.title))}</button>`).join('');
+  let h='';
+  if(FU.err) h+=`<div class="empty"><span class="err">${esc(FU.err)}</span></div>`;
+  if(FU.loading) h+=skel(2);
+  else if(!L.length && !FU.err) h+=`<div class="empty">No futures markets open right now.</div>`;
+  const evs=FU.data[FU.sel];
+  if(evs && !FU.loading){
+    for(const ev of evs){
+      const os=outcomes(ev,'outrights').sort((a,b)=>(b.fair??0)-(a.fair??0));
+      h+=`<h2 class="sec">${esc(ev.sport_title||'Futures')}</h2><div class="note">${os.length} teams · best price across the books you ticked · fair = market chance with the books' cut removed. A futures bet ties up your money until the season ends, and the books' cut on futures is much bigger than on single games.</div>
+        <div class="pc"><div class="tscroll"><table class="pt"><tr><th>Team</th><th>Best price</th><th>Book</th><th>Fair chance</th><th>Edge</th><th></th></tr>
+        ${os.map(o=>{ const e=evEdge(o), on=OB.slip.some(l=>l.id===o.id);
+          return `<tr><td>${esc(o.name)}</td><td>${fmtA(o.best.p)}</td><td>${esc(OB.allBooks[o.best.k]||o.best.k)}</td><td>${o.fair!=null?(o.fair<0.01?'<1%':pct(o.fair)):'–'}</td><td class="${e>0?'hi':''}">${e>0?'+'+(e*100).toFixed(1)+'%':'–'}</td>
+            <td><button class="addb ${on?'on':''}" data-fuadd="${esc(o.id)}" data-fuev="${esc(ev.id)}">${on?'✓':'+'}</button></td></tr>`; }).join('')}
+        </table></div></div>`;
+    }
+    if(!evs.length) h+=`<div class="empty">No prices posted for this market right now.</div>`;
+  }
+  h+=`<footer>Futures: The Odds API (1 request per market, cached 30 minutes). Not betting advice.</footer>`;
+  $('#fubody').innerHTML=h;
+}
+$('#futopen').onclick=()=>{ location.hash='#futures'; };
+$('#fuback').onclick=()=>{ if(location.hash) history.back(); else closeFut(); };
+$('#fulist').addEventListener('click',e=>{ const b=e.target.closest('[data-fu]'); if(!b) return; FU.sel=b.dataset.fu; store.set('wc_fusel',FU.sel); if(!FU.data[FU.sel]) loadFut(FU.sel); else renderFut(); });
+$('#fubody').addEventListener('click',e=>{ const b=e.target.closest('[data-fuadd]'); if(!b) return;
+  const ev=(FU.data[FU.sel]||[]).find(x=>x.id===b.dataset.fuev); if(!ev) return;
+  const id=b.dataset.fuadd, i=OB.slip.findIndex(l=>l.id===id);
+  if(i>=0) OB.slip.splice(i,1); else { const o=outcomes(ev,'outrights').find(x=>x.id===id); if(o) OB.slip.push({id, ev:ev.id, game:ev.sport_title||'Futures', sport:'futures', label:`${o.name} to win ${(ev.sport_title||'').replace(/ Winner$/,'')}`.trim(), prices:o.prices, fair:o.fair, start:ev.commence_time}); }
+  store.set('wc_slip',OB.slip); renderSlip(); renderFut(); });
+
 function route(){
+  if(location.hash==='#schedule'){ openSched(); return; } else if(!$('#sc').hidden) closeSched();
+  if(location.hash==='#futures'){ openFut(); return; } else if(!$('#fu').hidden) closeFut();
   if(location.hash==='#best'){ openBest(); return; } else if(!$('#bb').hidden) closeBest();
   if(location.hash==='#props'){ openProps(); return; } else if(!$('#pp').hidden) closeProps();
   if(location.hash==='#bets'){ if(!$('#ob').hidden) closeOdds(); openBets(); return; } else if(!$('#mb').hidden) closeBets();
