@@ -1008,6 +1008,61 @@ function outBtn(o,mkey,ev,label){
 /* Expected value of the best price against the market's no-vig fair chance. Needs 3+ books so one book can't set "fair" alone. */
 function evEdge(o){ if(!o.fair || o.n<3) return null; const e=o.fair*decOdds(o.best.p)-1; return e>=0.01?e:null; }
 
+/* ---------- Combo shuffler: random combos from the market's most likely legs, placeable at one book ---------- */
+OB.shuf={legs:3, min:0.65, sameGame:false, pick:null, msg:''};
+function shufflePool(){
+  const pool=[], evs=[...(OB.data[OB.sport]||[]), ...Object.values(OB.props).filter(p=>p&&p.id&&!p.error)];
+  for(const ev of evs){
+    if(new Date(ev.commence_time)<new Date()) continue;           // pregame only
+    const mks=[...new Set((ev.bookmakers||[]).flatMap(b=>b.markets.map(m=>m.key)))];
+    for(const mk of mks){ let os=outcomes(ev,mk); if(mk!=='h2h') os=mainLines(os);
+      for(const o of os) if(o.fair!=null && o.n>=3 && o.fair>=OB.shuf.min) pool.push({o,ev,mk}); }
+  }
+  return pool;
+}
+function shuffleCombo(){
+  const S=OB.shuf, pool=shufflePool();
+  S.pick=null;
+  if(pool.length<S.legs){ S.msg=`Only ${pool.length} upcoming leg${pool.length===1?'':'s'} have a market chance of ${Math.round(S.min*100)}% or more. Lower the minimum, load player props, or pick fewer legs.`; return renderOB(); }
+  const allowed=k=>!OB.books||OB.books.includes(k);
+  for(let tries=0; tries<400; tries++){
+    const pick=[], used=new Set();
+    for(const c of [...pool].sort(()=>Math.random()-0.5)){
+      const gameKey=c.ev.home_team+c.ev.away_team, mkKey=c.ev.id+'|'+c.mk+'|'+(c.o.desc||'');
+      if(used.has(mkKey) || (!S.sameGame && used.has(gameKey))) continue;
+      pick.push(c); used.add(mkKey); used.add(gameKey); if(pick.length===S.legs) break;
+    }
+    if(pick.length<S.legs) break;
+    const books=Object.keys(pick[0].o.prices).filter(k=>allowed(k) && pick.every(c=>c.o.prices[k]!=null));
+    if(!books.length) continue;
+    const best=books.map(k=>({k,dec:pick.reduce((t,c)=>t*decOdds(c.o.prices[k]),1)})).sort((a,b)=>b.dec-a.dec)[0];
+    S.pick={legs:pick, book:best, fair:pick.reduce((t,c)=>t*c.o.fair,1)}; S.msg=''; return renderOB();
+  }
+  S.msg=S.sameGame?'No single book you ticked offers a combo like that. Tick more books or lower the minimum.':'Not enough different games to fill that many legs. Allow same-game legs or pick fewer.';
+  renderOB();
+}
+function shufflerHTML(){
+  const S=OB.shuf, p=S.pick;
+  let h=`<div class="pc" style="border-color:var(--accent)"><b>Combo shuffler</b>
+    <div class="note" style="margin:4px 0 8px">Shuffles random combos from the legs the market thinks are most likely, only from books you ticked, all at one book. Nothing is guaranteed: the chance the whole combo hits is shown below, and the books' cut is in every price.</div>
+    <div class="form">
+      <label>Legs<select id="sh-legs">${[2,3,4,5].map(n=>`<option ${n===S.legs?'selected':''}>${n}</option>`).join('')}</select></label>
+      <label>Each leg at least<select id="sh-min">${[0.55,0.6,0.65,0.7,0.75,0.8].map(v=>`<option value="${v}" ${v===S.min?'selected':''}>${Math.round(v*100)}% likely</option>`).join('')}</select></label>
+      <label>Same-game legs<select id="sh-sg"><option value="0" ${!S.sameGame?'selected':''}>Different games</option><option value="1" ${S.sameGame?'selected':''}>Allow</option></select></label>
+    </div>
+    <button class="tbtn" id="sh-go" style="margin-top:10px;border-color:var(--accent);color:var(--accent)">🔀 Shuffle a combo</button>
+    <span class="note">Includes player props for games where you've loaded them.</span>`;
+  if(S.msg) h+=`<div class="note lo">${esc(S.msg)}</div>`;
+  if(p){
+    const ev=p.fair*p.book.dec-1;
+    h+=`<div style="margin-top:10px">${p.legs.map(c=>`<div class="leg"><div><b>${esc(legLabel(c.o,c.mk,c.ev))}</b><div class="note" style="margin:2px 0 0">${esc(c.ev.away_team)} @ ${esc(c.ev.home_team)} · ${fmtA(c.o.prices[p.book.k])} at ${esc(OB.allBooks[p.book.k]||p.book.k)} · market chance ${pct(c.o.fair)}</div></div></div>`).join('')}
+      <div class="bookrow best" style="margin-top:8px"><span>${esc(OB.allBooks[p.book.k]||p.book.k)} · ${toAmerican(p.book.dec)}</span><span>$${+OB.stake||10} pays $${((+OB.stake||10)*p.book.dec).toFixed(2)}</span></div>
+      <div class="note">Chance all ${p.legs.length} legs hit: <b>${pct(p.fair)}</b> (about 1 in ${Math.max(1,Math.round(1/p.fair))}) · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar${S.sameGame?' · same-game legs move together, so the real chance can differ':''}</div>
+      <button class="tbtn" id="sh-add">Put on my slip</button> <button class="tbtn" id="sh-go2">🔀 Shuffle again</button></div>`;
+  }
+  return h+`</div>`;
+}
+
 function openOdds(){ $('#ob').hidden=false; document.body.style.overflow='hidden'; renderOB(); if(OB.key && !OB.data[OB.sport]) loadOdds(); }
 function closeOdds(){ $('#ob').hidden=true; if($('#gv').hidden) document.body.style.overflow=''; }
 async function loadOdds(force){
@@ -1043,6 +1098,7 @@ function renderOB(){
   if(bk.length) h+=`<div class="note" style="margin-bottom:0">Books you can bet at:</div><div class="bookchips">${bk.map(([k,t])=>`<label><input type="checkbox" data-book="${k}" ${!OB.books||OB.books.includes(k)?'checked':''}>${esc(t)}</label>`).join('')}</div>`;
   h+=`<div class="bookchips"><label style="border-color:var(--good)"><input type="checkbox" id="evonly" ${OB.evOnly?'checked':''}>Only show +EV bets</label></div>
     <div class="note" style="margin-top:0">+EV = a book's price pays more than the market's fair chance says it should (green border). It's the one edge bettors can measure; it pays off over hundreds of bets, not every bet, and books often limit accounts that win this way.</div>`;
+  if(d?.length) h+=shufflerHTML();
   if(OB.err) h+=`<div class="empty"><span class="err">${esc(OB.err)}</span></div>`;
   else if(OB.loading && !d) h+=skel(3);
   else if(d && !d.length) h+=`<div class="empty">No ${BY_KEY[OB.sport].label} games with odds right now.</div>`;
@@ -1133,6 +1189,10 @@ $('#ob').addEventListener('click',async e=>{
   if(t.id==='obrefresh'){ e.preventDefault(); loadOdds(true); return; }
   if(t.id==='slipclear'){ OB.slip=[]; store.set('wc_slip',OB.slip); renderOB(); return; }
   if(t.id==='sliplog'){ startLogFromSlip(); return; }
+  if(t.id==='sh-go'||t.id==='sh-go2'){ shuffleCombo(); return; }
+  if(t.id==='sh-add'&&OB.shuf.pick){ const p=OB.shuf.pick;
+    OB.slip=p.legs.map(c=>({id:c.o.id, ev:c.ev.id, game:`${c.ev.away_team} @ ${c.ev.home_team}`, sport:OB.sport, label:legLabel(c.o,c.mk,c.ev), prices:c.o.prices, fair:c.o.fair, start:c.ev.commence_time}));
+    store.set('wc_slip',OB.slip); renderOB(); return; }
   if(t.id==='slipcopy'){ try{ await navigator.clipboard.writeText(slipText()); $('#copied').textContent='Copied'; }catch{ $('#copied').textContent=slipText(); } return; }
   const rm=t.closest('[data-rm]'); if(rm){ toggleLeg(rm.dataset.rm); return; }
   const pr=t.closest('[data-props]'); if(pr){ loadProps(pr.dataset.props); return; }
@@ -1142,6 +1202,9 @@ $('#ob').addEventListener('change',e=>{
   const b=e.target.closest('[data-book]');
   if(b){ const all=Object.keys(OB.allBooks); const cur=new Set(OB.books||all); b.checked?cur.add(b.dataset.book):cur.delete(b.dataset.book);
     OB.books=cur.size===all.length?null:[...cur]; store.set('wc_books',OB.books); renderOB(); }
+  if(e.target.id==='sh-legs'){ OB.shuf.legs=+e.target.value; OB.shuf.pick=null; renderOB(); return; }
+  if(e.target.id==='sh-min'){ OB.shuf.min=+e.target.value; OB.shuf.pick=null; renderOB(); return; }
+  if(e.target.id==='sh-sg'){ OB.shuf.sameGame=e.target.value==='1'; OB.shuf.pick=null; renderOB(); return; }
   if(e.target.id==='evonly'){ OB.evOnly=e.target.checked; renderOB(); return; }
   if(e.target.id==='stake'){ OB.stake=+e.target.value||0; store.set('wc_stake',OB.stake); renderSlip(); }
 });
