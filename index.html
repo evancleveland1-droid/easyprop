@@ -1390,7 +1390,7 @@ async function loadPPPlayers(){
     for(const c of comp.competitors){
       const opp=comp.competitors.find(x=>x!==c), base={evId:ev.id, team:c.team.abbreviation, opp:opp.team.abbreviation, at:c.homeAway==='home'?'vs':'@', state, start:ev.date, home:comp.competitors.find(x=>x.homeAway==='home').team.displayName, away:comp.competitors.find(x=>x.homeAway==='away').team.displayName};
       if(PP.game==='all'){ // the slate: ESPN's listed leaders for each team
-        for(const L of c.leaders||[]) for(const l of (L.leaders||[]).slice(0,2)){ const a=l.athlete; if(!a||seen.has(a.id)) continue; seen.add(a.id);
+        for(const L of c.leaders||[]) for(const l of (L.leaders||[]).slice(0,2)){ const a=l.athlete; if(!a?.id||seen.has(a.id)) continue; seen.add(a.id);
           list.push({...base, id:a.id, name:a.displayName, pos:a.position?.abbreviation||'', head:a.headshot}); }
       } else { // one game: the whole roster (offense only for football)
         try{ for(const r of await roster(sport,c.team.id)){ if(seen.has(r.id) || (!bb && !FB_POS.includes(r.pos))) continue; seen.add(r.id); list.push({...base, ...r}); } }catch(e){}
