@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WinCast Live Predictions</title>
+<title>EasyProp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -167,7 +167,7 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
 <header>
   <div class="wrap">
     <div class="top">
-      <div class="brand"><span class="dot"></span>WinCast</div>
+      <div class="brand"><span class="dot"></span>EasyProp</div>
       <div class="spacer"></div>
       <div class="datenav">
         <button id="prev" aria-label="Previous day">‹</button>
@@ -177,6 +177,7 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
       <button class="iconbtn" id="theme" title="Toggle theme">◐</button>
     </div>
     <div class="tabs nav">
+      <button class="oddsbtn" id="bestopen" style="background:var(--good);border-color:var(--good)">Best bets</button>
       <button class="oddsbtn" id="propsopen">Player props</button>
       <button class="oddsbtn" id="oddsopen">Best odds &amp; parlay<span class="n" id="slipcount" hidden></span></button>
       <button class="tab" id="betsopen">My bets</button>
@@ -190,7 +191,7 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
   <div class="record" id="record" hidden></div>
   <div id="list"></div>
   <footer>
-    WinCast estimates each team's chance to win from the pregame betting line (or team records when no line is posted),
+    EasyProp estimates each team's chance to win from the pregame betting line (or team records when no line is posted),
     then updates every few seconds from the live score, time remaining and, in football, field position.
     Data: ESPN public scoreboards. For entertainment and analysis only. It is not betting advice, and no model
     reliably beats the closing line.
@@ -212,6 +213,14 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
   </div></div>
   <div class="wrap" id="obbody"></div>
   <div class="slip" id="slip" hidden></div>
+</div>
+
+<div class="gv" id="bb" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="bbback">‹ Games</button><b style="font-size:16px">Best bets</b></div>
+    <div class="tabs" id="bbsports"></div>
+  </div></div>
+  <div class="wrap" id="bbbody"></div>
 </div>
 
 <div class="gv" id="pp" hidden>
@@ -1488,7 +1497,82 @@ $('#pp').addEventListener('click',e=>{
 });
 $('#pp').addEventListener('change',e=>{ if(e.target.id==='pponlybook'){ PP.onlyBook=e.target.checked; renderPP(); } });
 
+/* ================= Best bets =================
+   For every upcoming game: each bet's edge = (market's no-vig fair chance × best payout) − 1.
+   Positive edge (+EV) is the only "best bet" with evidence behind it. Uses game lines, plus player props once scanned. */
+const BBS={scan:'', loading:false};
+function edgeList(ev){
+  const out=[];
+  for(const src of [ev, OB.props[ev.id]].filter(x=>x&&x.bookmakers&&x.id===ev.id)){
+    const mks=[...new Set(src.bookmakers.flatMap(b=>b.markets.map(m=>m.key)))];
+    for(const mk of mks){ let os=outcomes(src,mk); if(mk!=='h2h') os=mainLines(os);
+      for(const o of os) if(o.fair!=null && o.n>=3) out.push({o,ev:src,mk,edge:o.fair*decOdds(o.best.p)-1}); }
+  }
+  return out.sort((a,b)=>b.edge-a.edge);
+}
+function openBest(){ $('#bb').hidden=false; document.body.style.overflow='hidden'; renderBest(); if(OB.key && !OB.data[OB.sport]) loadBestOdds(); }
+function closeBest(){ $('#bb').hidden=true; if($('#gv').hidden&&$('#ob').hidden&&$('#mb').hidden&&$('#pp').hidden) document.body.style.overflow=''; }
+async function loadBestOdds(force){
+  BBS.loading=true; renderBest();
+  try{ OB.data[OB.sport]=await oddsGet(`sports/${ODDS_KEYS[OB.sport]}/odds`, {regions:'us',markets:'h2h,spreads,totals',oddsFormat:'american'}, force?0:300000); OB.data[OB.sport].t=Date.now(); OB.err=null; }
+  catch(e){ OB.err=e.message; }
+  BBS.loading=false; renderBest();
+}
+async function scanProps(){
+  const pm=PROP_MARKETS[OB.sport]; if(!pm) return;
+  const evs=(OB.data[OB.sport]||[]).filter(e=>new Date(e.commence_time)>new Date() && !OB.props[e.id]?.bookmakers);
+  BBS.scan=`Scanning player props for ${evs.length} games…`; renderBest();
+  let ok=0, err='';
+  await pool(evs,3,async e=>{ try{ OB.props[e.id]=await oddsGet(`sports/${ODDS_KEYS[OB.sport]}/events/${e.id}/odds`, {regions:'us',markets:pm.map(x=>x[0]).join(','),oddsFormat:'american'}); ok++; }catch(x){ err=x.message; } });
+  BBS.scan= err&&!ok ? `Player props unavailable: ${err}` : `Player props scanned for ${ok} game${ok===1?'':'s'}${OB.remaining!=null?` · ${OB.remaining} requests left`:''}.`;
+  renderBest();
+}
+function bestRow(c,showGame){
+  const on=OB.slip.some(l=>l.id===c.o.id), pos=c.edge>=0.01;
+  return `<div class="leg"><div><b>${esc(legLabel(c.o,c.mk,c.ev))}</b>
+    <div class="note" style="margin:2px 0 0">${showGame?esc(c.ev.away_team)+' @ '+esc(c.ev.home_team)+' · ':''}${fmtA(c.o.best.p)} at ${esc(OB.allBooks[c.o.best.k]||c.o.best.k)} · fair chance ${pct(c.o.fair)} ·
+      <b class="${pos?'hi':c.edge<-0.02?'lo':''}">${c.edge>=0.0005?'+':''}${(Math.abs(c.edge)<0.0005?0:c.edge*100).toFixed(1)}% ${pos?'edge':'(no edge)'}</b></div></div>
+    <button class="addb ${on?'on':''}" data-bbadd="${esc(c.o.id)}">${on?'✓ slip':'+ slip'}</button></div>`;
+}
+function renderBest(){
+  if($('#bb').hidden) return;
+  $('#bbsports').innerHTML=SPORTS.filter(s=>ODDS_KEYS[s.key]).map(s=>`<button class="tab ${OB.sport===s.key?'on':''}" data-bbs="${s.key}">${s.label}</button>`).join('');
+  let h=`<div class="note" style="margin-top:12px">A bet is ranked by its <b>edge</b>: how much the best price pays above what the market's fair odds say it should. Positive edge (green) is a bet that makes money over many bets, not a sure thing. When a game has no positive-edge bet, that's shown honestly instead of a forced pick.</div>`;
+  if(!OB.key){ $('#bbbody').innerHTML=h+`<div class="pc"><b>Add your odds key first</b><div class="note">Best bets compare prices across sportsbooks. Paste your free key from the-odds-api.com in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>, then come back.</div></div>`; return; }
+  const d=OB.data[OB.sport];
+  h+=`<div class="note">${OB.remaining!=null?`<b>${esc(OB.remaining)}</b> requests left · `:''}<a href="#" id="bbrefresh" style="color:var(--accent)">refresh game lines (3 requests)</a>
+    ${PROP_MARKETS[OB.sport]&&d?.length?` · <button class="tbtn" id="bbscan" style="margin:4px 0">Scan player props (${d.filter(e=>new Date(e.commence_time)>new Date()&&!OB.props[e.id]?.bookmakers).length*PROP_MARKETS[OB.sport].length} requests)</button>`:''} ${BBS.scan?esc(BBS.scan):''}</div>`;
+  if(OB.err) h+=`<div class="empty"><span class="err">${esc(OB.err)}</span></div>`;
+  else if(BBS.loading&&!d) h+=skel(3);
+  else if(d){
+    const games=d.filter(e=>new Date(e.commence_time)>new Date()).sort((a,b)=>new Date(a.commence_time)-new Date(b.commence_time));
+    if(!games.length) h+=`<div class="empty">No upcoming ${BY_KEY[OB.sport].label} games with lines right now.</div>`;
+    const lists=games.map(ev=>({ev, list:edgeList(ev)}));
+    const seenTop=new Set();
+    const top=lists.flatMap(x=>x.list).filter(c=>c.edge>=0.01 && !seenTop.has(c.o.id) && seenTop.add(c.o.id)).sort((a,b)=>b.edge-a.edge).slice(0,15);
+    h+=`<h2 class="sec">Top edges today · ${top.length}</h2>`+(top.length?`<div class="pc">${top.map(c=>bestRow(c,true)).join('')}</div>`
+      :`<div class="pc"><div class="note" style="margin:0">No bet in these ${games.length} games beats the fair odds by 1% or more right now. That's normal: books price most lines tightly. ${PROP_MARKETS[OB.sport]?'Scanning player props finds more, since books price them less sharply. ':''}Lines move all day, so check back.</div></div>`);
+    for(const {ev,list} of lists){
+      const t=new Date(ev.commence_time);
+      h+=`<h2 class="sec">${esc(ev.away_team)} @ ${esc(ev.home_team)} · ${t.toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})}</h2>
+        <div class="pc">${list.length?list.slice(0,4).map(c=>bestRow(c,false)).join(''):'<div class="note" style="margin:0">Not enough books pricing this game yet.</div>'}
+        ${OB.props[ev.id]?.bookmakers?'':PROP_MARKETS[OB.sport]?'<div class="note">Player props not scanned for this game.</div>':''}</div>`;
+    }
+  }
+  h+=`<footer>Edge uses the average no-vig price across books as the fair chance, which is the market's own estimate, not a guarantee. Even true +EV bets lose often; the profit shows up over hundreds of bets, and books may limit accounts that win. Not betting advice.</footer>`;
+  const y=$('#bb').scrollTop; $('#bbbody').innerHTML=h; $('#bb').scrollTop=y;
+}
+$('#bestopen').onclick=()=>{ location.hash='#best'; };
+$('#bbback').onclick=()=>{ if(location.hash) history.back(); else closeBest(); };
+$('#bbsports').addEventListener('click',e=>{ const b=e.target.closest('[data-bbs]'); if(!b) return; OB.sport=b.dataset.bbs; store.set('wc_obsport',OB.sport); BBS.scan=''; renderBest(); if(!OB.data[OB.sport]) loadBestOdds(); });
+$('#bb').addEventListener('click',e=>{
+  if(e.target.id==='bbrefresh'){ e.preventDefault(); loadBestOdds(true); return; }
+  if(e.target.id==='bbscan'){ scanProps(); return; }
+  const a=e.target.closest('[data-bbadd]'); if(a){ toggleLeg(a.dataset.bbadd); renderBest(); return; }
+});
+
 function route(){
+  if(location.hash==='#best'){ openBest(); return; } else if(!$('#bb').hidden) closeBest();
   if(location.hash==='#props'){ openProps(); return; } else if(!$('#pp').hidden) closeProps();
   if(location.hash==='#bets'){ if(!$('#ob').hidden) closeOdds(); openBets(); return; } else if(!$('#mb').hidden) closeBets();
   if(location.hash==='#odds'){ openOdds(); return; } else if(!$('#ob').hidden) closeOdds();
