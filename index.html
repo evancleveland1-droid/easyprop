@@ -140,6 +140,13 @@ table.pt input{width:58px;font:inherit;font-family:'JetBrains Mono',monospace;te
 .bookchips input{margin:0 4px 0 0}
 .keybox{display:flex;gap:8px;flex-wrap:wrap}
 .keybox input{flex:1;min-width:200px;font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.nav{padding-bottom:8px}
+.nav .oddsbtn,.nav .tab{flex:none}
+#propsopen{background:var(--text);border-color:var(--text);color:var(--bg)}
+table.pt td.pn2{white-space:normal;min-width:130px}
+table.pt td.pn2 small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+.addb{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:2px 6px;cursor:pointer}
+.addb.on{background:var(--accent);color:#fff}
 /* bet tracker */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -167,9 +174,12 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
         <span class="d" id="dlabel">Today</span>
         <button id="next" aria-label="Next day">›</button>
       </div>
-      <button class="oddsbtn" id="oddsopen">Best odds &amp; parlay<span class="n" id="slipcount" hidden></span></button>
-      <button class="iconbtn" id="betsopen" title="My bets">My bets</button>
       <button class="iconbtn" id="theme" title="Toggle theme">◐</button>
+    </div>
+    <div class="tabs nav">
+      <button class="oddsbtn" id="propsopen">Player props</button>
+      <button class="oddsbtn" id="oddsopen">Best odds &amp; parlay<span class="n" id="slipcount" hidden></span></button>
+      <button class="tab" id="betsopen">My bets</button>
     </div>
     <div class="tabs" id="tabs"></div>
   </div>
@@ -202,6 +212,15 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
   </div></div>
   <div class="wrap" id="obbody"></div>
   <div class="slip" id="slip" hidden></div>
+</div>
+
+<div class="gv" id="pp" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="ppback">‹ Games</button><b style="font-size:16px">Player props</b></div>
+    <div class="tabs" id="ppsports"></div>
+    <div class="tabs" id="ppgames"></div>
+  </div></div>
+  <div class="wrap" id="ppbody"></div>
 </div>
 
 <div class="gv" id="mb" hidden>
@@ -1016,14 +1035,14 @@ function shufflePool(){
     if(new Date(ev.commence_time)<new Date()) continue;           // pregame only
     const mks=[...new Set((ev.bookmakers||[]).flatMap(b=>b.markets.map(m=>m.key)))];
     for(const mk of mks){ let os=outcomes(ev,mk); if(mk!=='h2h') os=mainLines(os);
-      for(const o of os) if(o.fair!=null && o.n>=3 && o.fair>=OB.shuf.min) pool.push({o,ev,mk}); }
+      for(const o of os) if(o.fair!=null && o.n>=3 && o.fair>=OB.shuf.min && (!OB.shuf.ev || evEdge(o)>0)) pool.push({o,ev,mk}); }
   }
   return pool;
 }
 function shuffleCombo(){
   const S=OB.shuf, pool=shufflePool();
   S.pick=null;
-  if(pool.length<S.legs){ S.msg=`Only ${pool.length} upcoming leg${pool.length===1?'':'s'} have a market chance of ${Math.round(S.min*100)}% or more. Lower the minimum, load player props, or pick fewer legs.`; return renderOB(); }
+  if(pool.length<S.legs){ S.msg=`Only ${pool.length} upcoming leg${pool.length===1?'':'s'} ${S.ev?'are +EV with':'have'} a market chance of ${Math.round(S.min*100)}% or more. Lower the minimum, load player props (here or in the Player props tab), or pick fewer legs.`; return renderOB(); }
   const allowed=k=>!OB.books||OB.books.includes(k);
   for(let tries=0; tries<400; tries++){
     const pick=[], used=new Set();
@@ -1047,7 +1066,8 @@ function shufflerHTML(){
     <div class="note" style="margin:4px 0 8px">Shuffles random combos from the legs the market thinks are most likely, only from books you ticked, all at one book. Nothing is guaranteed: the chance the whole combo hits is shown below, and the books' cut is in every price.</div>
     <div class="form">
       <label>Legs<select id="sh-legs">${[2,3,4,5].map(n=>`<option ${n===S.legs?'selected':''}>${n}</option>`).join('')}</select></label>
-      <label>Each leg at least<select id="sh-min">${[0.55,0.6,0.65,0.7,0.75,0.8].map(v=>`<option value="${v}" ${v===S.min?'selected':''}>${Math.round(v*100)}% likely</option>`).join('')}</select></label>
+      <label>Pick legs by<select id="sh-ev"><option value="0" ${!S.ev?'selected':''}>Most likely to hit</option><option value="1" ${S.ev?'selected':''}>+EV legs only (price beats fair odds)</option></select></label>
+      <label>Each leg at least<select id="sh-min">${[0.4,0.5,0.55,0.6,0.65,0.7,0.75,0.8].map(v=>`<option value="${v}" ${v===S.min?'selected':''}>${Math.round(v*100)}% likely</option>`).join('')}</select></label>
       <label>Same-game legs<select id="sh-sg"><option value="0" ${!S.sameGame?'selected':''}>Different games</option><option value="1" ${S.sameGame?'selected':''}>Allow</option></select></label>
     </div>
     <button class="tbtn" id="sh-go" style="margin-top:10px;border-color:var(--accent);color:var(--accent)">🔀 Shuffle a combo</button>
@@ -1203,6 +1223,7 @@ $('#ob').addEventListener('change',e=>{
   if(b){ const all=Object.keys(OB.allBooks); const cur=new Set(OB.books||all); b.checked?cur.add(b.dataset.book):cur.delete(b.dataset.book);
     OB.books=cur.size===all.length?null:[...cur]; store.set('wc_books',OB.books); renderOB(); }
   if(e.target.id==='sh-legs'){ OB.shuf.legs=+e.target.value; OB.shuf.pick=null; renderOB(); return; }
+  if(e.target.id==='sh-ev'){ OB.shuf.ev=e.target.value==='1'; if(OB.shuf.ev && OB.shuf.min>0.5) OB.shuf.min=0.5; OB.shuf.pick=null; renderOB(); return; }
   if(e.target.id==='sh-min'){ OB.shuf.min=+e.target.value; OB.shuf.pick=null; renderOB(); return; }
   if(e.target.id==='sh-sg'){ OB.shuf.sameGame=e.target.value==='1'; OB.shuf.pick=null; renderOB(); return; }
   if(e.target.id==='evonly'){ OB.evOnly=e.target.checked; renderOB(); return; }
@@ -1338,7 +1359,137 @@ $('#mb').addEventListener('click',e=>{
   const del=t.closest('[data-del]'); if(del){ if(confirm('Delete this bet from your tracker?')) deleteBet(del.dataset.del); return; }
 });
 
+/* ================= Player props tab =================
+   Every player prop for a sport's slate: season/L5/L10 averages and hit rates from ESPN game logs,
+   matched to sportsbook lines (The Odds API) when a key is saved. */
+const PP_SPORTS=['nba','nfl','ncaaf','ncaam','wnba'];
+const BOOK_MK={PTS:'player_points',REB:'player_rebounds',AST:'player_assists','3PM':'player_threes',PRA:'player_points_rebounds_assists',
+  'Pass Yds':'player_pass_yds','Pass TD':'player_pass_tds','Comp':'player_pass_completions','Pass Att':'player_pass_attempts','INT':'player_pass_interceptions',
+  'Rush Yds':'player_rush_yds','Carries':'player_rush_attempts','Rec':'player_receptions','Rec Yds':'player_reception_yds','Rush+Rec Yds':'player_rush_reception_yds'};
+const PP={sport:store.get('wc_ppsport','nba'), game:'all', games:[], players:[], prop:null, loading:false, msg:'', book:{}, bookMsg:'', onlyBook:false};
+const normName=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[.'’]/g,'').replace(/\b(jr|sr|ii|iii|iv)\b/g,'').replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();
+const ppSport=()=>BY_KEY[PP.sport];
+const ppProps=()=>isBB(ppSport())?BB_PROPS:FB_PROPS;
+
+function openProps(){ $('#pp').hidden=false; document.body.style.overflow='hidden'; if(!PP.games.length||PP.day!==dayOffset) loadPPGames(); else renderPP(); }
+function closeProps(){ $('#pp').hidden=true; if($('#gv').hidden&&$('#ob').hidden&&$('#mb').hidden) document.body.style.overflow=''; }
+
+async function loadPPGames(){
+  PP.loading=true; PP.msg=''; PP.players=[]; PP.day=dayOffset; renderPP();
+  try{ PP.games=(await fetchSport(ppSport(), ymd(dayOffset))).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state!=='post'); }
+  catch(e){ PP.games=[]; PP.msg=`Couldn't load ${ppSport().label} games (${e.message}).`; }
+  if(PP.game!=='all' && !PP.games.some(g=>g.id===PP.game)) PP.game='all';
+  await loadPPPlayers();
+}
+async function loadPPPlayers(){
+  const sport=ppSport(), bb=isBB(sport); PP.loading=true; PP.players=[]; renderPP();
+  const games=PP.game==='all'?PP.games:PP.games.filter(g=>g.id===PP.game);
+  const seen=new Set(), list=[];
+  for(const ev of games){
+    const comp=ev.competitions[0], state=(comp.status||ev.status).type.state;
+    for(const c of comp.competitors){
+      const opp=comp.competitors.find(x=>x!==c), base={evId:ev.id, team:c.team.abbreviation, opp:opp.team.abbreviation, at:c.homeAway==='home'?'vs':'@', state, start:ev.date, home:comp.competitors.find(x=>x.homeAway==='home').team.displayName, away:comp.competitors.find(x=>x.homeAway==='away').team.displayName};
+      if(PP.game==='all'){ // the slate: ESPN's listed leaders for each team
+        for(const L of c.leaders||[]) for(const l of (L.leaders||[]).slice(0,2)){ const a=l.athlete; if(!a||seen.has(a.id)) continue; seen.add(a.id);
+          list.push({...base, id:a.id, name:a.displayName, pos:a.position?.abbreviation||'', head:a.headshot}); }
+      } else { // one game: the whole roster (offense only for football)
+        try{ for(const r of await roster(sport,c.team.id)){ if(seen.has(r.id) || (!bb && !FB_POS.includes(r.pos))) continue; seen.add(r.id); list.push({...base, ...r}); } }catch(e){}
+      }
+    }
+  }
+  PP.players=list; renderPP();
+  await pool(list,6,async p=>{ try{ p.log=await gamelog(sport,p.id); }catch(e){ p.log=null; } });
+  PP.players=list.filter(p=>p.log?.length); PP.loading=false;
+  if(!PP.players.length && !PP.msg) PP.msg=games.length?'No player game logs found for these games yet.':`No upcoming ${sport.label} games ${dayLabel(dayOffset).toLowerCase()}.`;
+  renderPP();
+}
+
+/* Sportsbook prop lines for the shown games. Costs one request per prop type per game. */
+async function loadPPBook(){
+  const sport=ppSport(), skey=ODDS_KEYS[PP.sport];
+  const games=PP.game==='all'?PP.games:PP.games.filter(g=>g.id===PP.game);
+  const mks=[...new Set(ppProps().map(([l])=>BOOK_MK[l]).filter(Boolean))].slice(0,isBB(sport)?5:6);
+  PP.bookMsg='Loading sportsbook lines…'; renderPP();
+  try{
+    const evs=await oddsGet(`sports/${skey}/events`, {}, 600000);
+    let matched=0, failed='';
+    await pool(games,3,async g=>{
+      const comp=g.competitions[0], h=normName(comp.competitors.find(c=>c.homeAway==='home').team.displayName), a=normName(comp.competitors.find(c=>c.homeAway==='away').team.displayName);
+      const oe=evs.find(e=>normName(e.home_team)===h && normName(e.away_team)===a); if(!oe) return;
+      try{ const d=await oddsGet(`sports/${skey}/events/${oe.id}/odds`, {regions:'us',markets:mks.join(','),oddsFormat:'american'}); OB.props[d.id]=d; PP.book[g.id]=d; matched++; }
+      catch(e){ failed=e.message; }
+    });
+    PP.bookMsg = failed && !matched ? `Sportsbook prop lines unavailable: ${failed}` : `Sportsbook lines loaded for ${matched} of ${games.length} game${games.length===1?'':'s'}${OB.remaining!=null?` · ${OB.remaining} requests left`:''}.`;
+  }catch(e){ PP.bookMsg=`Sportsbook lines unavailable: ${e.message}`; }
+  renderPP();
+}
+function bookFor(p,label){
+  const ev=PP.book[p.evId], mk=BOOK_MK[label]; if(!ev||!mk) return null;
+  const os=mainLines(outcomes(ev,mk)).filter(o=>normName(o.desc)===normName(p.name));
+  const over=os.find(o=>o.name==='Over'), under=os.find(o=>o.name==='Under');
+  return over?{ev, mk, over, under, point:over.point}:null;
+}
+function ppRows(){
+  const rows=[], props=ppProps().filter(([l])=>!PP.prop||l===PP.prop);
+  for(const p of PP.players){
+    const log=(p.log||[]).filter(r=>r.id!==p.evId && (isBB(ppSport())?(r.s.minutes||0)>0:true));
+    for(const [label,f] of props){
+      const vals=log.map(r=>f(r.s)).filter(v=>v!=null); if(!vals.length) continue;
+      const a=avg(vals); if(!isBB(ppSport()) && a<0.5) continue;
+      const b=bookFor(p,label);
+      const line=b?b.point:Math.floor(median(vals))+0.5;
+      const hit=a=>a.length?a.filter(v=>v>line).length/a.length:null;
+      rows.push({p,label,vals,a,l5:avg(vals.slice(0,5)),line,b,h5:hit(vals.slice(0,5)),h10:hit(vals.slice(0,10)),hs:hit(vals),n10:Math.min(10,vals.length)});
+    }
+  }
+  return rows.filter(r=>!PP.onlyBook||r.b).sort((x,y)=>(y.h10-x.h10)||(y.hs-x.hs)||(y.a-x.a));
+}
+function renderPP(){
+  if($('#pp').hidden) return;
+  $('#ppsports').innerHTML=PP_SPORTS.map(k=>`<button class="tab ${PP.sport===k?'on':''}" data-pps="${k}">${BY_KEY[k].label}</button>`).join('');
+  $('#ppgames').innerHTML=`<button class="tab ${PP.game==='all'?'on':''}" data-ppg="all">All games · top players</button>`+
+    PP.games.map(ev=>{ const c=ev.competitions[0], st=(c.status||ev.status).type, a=c.competitors.find(x=>x.homeAway==='away').team.abbreviation, h=c.competitors.find(x=>x.homeAway==='home').team.abbreviation;
+      return `<button class="tab ${PP.game===ev.id?'on':''}" data-ppg="${ev.id}">${a} @ ${h} · ${st.state==='in'?'<span style="color:var(--live)">live</span>':new Date(ev.date).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</button>`; }).join('');
+  let h='';
+  const props=ppProps();
+  h+=`<div class="bookchips" style="margin-top:12px">${[['','All props'],...props.map(([l])=>[l,l])].map(([k,l])=>`<label style="${(PP.prop||'')===k?'background:var(--text);color:var(--bg)':''}" data-ppp="${esc(k)}">${esc(l)}</label>`).join('')}</div>`;
+  h+=`<div class="note">${PP.game==='all'?"Each team's leading players for every game on the slate. Tap a game above to see its whole roster.":'Every player on both rosters with a game log this season.'}
+    Over L5 / L10 / Season = games he went over the line. Sorted by L10 hit rate.</div>`;
+  if(OB.key) h+=`<div class="note">${PP.bookMsg?esc(PP.bookMsg)+' ':''}<button class="tbtn" id="ppbook" style="margin:4px 0">${Object.keys(PP.book).length?'Reload':'Load'} sportsbook lines (${(PP.game==='all'?PP.games.length:1)*(isBB(ppSport())?5:6)} requests)</button>
+      <label style="margin-left:8px"><input type="checkbox" id="pponlybook" ${PP.onlyBook?'checked':''}> only props with a book line</label></div>`;
+  else h+=`<div class="note">Lines below are each player's median until you add your odds key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>; then real sportsbook lines and prices show here.</div>`;
+  if(PP.msg) h+=`<div class="empty">${esc(PP.msg)}</div>`;
+  const rows=ppRows();
+  if(rows.length){
+    h+=`<div class="pc"><div class="tscroll"><table class="pt"><tr><th>Player</th><th>Prop</th><th>Line</th><th>Over L5</th><th>L10</th><th>Season</th><th>Avg</th><th>L5 avg</th><th>Best over</th><th>Best under</th></tr>
+      ${rows.slice(0,300).map(r=>{ const c=v=>v==null?'–':`${Math.round(v*100)}%`, cls=v=>v==null?'':v>=0.6?'hi':v<=0.4?'lo':'';
+        const ov=r.b?.over, un=r.b?.under, onO=ov&&OB.slip.some(l=>l.id===ov.id), onU=un&&OB.slip.some(l=>l.id===un.id);
+        return `<tr><td class="pn2"><a href="#g/${PP.sport}/${r.p.evId}" style="color:inherit;text-decoration:none">${esc(r.p.name)}</a><small>${esc(r.p.team)} ${r.p.at} ${esc(r.p.opp)}${r.p.state==='in'?' · <span style="color:var(--live)">live</span>':''}${r.p.pos?' · '+esc(r.p.pos):''}</small></td>
+          <td>${esc(r.label)}</td><td>${f1(r.line)}${r.b?'':'<small style="color:var(--muted)"> med</small>'}</td>
+          <td class="${cls(r.h5)}">${c(r.h5)}</td><td class="${cls(r.h10)}">${c(r.h10)}</td><td class="${cls(r.hs)}">${c(r.hs)}</td><td>${f1(r.a)}</td><td>${f1(r.l5)}</td>
+          <td>${ov?`${fmtA(ov.best.p)} <small>${esc(OB.allBooks[ov.best.k]||ov.best.k)}</small> <button class="addb ${onO?'on':''}" data-ppadd="${esc(ov.id)}">${onO?'✓':'+'}</button>`:'–'}</td>
+          <td>${un?`${fmtA(un.best.p)} <small>${esc(OB.allBooks[un.best.k]||un.best.k)}</small> <button class="addb ${onU?'on':''}" data-ppadd="${esc(un.id)}">${onU?'✓':'+'}</button>`:'–'}</td></tr>`; }).join('')}
+    </table></div></div>${rows.length>300?`<div class="note">Showing the top 300 of ${rows.length}. Pick a prop or a game to narrow it.</div>`:''}`;
+  } else if(!PP.msg && !PP.loading) h+=`<div class="empty">No props match.</div>`;
+  if(PP.loading) h+=`<div class="note">Loading player game logs (${PP.players.filter(p=>p.log!==undefined).length}/${PP.players.length})…</div>${skel(2)}`;
+  if(Object.keys(PP.book).length) h+=`<div class="note">Want a combo? Lines loaded here are now in the <a href="#odds" style="color:var(--accent)">combo shuffler</a> under Best odds &amp; parlay (pick the same sport there).</div>`;
+  h+=`<footer>Hit rates describe past games against today's line; they don't predict the next one, and books set lines knowing these numbers. Player stats: ESPN. Lines: The Odds API. Not betting advice.</footer>`;
+  const y=$('#pp').scrollTop; $('#ppbody').innerHTML=h; $('#pp').scrollTop=y;
+  if(PP.loading && !PP._tick){ PP._tick=setTimeout(()=>{ PP._tick=null; if(PP.loading) renderPP(); },1500); }
+}
+$('#propsopen').onclick=()=>{ location.hash='#props'; };
+$('#ppback').onclick=()=>{ if(location.hash) history.back(); else closeProps(); };
+$('#ppsports').addEventListener('click',e=>{ const b=e.target.closest('[data-pps]'); if(!b) return; PP.sport=b.dataset.pps; store.set('wc_ppsport',PP.sport); PP.game='all'; PP.prop=null; PP.book={}; PP.bookMsg=''; loadPPGames(); });
+$('#ppgames').addEventListener('click',e=>{ const b=e.target.closest('[data-ppg]'); if(!b) return; PP.game=b.dataset.ppg; loadPPPlayers(); });
+$('#pp').addEventListener('click',e=>{
+  const pr=e.target.closest('[data-ppp]'); if(pr){ PP.prop=pr.dataset.ppp||null; renderPP(); return; }
+  if(e.target.id==='ppbook'){ loadPPBook(); return; }
+  const ad=e.target.closest('[data-ppadd]'); if(ad){ const prev=OB.sport; OB.sport=PP.sport; toggleLeg(ad.dataset.ppadd); OB.sport=prev; renderPP(); return; }
+});
+$('#pp').addEventListener('change',e=>{ if(e.target.id==='pponlybook'){ PP.onlyBook=e.target.checked; renderPP(); } });
+
 function route(){
+  if(location.hash==='#props'){ openProps(); return; } else if(!$('#pp').hidden) closeProps();
   if(location.hash==='#bets'){ if(!$('#ob').hidden) closeOdds(); openBets(); return; } else if(!$('#mb').hidden) closeBets();
   if(location.hash==='#odds'){ openOdds(); return; } else if(!$('#ob').hidden) closeOdds();
   const m=location.hash.match(/^#g\/(\w+)\/(\d+)/); if(m&&BY_KEY[m[1]]) openGame(m[1],m[2]); else if(!$('#gv').hidden) closeGame(); }
