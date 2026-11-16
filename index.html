@@ -312,6 +312,7 @@ main.wrap{padding-bottom:110px}
 
 <main class="wrap">
   <div class="status" id="status"></div>
+  <div id="picks"></div>
   <div class="record" id="record" hidden></div>
   <div id="list"></div>
   <footer>
@@ -801,6 +802,87 @@ function boardCard(g){
   </div>`;
 }
 
+/* ================= EasyProp picks: the app's own daily paper bets, graded automatically =================
+   Once a day, before games start: a single, a 3-leg parlay and a long-shot parlay of today's moneyline favorites
+   at DraftKings prices (via ESPN), $10 paper stake each. Legs are graded from ESPN final scores. */
+const PK={list:store.get('wc_picks',[]), open:new Set(), busy:false, lastGrade:0};
+const PK_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','wnba','epl','ucl','laliga','mls'];
+const savePicks=()=>store.set('wc_picks',PK.list);
+async function ensureDailyPicks(){
+  const day=ymd(0);
+  if(PK.busy || PK.list.some(p=>p.day===day)) return;
+  PK.busy=true;
+  try{
+    const legs=[];
+    await pool(PK_SPORTS,6,async sk=>{ try{ for(const {ev} of await fetchSport(BY_KEY[sk], day)){
+      const c=ev.competitions[0]; if((c.status||ev.status).type.state!=='pre' || new Date(ev.date)<new Date(Date.now()+5*60e3)) continue;
+      const ml=rawML(c); if(!ml) continue;
+      const h=c.competitors.find(x=>x.homeAway==='home'), a=c.competitors.find(x=>x.homeAway==='away');
+      const ih=impl(ml.home), ia=impl(ml.away), idr=ml.draw?impl(ml.draw):0, s=ih+ia+idr;
+      const fav=ih>=ia?{t:h,price:ml.home,p:ih/s}:{t:a,price:ml.away,p:ia/s};
+      if(fav.price<-400) continue;   // skip huge favorites: they barely pay
+      legs.push({ev:ev.id, sk, d:day, start:ev.date, teamId:fav.t.team.id, team:fav.t.team.displayName, abbr:fav.t.team.abbreviation,
+        game:`${a.team.abbreviation} @ ${h.team.abbreviation}`, price:fav.price, p:fav.p, res:null});
+    } }catch(e){} });
+    legs.sort((x,y)=>y.p-x.p);
+    if(!legs.length){ PK.busy=false; return; }
+    const mk=(kind,name,ls)=>({id:day+'-'+kind, day, kind, name, made:new Date().toISOString(), stake:10, legs:ls.map(l=>({...l})), status:'pending',
+      odds:+toAmerican(ls.reduce((t,l)=>t*decOdds(l.price),1)).replace('+',''), p:ls.reduce((t,l)=>t*l.p,1)});
+    const single=legs.find(l=>l.price>=-250)||legs[0];
+    const picks=[mk('single','Single of the day',[single])];
+    if(legs.length>=3) picks.push(mk('parlay3','3-leg parlay',legs.slice(0,3)));
+    const n=Math.min(10,legs.length); if(n>=5) picks.push(mk('long',`${n}-leg long shot`,legs.slice(0,n)));
+    PK.list.push(...picks); savePicks();
+  }catch(e){}
+  PK.busy=false; renderPicks();
+}
+async function gradePicks(force){
+  const pend=PK.list.filter(p=>p.status==='pending'); if(!pend.length) return;
+  if(!force && Date.now()-PK.lastGrade<120e3) return; PK.lastGrade=Date.now();
+  const need=new Set(pend.flatMap(p=>p.legs.filter(l=>!l.res && new Date(l.start)<new Date()).map(l=>l.sk+'|'+l.d)));
+  const evs={};
+  await pool([...need],4,async k=>{ const [sk,d]=k.split('|'); try{ for(const {ev} of await fetchSport(BY_KEY[sk], d)) evs[ev.id]=ev; }catch(e){} });
+  let changed=false;
+  for(const p of pend){
+    for(const l of p.legs){ if(l.res) continue; const ev=evs[l.ev]; if(!ev) continue;
+      const c=ev.competitions[0], st=(c.status||ev.status).type;
+      if(st.state==='post' && st.completed!==false){
+        if(/postpon|cancel/i.test(st.description||'')){ l.res='push'; changed=true; continue; }
+        const me=c.competitors.find(x=>x.team.id===l.teamId), op=c.competitors.find(x=>x.team.id!==l.teamId);
+        const ms=+me?.score, os=+op?.score;
+        l.res= me?.winner? 'won' : op?.winner? 'lost' : ms>os?'won': ms<os?'lost':'push'; l.final=`${me?.team.abbreviation} ${me?.score}–${op?.score} ${op?.team.abbreviation}`; changed=true;
+      } else if(st.state==='in'){ l.live=`${c.competitors.find(x=>x.homeAway==='away').score}-${c.competitors.find(x=>x.homeAway==='home').score} · ${st.shortDetail}`; changed=true; }
+    }
+    if(p.legs.some(l=>l.res==='lost')){ p.status='lost'; p.settled=new Date().toISOString(); }
+    else if(p.legs.every(l=>l.res)){ const live=p.legs.filter(l=>l.res==='won'); p.status=live.length?'won':'push'; p.payout=p.stake*live.reduce((t,l)=>t*decOdds(l.price),1); p.settled=new Date().toISOString(); }
+  }
+  if(changed){ savePicks(); renderPicks(); }
+}
+const pickProfit=p=>p.status==='won'?p.payout-p.stake:p.status==='lost'?-p.stake:0;
+function renderPicks(){
+  const el=$('#picks'); if(!el) return;
+  if(dayOffset!==0 && !PK.list.length){ el.innerHTML=''; return; }
+  const done=PK.list.filter(p=>p.status!=='pending'), w=done.filter(p=>p.status==='won').length, l=done.filter(p=>p.status==='lost').length;
+  const staked=done.reduce((t,p)=>t+p.stake,0), profit=done.reduce((t,p)=>t+pickProfit(p),0);
+  const legsDone=PK.list.flatMap(p=>p.kind==='long'?[]:p.legs).filter(x=>x.res==='won'||x.res==='lost'), legW=legsDone.filter(x=>x.res==='won').length;
+  const today=PK.list.filter(p=>p.day===ymd(0)), recent=[...PK.list].filter(p=>p.day!==ymd(0)).sort((a,b)=>b.day.localeCompare(a.day)).slice(0,9);
+  const icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
+  const card=p=>{ const open=PK.open.has(p.id), dec=decOdds(p.odds);
+    const res=p.status==='won'?`<b class="hi">+$${(p.payout-p.stake).toFixed(2)}</b>`:p.status==='lost'?`<b class="lo">−$${p.stake.toFixed(2)}</b>`:p.status==='push'?'Push':`$${p.stake} → $${(p.stake*dec).toFixed(2)}`;
+    return `<div class="bet ${p.status==='pending'?'':p.status}" data-pk2="${p.id}" style="cursor:pointer">
+      <div class="row"><b>${p.status==='won'?'✅ ':p.status==='lost'?'❌ ':''}${esc(p.name)}</b><span>${fmtA(p.odds)} · ${res} ${open?'▴':'▾'}</span></div>
+      <div class="note" style="margin:2px 0 0">${p.legs.map(x=>icon(x.res)).join(' ')} · ${pct(p.p)} chance when picked${p.day!==ymd(0)?' · '+new Date(p.made).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''}</div>
+      ${open?`<div style="margin-top:8px;cursor:default">${p.legs.map(x=>`<div class="leg" style="padding:5px 0"><span>${icon(x.res)} <b>${esc(x.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[x.sk]?.label||'')} · ${esc(x.game)}</small></span><span>${fmtA(x.price)}${x.final?` · ${esc(x.final)}`:x.live&&!x.res?` · <span style="color:var(--live)">${esc(x.live)}</span>`:` · ${new Date(x.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`}</span></div>`).join('')}</div>`:''}
+    </div>`; };
+  el.innerHTML=`<div class="pc" style="margin-top:12px;border-color:color-mix(in srgb,var(--accent) 40%,var(--line))">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b style="font-size:16px">📊 EasyProp picks <span class="badge">paper bets</span></b>
+      <span class="note" style="margin:0">Record <b>${w}-${l}</b> · Profit <b class="${profit>0?'hi':profit<0?'lo':''}">${profit<0?'−':'+'}$${Math.abs(profit).toFixed(2)}</b>${staked?` · ROI ${(profit/staked*100).toFixed(0)}%`:''}${legsDone.length?` · legs ${legW}/${legsDone.length}`:''}</span></div>
+    <div class="note">Every day before games start the app places 3 test bets on its own ($10 each, no real money) at DraftKings prices, then grades them from the final scores. This is the honest scoreboard for whether its picks actually win.</div>
+    ${today.length?`<div class="mk">Today</div>${today.map(card).join('')}`:PK.busy?`<div class="note">Making today's picks…</div>`:`<div class="note">No picks yet today: they're made when games with posted lines haven't started.</div>`}
+    ${recent.length?`<div class="mk">Earlier</div>${recent.map(card).join('')}`:''}
+  </div>`;
+}
+
 /* Whole season for a chosen sport: football by week (incl. playoffs, bowls, title games), others day by day for 4 weeks. */
 const SEASON={};
 async function loadSeason(sport){
@@ -857,7 +939,7 @@ function render(){
   }
   html+=sec('Final', games.filter(g=>g.state==='post').sort((a,b)=>new Date(b.ev.date)-new Date(a.ev.date)));
   $('#list').innerHTML = html || `<div class="empty">No ${tab==='all'?'':BY_KEY[tab].label+' '}games on ${dayLabel(dayOffset).toLowerCase()}.${errors.length?`<br><span class="err">${esc(errors.join(', '))}</span>`:''}</div>`;
-  updateSlipFab();
+  updateSlipFab(); renderPicks();
   if(tab!=='all' && dayOffset===0) loadSeason(BY_KEY[tab]);
   fillWeather($('#list'), id=>allBoardGames().find(g=>g.ev.id===id)?.ev);
   const tr=trackRecord();
@@ -866,7 +948,7 @@ function render(){
       <div><div class="k">Games graded</div><div class="v">${tr.n}</div></div>
       <div><div class="k">Picks correct</div><div class="v">${Math.round(tr.acc*100)}%</div></div>
       <div><div class="k">Brier score</div><div class="v">${tr.brier.toFixed(3)}</div></div>
-      <div class="note">Your model's track record: pregame forecasts saved in this browser and graded once games end. Lower Brier is better; a coin flip scores 0.500.</div>`; }
+      <div class="note">Win-chance model: before each game it records which team it gives the better chance, then checks once the game ends whether that team won. Lower Brier is better (it also rewards being confident only when right); a coin flip scores 0.500.</div>`; }
   else rec.hidden=true;
 }
 
@@ -890,6 +972,7 @@ async function refresh(){
   lastUpdate=new Date(); loading=false;
   render(); status();
   schedule();
+  ensureDailyPicks(); gradePicks();
 }
 function status(){
   const live=lastGames.filter(g=>g.state==='in').length;
@@ -1899,6 +1982,7 @@ function entryTray(){
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
 $('#slipfab').onclick=()=>{ location.hash='#odds'; };
+$('#picks').addEventListener('click',e=>{ const b=e.target.closest('[data-pk2]'); if(!b||e.target.closest('.leg')) return; const id=b.dataset.pk2; PK.open.has(id)?PK.open.delete(id):PK.open.add(id); renderPicks(); });
 $('#ppback').onclick=()=>{ if(location.hash) history.back(); else closeProps(); };
 $('#ppsports').addEventListener('click',e=>{ const b=e.target.closest('[data-pps]'); if(!b) return; PP.sport=b.dataset.pps; store.set('wc_ppsport',PP.sport); PP.game='all'; PP.prop=null; PP.book={}; PP.bookMsg=''; loadPPGames(); });
 $('#ppgames').addEventListener('click',e=>{ const b=e.target.closest('[data-ppg]'); if(!b) return; PP.game=b.dataset.ppg; loadPPPlayers(); });
