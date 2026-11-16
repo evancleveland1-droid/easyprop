@@ -1407,15 +1407,20 @@ function renderBets(){
       <div class="note" id="bf-msg"></div>
       <button class="tbtn" id="bf-save" style="border-color:var(--accent);color:var(--accent)">Save bet</button> <button class="tbtn" id="bf-cancel">Cancel</button></div>`
     : `<button class="tbtn" id="bf-new">+ Log a bet by hand</button> <span class="note">or build one in Best odds &amp; parlay and tap “Log this bet”.</span>`;
-  const list=f=>f.map(b=>{ const dec=decOdds(b.odds);
-    return `<div class="bet ${b.status}"><div class="row"><b>${b.legs?.length>1?`${b.legs.length}-leg parlay`:esc(b.legs?.[0]?.label||b.desc||'Bet')}</b><span>${fmtA(b.odds)}</span></div>
-      ${b.legs?.length>1?`<div class="note" style="margin:4px 0">${b.legs.map(x=>esc(x.label)).join('<br>')}</div>`:''}
-      ${b.desc&&b.legs?.length?`<div class="note" style="margin:4px 0">${esc(b.desc)}</div>`:''}
-      <div class="row" style="color:var(--muted);font-size:12px;margin-top:4px"><span>${esc(b.book||'')} · ${new Date(b.placed).toLocaleDateString(undefined,{month:'short',day:'numeric'})}${b.fair?` · fair ${pct(b.fair)}`:''}</span>
+  const list=f=>f.map(b=>{ const dec=decOdds(b.odds), open=BT.open?.has(b.id), n=b.legs?.length||0;
+    const title=n>1?`${n}-leg parlay`:esc(b.legs?.[0]?.label||b.desc||'Bet');
+    const peek=n>1?esc(b.legs.map(x=>x.label.replace(/ (to win|moneyline)$/,'')).join(' · ')):esc(b.legs?.[0]?.game||'');
+    return `<div class="bet ${b.status}" data-bopen="${b.id}" style="cursor:pointer">
+      <div class="row"><b>${title}</b><span>${fmtA(b.odds)} · ${b.status==='pending'?`${money(b.stake)} → ${money(b.stake*dec)}`:b.status==='push'?'Push':`<b class="${b.status==='won'?'hi':'lo'}">${b.status==='won'?'+':''}${money(profitOf(b))}</b>`} ${open?'▴':'▾'}</span></div>
+      ${open?'':`<div class="note" style="margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${peek}</div>`}
+      ${open?`<div class="bdet" style="cursor:default">
+      ${n>1?`<div class="note" style="margin:6px 0">${b.legs.map(x=>`<div class="leg" style="padding:4px 0"><span>${esc(x.label)}</span><span>${esc(x.game||'')}</span></div>`).join('')}</div>`:''}
+      ${b.desc?`<div class="note" style="margin:4px 0">${esc(b.desc)}</div>`:''}
+      <div class="row" style="color:var(--muted);font-size:12px;margin-top:4px"><span>${esc(b.book||'')} · ${new Date(b.placed).toLocaleDateString(undefined,{month:'short',day:'numeric'})}${b.fair?` · fair chance ${pct(b.fair)}`:''}</span>
         <span>${b.status==='pending'?`${money(b.stake)} to win ${money(b.stake*(dec-1))}`:b.status==='push'?'Push, stake back':`<b class="${b.status==='won'?'hi':'lo'}">${b.status==='won'?'+':''}${money(profitOf(b))}</b>`}</span></div>
       <div class="acts">${b.status==='pending'
         ? `<button data-st="won" data-b="${b.id}" style="color:var(--good)">Won</button><button data-st="lost" data-b="${b.id}" style="color:var(--live)">Lost</button><button data-st="push" data-b="${b.id}">Push</button><button data-edit="${b.id}">Edit</button>`
-        : `<button data-st="pending" data-b="${b.id}">Undo</button>`}<button data-del="${b.id}">Delete</button></div></div>`; }).join('');
+        : `<button data-st="pending" data-b="${b.id}">Undo</button>`}<button data-del="${b.id}">Delete</button></div></div>`:''}</div>`; }).join('');
   if(pending.length) h+=`<h2 class="sec">Pending · ${pending.length}</h2>${list(pending)}`;
   const done=all.filter(b=>b.status!=='pending');
   if(done.length) h+=`<h2 class="sec">Settled · ${done.length}</h2>${list(done)}`;
@@ -1443,6 +1448,8 @@ $('#mb').addEventListener('click',e=>{
   const st=t.closest('[data-st]'); if(st){ const b=BT.bets.find(x=>x.id===st.dataset.b); if(b) saveBet({...b, status:st.dataset.st, settled:st.dataset.st==='pending'?null:new Date().toISOString()}); return; }
   const ed=t.closest('[data-edit]'); if(ed){ const b=BT.bets.find(x=>x.id===ed.dataset.edit); if(b){ BT.draft={...b}; renderBets(); $('#mb').scrollTop=0; } return; }
   const del=t.closest('[data-del]'); if(del){ if(confirm('Delete this bet from your tracker?')) deleteBet(del.dataset.del); return; }
+  if(t.closest('.bdet')) return;
+  const bo=t.closest('[data-bopen]'); if(bo){ (BT.open ||= new Set()); const id=bo.dataset.bopen; BT.open.has(id)?BT.open.delete(id):BT.open.add(id); renderBets(); }
 });
 
 /* ================= Player props tab =================
@@ -1908,8 +1915,12 @@ function gameCombos(){
   const mid=legs.filter(l=>l.p>=0.55&&l.p<=0.72);
   add('Bigger payout 3-leg','Solid favorites at better prices (55–72% each)',pickDistinct(mid,3,l=>l.ev));
   add('Bigger payout 2-leg','Two solid favorites at better prices',pickDistinct(mid,2,l=>l.ev));
-  const cross=[]; const seenSp=new Set(); for(const l of legs){ if(!seenSp.has(l.sk)){ seenSp.add(l.sk); cross.push(l); } }
-  if(cross.length>=3) add('Multi-sport 3-leg','Top favorite from three different sports',cross.slice(0,3));
+  // Mixed sports: one leg per sport (and per game)
+  const bySport=n=>pickDistinct(legs,n,l=>l.sk);
+  add('Multi-sport 2-leg','Top favorite from two different sports',bySport(2));
+  add('Multi-sport 3-leg','Top favorite from three different sports',bySport(3));
+  add('Multi-sport 4-leg','Top favorite from four different sports',bySport(4));
+  add('Multi-sport bigger payout 3-leg','Solid favorites from three sports at better prices',pickDistinct(mid,3,l=>l.sk));
   return C;
 }
 function gameSingles(){
@@ -1943,25 +1954,26 @@ function comboCard(c){
     const dec=c.legs.reduce((t,l)=>t*decOdds(l.price),1), p=c.legs.reduce((t,l)=>t*l.p,1), ev=p*dec-1;
     return `<div class="combo ${open?'open':''}" data-cb="${esc(c.id)}"><div class="top"><span class="nm">${esc(c.name)}</span><span class="pay">${toAmerican(dec)}</span></div>
       <div class="sub">${c.legs.length===1?`${esc(BY_KEY[c.legs[0].sk].label)} · ${esc(c.legs[0].game)} · ${new Date(c.legs[0].start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:esc(c.legs.map(l=>l.label.replace(' to win','')).join(' · '))}</div>
-      <div class="sub">$${stake} pays <b>$${(stake*dec).toFixed(2)}</b> · ${pct(p)} chance ${c.legs.length===1?'to win':'all hit'} · tap for details</div>
+      <div class="sub">$${stake} pays <b>$${(stake*dec).toFixed(2)}</b> · ${pct(p)} chance ${c.legs.length===1?'to win':'all hit'} · tap to see legs</div>
+      ${(()=>{ const inS=c.legs.every(l=>OB.slip.some(x=>x.id===l.id)); return `<div style="margin-top:8px"><button class="addb ${inS?'on':''}" data-cbslip="${esc(c.id)}" style="font-size:12.5px;padding:5px 10px">${inS?'✓ On your slip (tap to remove)':c.legs.length===1?'+ Add to slip':`+ Add all ${c.legs.length} legs to slip`}</button></div>`; })()}
       <div class="det">
         ${c.legs.map(l=>`<div class="leg"><div><b>${esc(l.label)}</b><div class="note" style="margin:2px 0 0">${esc(BY_KEY[l.sk].label)} · ${esc(l.game)} · ${new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} · ${fmtA(l.price)} ${esc(l.book)} · ${pct(l.p)} chance</div></div></div>`).join('')}
         <div class="big"><div><b>${toAmerican(dec)}</b><span>Odds</span></div><div><b>$${(stake*dec).toFixed(2)}</b><span>Pays on $${stake}</span></div><div><b>${pct(p)}</b><span>Chance</span></div></div>
         <div class="note">Profit if it hits: <b class="hi">$${(stake*(dec-1)).toFixed(2)}</b> · about 1 in ${Math.max(1,Math.round(1/p))} combos like this hit · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar (the book's cut on every leg).</div>
-        <button class="tbtn" data-cbslip="${esc(c.id)}">Add to my slip</button> <button class="tbtn" data-cblog="${esc(c.id)}" style="border-color:var(--accent);color:var(--accent)">Log this bet</button>
+        <button class="tbtn" data-cblog="${esc(c.id)}" style="border-color:var(--accent);color:var(--accent)">Log this bet</button> <a class="note" href="#odds" style="color:var(--accent)">Open my slip ›</a>
       </div></div>`;
   }
   const P=c.picks, p=P.reduce((t,x)=>t*x.p,1), mult=+(PP.mult[P.length]||0), real=P.every(x=>x.r.b), ev=mult&&real?p*mult-1:null;
   return `<div class="combo ${open?'open':''}" data-cb="${esc(c.id)}"><div class="top"><span class="nm">${esc(c.name)}</span><span class="pay">${mult?`${mult}×`:`${pct(p)}`}</span></div>
     <div class="sub">${esc(P.map(x=>`${x.r.p.name.split(' ').slice(-1)[0]} ${x.side==='more'?'O':'U'} ${f1(x.r.line)} ${x.r.label}`).join(' · '))}</div>
-    <div class="sub">${mult?`$${stake} pays <b>$${(stake*mult).toFixed(2)}</b> · `:''}${pct(p)} chance all hit · tap for details</div>
+    <div class="sub">${mult?`$${stake} pays <b>$${(stake*mult).toFixed(2)}</b> · `:''}${pct(p)} chance all hit · tap to see picks</div>
+    ${(()=>{ const inE=P.length===PP.entry.length && P.every(x=>PP.entry.some(e=>e.k===pickKey(x.r)&&e.side===x.side)); return `<div style="margin-top:8px"><button class="addb ${inE?'on':''}" data-cbentry="${esc(c.id)}" style="font-size:12.5px;padding:5px 10px">${inE?'✓ This is your entry':`+ Use all ${P.length} picks as my entry`}</button>${inE?' <a class="note" href="#props" style="color:var(--accent)">Open entry ›</a>':''}</div>`; })()}
     <div class="det">
       ${P.map(x=>`<div class="leg"><div><b>${esc(x.r.p.name)} ${x.side==='more'?'More':'Less'} ${f1(x.r.line)} ${esc(x.r.label)}</b><div class="note" style="margin:2px 0 0">${esc(x.r.p.team)} ${x.r.p.at} ${esc(x.r.p.opp)} · L10 ${x.r.vals.slice(0,10).filter(v=>x.side==='more'?v>x.r.line:v<x.r.line).length}/${x.r.n10} · ${pct(x.p)} chance${x.r.b?' · sportsbook line':' · estimated line'}</div></div></div>`).join('')}
       <div class="note">Your app's payout for ${P.length} picks: <input type="number" class="cbmult" data-n="${P.length}" step="0.25" min="1" value="${mult||''}" placeholder="e.g. ${[0,0,3,5,10,20][P.length]||3}" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">× <span style="color:var(--muted)">(type what your app shows)</span></div>
       <div class="big"><div><b>${mult?`${mult}×`:'–'}</b><span>Payout</span></div><div><b>${mult?`$${(stake*mult).toFixed(2)}`:'–'}</b><span>Pays on $${stake}</span></div><div><b>${pct(p)}</b><span>Chance</span></div></div>
       <div class="note">Break-even payout: <b>${(1/p).toFixed(2)}×</b>${ev!=null?` · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar`:''}.
         ${real?'':'<br><b>These lines are estimates</b> (season averages), so the chance is rough and no expected return is shown. Your app\'s real lines will differ; load sportsbook lines in Player props for real numbers.'}</div>
-      <button class="tbtn" data-cbentry="${esc(c.id)}" style="border-color:var(--accent);color:var(--accent)">Use as my entry</button>
     </div></div>`;
 }
 function renderCombos(){
@@ -1999,13 +2011,15 @@ $('#cbtabs').addEventListener('click',e=>{
 $('#cb').addEventListener('click',e=>{
   const c=(CB.list||[]).find(x=>x.id===(e.target.closest('[data-cbslip],[data-cblog],[data-cbentry]')?.dataset.cbslip||e.target.closest('[data-cblog]')?.dataset.cblog||e.target.closest('[data-cbentry]')?.dataset.cbentry));
   if(c && e.target.closest('[data-cbslip]')){ OB.allBooks.draftkings ||= 'DraftKings';
-    for(const l of c.legs) if(!OB.slip.some(x=>x.id===l.id)) OB.slip.push({id:l.id, ev:l.ev, game:l.game, sport:l.sk, label:l.label, prices:{draftkings:l.price}, fair:l.p, start:l.start});
-    store.set('wc_slip',OB.slip); renderSlip(); e.target.textContent='Added ✓'; return; }
+    const inS=c.legs.every(l=>OB.slip.some(x=>x.id===l.id));
+    if(inS) OB.slip=OB.slip.filter(x=>!c.legs.some(l=>l.id===x.id));
+    else for(const l of c.legs) if(!OB.slip.some(x=>x.id===l.id)) OB.slip.push({id:l.id, ev:l.ev, game:l.game, sport:l.sk, label:l.label, prices:{draftkings:l.price}, fair:l.p, start:l.start});
+    store.set('wc_slip',OB.slip); renderSlip(); renderCombos(); return; }
   if(c && e.target.closest('[data-cblog]')){ const dec=c.legs.reduce((t,l)=>t*decOdds(l.price),1);
     BT.draft={legs:c.legs.map(l=>({label:l.label, game:l.game, start:l.start})), book:c.legs[0].book, odds:+toAmerican(dec).replace('+',''), stake:+CB.stake||10, fair:c.legs.reduce((t,l)=>t*l.p,1)};
     location.hash='#bets'; return; }
   if(c && e.target.closest('[data-cbentry]')){ PP.entry=c.picks.map(x=>({k:pickKey(x.r), pid:x.r.p.id, side:x.side, name:x.r.p.name, label:x.r.label, line:x.r.line, pOver:overChance(x.r), game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, start:x.r.p.start}));
-    store.set('wc_entry',PP.entry); location.hash='#props'; return; }
+    store.set('wc_entry',PP.entry); renderCombos(); return; }
   if(e.target.closest('.det')) return;
   const card=e.target.closest('[data-cb]'); if(card){ CB.open=CB.open===card.dataset.cb?null:card.dataset.cb; renderCombos(); }
 });
