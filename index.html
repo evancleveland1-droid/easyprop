@@ -180,6 +180,19 @@ table.pt td.pn2 small{display:block;color:var(--muted);font-weight:500;font-size
 .dayh .hol{font-size:11px;font-weight:700;background:color-mix(in srgb,var(--live) 16%,transparent);color:var(--live);border-radius:999px;padding:2px 8px}
 .sg{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;text-decoration:none;color:inherit}
 .sg .tm{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);padding-top:2px}
+/* suggested combos */
+.combo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer}
+.combo.open{border-color:#7c4dff;box-shadow:0 0 0 1px #7c4dff}
+.combo .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.combo .nm{font-weight:800;font-size:15px}
+.combo .pay{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:18px;color:var(--good);white-space:nowrap}
+.combo .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.combo .det{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;cursor:default}
+.combo.open .det{display:block}
+.combo .big{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.combo .big div{background:var(--panel2);border-radius:10px;padding:8px;text-align:center}
+.combo .big b{display:block;font-family:'JetBrains Mono',monospace;font-size:17px}
+.combo .big span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 /* bet tracker */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -210,6 +223,7 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
       <button class="iconbtn" id="theme" title="Toggle theme">◐</button>
     </div>
     <div class="tabs nav">
+      <button class="oddsbtn" id="combosopen" style="background:#7c4dff;border-color:#7c4dff">Suggested combos</button>
       <button class="oddsbtn" id="bestopen" style="background:var(--good);border-color:var(--good)">Best bets</button>
       <button class="oddsbtn" id="propsopen">Player props</button>
       <button class="tab" id="schedopen">Schedule &amp; holidays</button>
@@ -265,6 +279,14 @@ footer{color:var(--muted);font-size:12px;line-height:1.5;margin-top:36px;border-
     <div class="tabs" id="ppgames"></div>
   </div></div>
   <div class="wrap" id="ppbody"></div>
+</div>
+
+<div class="gv" id="cb" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="cbback">‹ Games</button><b style="font-size:16px">Suggested combos</b></div>
+    <div class="tabs" id="cbtabs"></div>
+  </div></div>
+  <div class="wrap" id="cbbody"></div>
 </div>
 
 <div class="gv" id="sc" hidden>
@@ -1501,7 +1523,7 @@ function ppRows(){
       const vals=log.map(r=>f(r.s)).filter(v=>v!=null); if(!vals.length) continue;
       const a=avg(vals); if(!isBB(ppSport()) && a<0.5) continue;
       const b=bookFor(p,label);
-      const line=b?b.point:Math.floor(median(vals))+0.5;
+      const line=b?b.point:Math.floor(a)+0.5;   // no book line: use his season average, near where books and apps set lines
       const hit=a=>a.length?a.filter(v=>v>line).length/a.length:null;
       rows.push({p,label,vals,a,l5:avg(vals.slice(0,5)),line,b,h5:hit(vals.slice(0,5)),h10:hit(vals.slice(0,10)),hs:hit(vals),n10:Math.min(10,vals.length)});
     }
@@ -1521,7 +1543,7 @@ function renderPP(){
     Over L5 / L10 / Season = games he went over the line. Sorted by L10 hit rate.</div>`;
   if(OB.key) h+=`<div class="note">${PP.bookMsg?esc(PP.bookMsg)+' ':''}<button class="tbtn" id="ppbook" style="margin:4px 0">${Object.keys(PP.book).length?'Reload':'Load'} sportsbook lines (${(PP.game==='all'?PP.games.length:1)*(isBB(ppSport())?5:6)} requests)</button>
       <label style="margin-left:8px"><input type="checkbox" id="pponlybook" ${PP.onlyBook?'checked':''}> only props with a book line</label></div>`;
-  else h+=`<div class="note">Lines below are each player's median until you add your odds key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>; then real sportsbook lines and prices show here.</div>`;
+  else h+=`<div class="note">Lines below are each player's season average (an estimate) until you add your odds key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>; then real sportsbook lines and prices show here.</div>`;
   if(PP.msg) h+=`<div class="empty">${esc(PP.msg)}</div>`;
   const rows=ppRows();
   h=h.replace('<div class="bookchips" style="margin-top:12px">',`<div style="margin-top:12px"><span class="viewtog"><button data-ppv="cards" class="${PP.view!=='table'?'on':''}">Cards</button><button data-ppv="table" class="${PP.view==='table'?'on':''}">Table</button></span></div><div class="bookchips">`);
@@ -1532,7 +1554,7 @@ function renderPP(){
       ${rows.slice(0,300).map(r=>{ const c=v=>v==null?'–':`${Math.round(v*100)}%`, cls=v=>v==null?'':v>=0.6?'hi':v<=0.4?'lo':'';
         const ov=r.b?.over, un=r.b?.under, onO=ov&&OB.slip.some(l=>l.id===ov.id), onU=un&&OB.slip.some(l=>l.id===un.id);
         return `<tr><td class="pn2"><a href="#g/${PP.sport}/${r.p.evId}" style="color:inherit;text-decoration:none">${esc(r.p.name)}</a><small>${esc(r.p.team)} ${r.p.at} ${esc(r.p.opp)}${r.p.state==='in'?' · <span style="color:var(--live)">live</span>':''}${r.p.pos?' · '+esc(r.p.pos):''}</small></td>
-          <td>${esc(r.label)}</td><td>${f1(r.line)}${r.b?'':'<small style="color:var(--muted)"> med</small>'}</td>
+          <td>${esc(r.label)}</td><td>${f1(r.line)}${r.b?'':'<small style="color:var(--muted)"> avg</small>'}</td>
           <td class="${cls(r.h5)}">${c(r.h5)}</td><td class="${cls(r.h10)}">${c(r.h10)}</td><td class="${cls(r.hs)}">${c(r.hs)}</td><td>${f1(r.a)}</td><td>${f1(r.l5)}</td>
           <td>${ov?`${fmtA(ov.best.p)} <small>${esc(OB.allBooks[ov.best.k]||ov.best.k)}</small> <button class="addb ${onO?'on':''}" data-ppadd="${esc(ov.id)}">${onO?'✓':'+'}</button>`:'–'}</td>
           <td>${un?`${fmtA(un.best.p)} <small>${esc(OB.allBooks[un.best.k]||un.best.k)}</small> <button class="addb ${onU?'on':''}" data-ppadd="${esc(un.id)}">${onU?'✓':'+'}</button>`:'–'}</td></tr>`; }).join('')}
@@ -1564,7 +1586,7 @@ function pkCard(r){
     <img src="${esc(headOf(r.p))}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
     <div class="nm">${esc(r.p.name)}</div>
     <div class="mt">${esc(r.p.team)} ${r.p.at} ${esc(r.p.opp)} · ${when}</div>
-    <div class="ln">${f1(r.line)}</div><div class="st">${esc(r.label)}${r.b?'':' <span title="his median; load book lines for real ones">(median)</span>'}</div>
+    <div class="ln">${f1(r.line)}</div><div class="st">${esc(r.label)}${r.b?'':' <span title="his season average; load book lines for real ones">(est. line)</span>'}</div>
     <div class="hr">L10 <b class="${r.h10>=0.6?'hi':r.h10<=0.4?'lo':''}">${r.vals.slice(0,10).filter(v=>v>r.line).length}/${r.n10}</b> · avg ${f1(r.a)} · more ${pct(p)}</div>
     <div class="ml"><button class="less ${sel?.side==='less'?'on':''}" data-pk="${esc(k)}" data-side="less">Less</button><button class="more ${sel?.side==='more'?'on':''}" data-pk="${esc(k)}" data-side="more">More</button></div>
   </div>`;
@@ -1843,7 +1865,157 @@ $('#fubody').addEventListener('click',e=>{ const b=e.target.closest('[data-fuadd
   if(i>=0) OB.slip.splice(i,1); else { const o=outcomes(ev,'outrights').find(x=>x.id===id); if(o) OB.slip.push({id, ev:ev.id, game:ev.sport_title||'Futures', sport:'futures', label:`${o.name} to win ${(ev.sport_title||'').replace(/ Winner$/,'')}`.trim(), prices:o.prices, fair:o.fair, start:ev.commence_time}); }
   store.set('wc_slip',OB.slip); renderSlip(); renderFut(); });
 
+/* ================= Suggested combos =================
+   Game combos: today's moneylines from ESPN (DraftKings), favorites ranked by the no-vig chance, one leg per game.
+   Player combos: each player's likelier side (more/less) from hit rates or book fair odds, one pick per player. */
+const CB={tab:'games', propSport:store.get('wc_cbsport','nba'), games:[], loading:false, open:null, stake:store.get('wc_stake',10)};
+const CB_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','epl','ucl','laliga','mls'];
+function rawML(comp){
+  const o=(comp.odds||[])[0]; if(!o) return null;
+  const n=v=>{ if(v==null) return null; if(typeof v==='string'){ if(/even/i.test(v)) return 100; v=parseFloat(v.replace('+','')); } return isFinite(v)&&Math.abs(v)>=100?v:null; };
+  const h=n(o.moneyline?.home?.close?.odds ?? o.moneyline?.home?.open?.odds ?? o.homeTeamOdds?.moneyLine);
+  const a=n(o.moneyline?.away?.close?.odds ?? o.moneyline?.away?.open?.odds ?? o.awayTeamOdds?.moneyLine);
+  const d=n(o.moneyline?.draw?.close?.odds ?? o.drawOdds?.moneyLine);
+  return h&&a?{home:h,away:a,draw:d,book:o.provider?.displayName||o.provider?.name||'DraftKings'}:null;
+}
+function openCombos(){ $('#cb').hidden=false; document.body.style.overflow='hidden'; renderCombos(); if(!CB.games.length) loadComboGames(); if(CB.tab==='props' && (PP.sport!==CB.propSport || !PP.players.length)) loadComboProps(); }
+function closeCombos(){ $('#cb').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+async function loadComboGames(){
+  CB.loading=true; renderCombos(); const out=[];
+  await pool(CB_SPORTS,6,async sk=>{ try{ const items=await fetchSport(BY_KEY[sk], ymd(dayOffset)); items.forEach(x=>out.push({sk,ev:x.ev})); }catch(e){} });
+  CB.games=out; CB.loading=false; renderCombos();
+}
+async function loadComboProps(){ PP.sport=CB.propSport; PP.game='all'; PP.prop=null; PP.book={}; renderCombos(); await loadPPGames(); renderCombos(); }
+function gameLegs(){
+  const legs=[];
+  for(const {sk,ev} of CB.games){
+    const c=ev.competitions[0], st=(c.status||ev.status).type.state; if(st!=='pre') continue;
+    const ml=rawML(c); if(!ml) continue;
+    const ih=impl(ml.home), ia=impl(ml.away), idr=ml.draw?impl(ml.draw):0, s=ih+ia+idr;
+    const h=c.competitors.find(x=>x.homeAway==='home'), a=c.competitors.find(x=>x.homeAway==='away');
+    const side=ih>=ia?{t:h,price:ml.home,p:ih/s}:{t:a,price:ml.away,p:ia/s};
+    legs.push({id:`espn|${ev.id}|${side.t.team.abbreviation}`, ev:ev.id, sk, label:`${side.t.team.displayName} to win`, game:`${a.team.abbreviation} @ ${h.team.abbreviation}`, price:side.price, p:side.p, book:ml.book, start:ev.date});
+  }
+  return legs.sort((x,y)=>y.p-x.p);
+}
+function pickDistinct(cands, n, key){ const out=[], used=new Set(); for(const c of cands){ const k=key(c); if(used.has(k)) continue; out.push(c); used.add(k); if(out.length===n) break; } return out.length===n?out:null; }
+function gameCombos(){
+  const legs=gameLegs().filter(l=>l.p<0.97), C=[];
+  const add=(name,why,ls)=>{ if(ls) C.push({id:'g:'+name, name, why, legs:ls}); };
+  add('Safest 2-leg','The two biggest favorites today',pickDistinct(legs,2,l=>l.ev));
+  add('Safest 3-leg','Three biggest favorites',pickDistinct(legs,3,l=>l.ev));
+  add('Safest 4-leg','Four biggest favorites',pickDistinct(legs,4,l=>l.ev));
+  const mid=legs.filter(l=>l.p>=0.55&&l.p<=0.72);
+  add('Bigger payout 3-leg','Solid favorites at better prices (55–72% each)',pickDistinct(mid,3,l=>l.ev));
+  add('Bigger payout 2-leg','Two solid favorites at better prices',pickDistinct(mid,2,l=>l.ev));
+  const cross=[]; const seenSp=new Set(); for(const l of legs){ if(!seenSp.has(l.sk)){ seenSp.add(l.sk); cross.push(l); } }
+  if(cross.length>=3) add('Multi-sport 3-leg','Top favorite from three different sports',cross.slice(0,3));
+  return C;
+}
+function gameSingles(){
+  const legs=gameLegs().filter(l=>l.p<0.97);
+  const safe=legs.slice(0,4), value=legs.filter(l=>l.p>=0.5&&l.p<=0.65&&!safe.includes(l)).slice(0,3);
+  return [...safe,...value].map(l=>({id:'s:'+l.id, name:`Single · ${l.label.replace(' to win','')}`, why:'', legs:[l]}));
+}
+// Without a sportsbook line, only use real, high-volume prop stats (no "Gobert under 0.5 threes"), and cap estimated chances.
+const COMBO_MIN={PTS:10,REB:4,AST:3,'3PM':1.5,PRA:18,'Pass Yds':150,'Comp':12,'Rush Yds':30,'Rec':2.5,'Rec Yds':25};
+function propCombos(){
+  const best={};
+  for(const r of ppRows()){
+    if(!r.b && !(COMBO_MIN[r.label]!=null && r.a>=COMBO_MIN[r.label])) continue;
+    let po=overChance(r); if(!r.b) po=clamp(po,0.25,0.75);
+    const side=po>=0.5?'more':'less', p=side==='more'?po:1-po;
+    const cur=best[r.p.id]; if(!cur||p>cur.p) best[r.p.id]={r,side,p}; }
+  const cands=Object.values(best).sort((x,y)=>y.p-x.p), C=[];
+  const add=(name,why,ls)=>{ if(ls) C.push({id:'p:'+name, name, why, picks:ls}); };
+  const diffGame=(n)=>pickDistinct(cands,n,c=>c.r.p.evId)||pickDistinct(cands,n,c=>c.r.p.id);
+  add('Top 2 picks','Highest-chance pick for each player, different games',diffGame(2));
+  add('Top 3 picks','Three highest-chance picks',diffGame(3));
+  add('Top 4 picks','Four highest-chance picks',diffGame(4));
+  add('Top 5 picks','Five highest-chance picks',diffGame(5));
+  const mores=cands.filter(c=>c.side==='more');
+  add('All "More" 3-pick','Players most likely to go over',pickDistinct(mores,3,c=>c.r.p.evId));
+  return C;
+}
+function comboCard(c){
+  const open=CB.open===c.id, stake=+CB.stake||0;
+  if(c.legs){ // game combo with real prices
+    const dec=c.legs.reduce((t,l)=>t*decOdds(l.price),1), p=c.legs.reduce((t,l)=>t*l.p,1), ev=p*dec-1;
+    return `<div class="combo ${open?'open':''}" data-cb="${esc(c.id)}"><div class="top"><span class="nm">${esc(c.name)}</span><span class="pay">${toAmerican(dec)}</span></div>
+      <div class="sub">${c.legs.length===1?`${esc(BY_KEY[c.legs[0].sk].label)} · ${esc(c.legs[0].game)} · ${new Date(c.legs[0].start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:esc(c.legs.map(l=>l.label.replace(' to win','')).join(' · '))}</div>
+      <div class="sub">$${stake} pays <b>$${(stake*dec).toFixed(2)}</b> · ${pct(p)} chance ${c.legs.length===1?'to win':'all hit'} · tap for details</div>
+      <div class="det">
+        ${c.legs.map(l=>`<div class="leg"><div><b>${esc(l.label)}</b><div class="note" style="margin:2px 0 0">${esc(BY_KEY[l.sk].label)} · ${esc(l.game)} · ${new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} · ${fmtA(l.price)} ${esc(l.book)} · ${pct(l.p)} chance</div></div></div>`).join('')}
+        <div class="big"><div><b>${toAmerican(dec)}</b><span>Odds</span></div><div><b>$${(stake*dec).toFixed(2)}</b><span>Pays on $${stake}</span></div><div><b>${pct(p)}</b><span>Chance</span></div></div>
+        <div class="note">Profit if it hits: <b class="hi">$${(stake*(dec-1)).toFixed(2)}</b> · about 1 in ${Math.max(1,Math.round(1/p))} combos like this hit · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar (the book's cut on every leg).</div>
+        <button class="tbtn" data-cbslip="${esc(c.id)}">Add to my slip</button> <button class="tbtn" data-cblog="${esc(c.id)}" style="border-color:var(--accent);color:var(--accent)">Log this bet</button>
+      </div></div>`;
+  }
+  const P=c.picks, p=P.reduce((t,x)=>t*x.p,1), mult=+(PP.mult[P.length]||0), real=P.every(x=>x.r.b), ev=mult&&real?p*mult-1:null;
+  return `<div class="combo ${open?'open':''}" data-cb="${esc(c.id)}"><div class="top"><span class="nm">${esc(c.name)}</span><span class="pay">${mult?`${mult}×`:`${pct(p)}`}</span></div>
+    <div class="sub">${esc(P.map(x=>`${x.r.p.name.split(' ').slice(-1)[0]} ${x.side==='more'?'O':'U'} ${f1(x.r.line)} ${x.r.label}`).join(' · '))}</div>
+    <div class="sub">${mult?`$${stake} pays <b>$${(stake*mult).toFixed(2)}</b> · `:''}${pct(p)} chance all hit · tap for details</div>
+    <div class="det">
+      ${P.map(x=>`<div class="leg"><div><b>${esc(x.r.p.name)} ${x.side==='more'?'More':'Less'} ${f1(x.r.line)} ${esc(x.r.label)}</b><div class="note" style="margin:2px 0 0">${esc(x.r.p.team)} ${x.r.p.at} ${esc(x.r.p.opp)} · L10 ${x.r.vals.slice(0,10).filter(v=>x.side==='more'?v>x.r.line:v<x.r.line).length}/${x.r.n10} · ${pct(x.p)} chance${x.r.b?' · sportsbook line':' · estimated line'}</div></div></div>`).join('')}
+      <div class="note">Your app's payout for ${P.length} picks: <input type="number" class="cbmult" data-n="${P.length}" step="0.25" min="1" value="${mult||''}" placeholder="e.g. ${[0,0,3,5,10,20][P.length]||3}" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">× <span style="color:var(--muted)">(type what your app shows)</span></div>
+      <div class="big"><div><b>${mult?`${mult}×`:'–'}</b><span>Payout</span></div><div><b>${mult?`$${(stake*mult).toFixed(2)}`:'–'}</b><span>Pays on $${stake}</span></div><div><b>${pct(p)}</b><span>Chance</span></div></div>
+      <div class="note">Break-even payout: <b>${(1/p).toFixed(2)}×</b>${ev!=null?` · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar`:''}.
+        ${real?'':'<br><b>These lines are estimates</b> (season averages), so the chance is rough and no expected return is shown. Your app\'s real lines will differ; load sportsbook lines in Player props for real numbers.'}</div>
+      <button class="tbtn" data-cbentry="${esc(c.id)}" style="border-color:var(--accent);color:var(--accent)">Use as my entry</button>
+    </div></div>`;
+}
+function renderCombos(){
+  if($('#cb').hidden) return;
+  $('#cbtabs').innerHTML=[['games','Game combos'],['props','Player prop combos']].map(([k,l])=>`<button class="tab ${CB.tab===k?'on':''}" data-cbt="${k}">${l}</button>`).join('')
+    +(CB.tab==='props'?PP_SPORTS.map(k=>`<button class="tab ${CB.propSport===k?'on':''}" data-cbs="${k}" style="margin-left:${k==='nba'?'12px':'0'}">${BY_KEY[k].label}</button>`).join(''):'');
+  let h=`<div class="note" style="margin-top:12px">Suggestions for ${dayLabel(dayOffset).toLowerCase()}, built from the most likely legs. Tap a combo to see each leg and the payout. Stake: $<input type="number" id="cbstake" value="${CB.stake}" min="1" step="1" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
+    <br>No combo is a sure thing: “safest” means most likely, and the chance shown is the honest chance every leg hits.</div>`;
+  let list=[];
+  if(CB.tab==='games'){
+    const singles=gameSingles(), parlays=gameCombos(); list=[...singles,...parlays];
+    if(CB.loading) h+=skel(3);
+    else if(!list.length) h+=`<div class="empty">No upcoming games with posted moneylines ${dayLabel(dayOffset).toLowerCase()}. Try tomorrow with the date arrows on the main page.</div>`;
+    else { h+=`<h2 class="sec">Singles · ${singles.length}</h2><div class="note" style="margin-top:0">One bet each. Singles carry the smallest house edge, so they lose the least over time.</div>${singles.map(comboCard).join('')}
+      <h2 class="sec">Parlays · ${parlays.length}</h2><div class="note" style="margin-top:0">Every leg must win. Bigger payouts, lower chances.</div>${parlays.map(comboCard).join('')}`;
+      h+=`<footer>Game prices: DraftKings via ESPN. Not betting advice.</footer>`; CB.list=list;
+      const y=$('#cb').scrollTop; $('#cbbody').innerHTML=h; $('#cb').scrollTop=y; return; }
+  } else {
+    list=PP.sport===CB.propSport && !PP.loading ? propCombos() : [];
+    if(PP.loading||PP.sport!==CB.propSport) h+=`<div class="note">Loading ${BY_KEY[CB.propSport].label} player game logs…</div>${skel(3)}`;
+    else if(!list.length) h+=`<div class="empty">${esc(PP.msg||'Not enough player props to build combos yet.')}</div>`;
+    else h+=`<div class="note">${Object.keys(PP.book).length?'Using sportsbook lines where loaded.':'Lines are estimates (each player\'s season average) until you load sportsbook lines in Player props (needs your odds key).'}</div>`;
+  }
+  h+=list.map(comboCard).join('');
+  h+=`<footer>Game prices: DraftKings via ESPN. Player chances: ESPN game logs, or sportsbook fair odds when loaded. Not betting advice.</footer>`;
+  CB.list=list;
+  const y=$('#cb').scrollTop; $('#cbbody').innerHTML=h; $('#cb').scrollTop=y;
+}
+$('#combosopen').onclick=()=>{ location.hash='#combos'; };
+$('#cbback').onclick=()=>{ if(location.hash) history.back(); else closeCombos(); };
+$('#cbtabs').addEventListener('click',e=>{
+  const t=e.target.closest('[data-cbt]'); if(t){ CB.tab=t.dataset.cbt; CB.open=null; renderCombos(); if(CB.tab==='props' && (PP.sport!==CB.propSport || !PP.players.length)) loadComboProps(); return; }
+  const s=e.target.closest('[data-cbs]'); if(s){ CB.propSport=s.dataset.cbs; store.set('wc_cbsport',CB.propSport); CB.open=null; loadComboProps(); }
+});
+$('#cb').addEventListener('click',e=>{
+  const c=(CB.list||[]).find(x=>x.id===(e.target.closest('[data-cbslip],[data-cblog],[data-cbentry]')?.dataset.cbslip||e.target.closest('[data-cblog]')?.dataset.cblog||e.target.closest('[data-cbentry]')?.dataset.cbentry));
+  if(c && e.target.closest('[data-cbslip]')){ OB.allBooks.draftkings ||= 'DraftKings';
+    for(const l of c.legs) if(!OB.slip.some(x=>x.id===l.id)) OB.slip.push({id:l.id, ev:l.ev, game:l.game, sport:l.sk, label:l.label, prices:{draftkings:l.price}, fair:l.p, start:l.start});
+    store.set('wc_slip',OB.slip); renderSlip(); e.target.textContent='Added ✓'; return; }
+  if(c && e.target.closest('[data-cblog]')){ const dec=c.legs.reduce((t,l)=>t*decOdds(l.price),1);
+    BT.draft={legs:c.legs.map(l=>({label:l.label, game:l.game, start:l.start})), book:c.legs[0].book, odds:+toAmerican(dec).replace('+',''), stake:+CB.stake||10, fair:c.legs.reduce((t,l)=>t*l.p,1)};
+    location.hash='#bets'; return; }
+  if(c && e.target.closest('[data-cbentry]')){ PP.entry=c.picks.map(x=>({k:pickKey(x.r), pid:x.r.p.id, side:x.side, name:x.r.p.name, label:x.r.label, line:x.r.line, pOver:overChance(x.r), game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, start:x.r.p.start}));
+    store.set('wc_entry',PP.entry); location.hash='#props'; return; }
+  if(e.target.closest('.det')) return;
+  const card=e.target.closest('[data-cb]'); if(card){ CB.open=CB.open===card.dataset.cb?null:card.dataset.cb; renderCombos(); }
+});
+$('#cb').addEventListener('change',e=>{
+  if(e.target.id==='cbstake'){ CB.stake=+e.target.value||0; store.set('wc_stake',CB.stake); renderCombos(); }
+  if(e.target.classList.contains('cbmult')){ PP.mult[e.target.dataset.n]=+e.target.value||0; store.set('wc_mult',PP.mult); renderCombos(); }
+});
+
 function route(){
+  if(location.hash==='#combos'){ openCombos(); return; } else if(!$('#cb').hidden) closeCombos();
   if(location.hash==='#schedule'){ openSched(); return; } else if(!$('#sc').hidden) closeSched();
   if(location.hash==='#futures'){ openFut(); return; } else if(!$('#fu').hidden) closeFut();
   if(location.hash==='#best'){ openBest(); return; } else if(!$('#bb').hidden) closeBest();
