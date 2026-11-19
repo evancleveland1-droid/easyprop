@@ -808,10 +808,11 @@ function boardCard(g){
 const PK={list:store.get('wc_picks',[]), open:new Set(), busy:false, lastGrade:0};
 const PK_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','wnba','epl','ucl','laliga','mls'];
 const savePicks=()=>store.set('wc_picks',PK.list);
+const PK_KINDS=['single','parlay3','long','top5-1','top5-2','top5-3','top5-4','top5-5','parlay5'];
 async function ensureDailyPicks(){
-  const day=ymd(0);
-  if(PK.busy || PK.list.some(p=>p.day===day)) return;
-  PK.busy=true;
+  const day=ymd(0), have=new Set(PK.list.filter(p=>p.day===day).map(p=>p.kind));
+  if(PK.busy || PK_KINDS.every(k=>have.has(k)) || PK.triedDay===day) return;
+  PK.busy=true; PK.triedDay=day;
   try{
     const legs=[];
     await pool(PK_SPORTS,6,async sk=>{ try{ for(const {ev} of await fetchSport(BY_KEY[sk], day)){
@@ -832,7 +833,11 @@ async function ensureDailyPicks(){
     const picks=[mk('single','Single of the day',[single])];
     if(legs.length>=3) picks.push(mk('parlay3','3-leg parlay',legs.slice(0,3)));
     const n=Math.min(10,legs.length); if(n>=5) picks.push(mk('long',`${n}-leg long shot`,legs.slice(0,n)));
-    PK.list.push(...picks); savePicks();
+    // Formula Top 5: its 5 most likely winners, as 5 single bets and as one 5-leg parlay
+    const top=legs.slice(0,5);
+    top.forEach((l,i)=>picks.push(mk('top5-'+(i+1),`Top 5 #${i+1} · ${l.team}`,[l])));
+    if(top.length===5) picks.push(mk('parlay5','Top 5 as a 5-leg parlay',top));
+    PK.list.push(...picks.filter(p=>!have.has(p.kind))); savePicks();
   }catch(e){}
   PK.busy=false; renderPicks();
 }
@@ -882,10 +887,75 @@ function renderPicks(){
       <div class="stat"><div class="k">Profit on $10 bets</div><div class="v ${profit>0?'hi':profit<0?'lo':''}">${profit<0?'−':'+'}$${Math.abs(profit).toFixed(2)}</div></div>
       <div class="stat"><div class="k">Return on money bet</div><div class="v ${profit>0?'hi':profit<0?'lo':''}">${staked?(profit/staked*100).toFixed(0)+'%':'–'}</div></div>
       <div class="stat"><div class="k">Teams picked that won</div><div class="v">${legsDone.length?`${legW} of ${legsDone.length}`:'–'}</div></div></div>
-      <div class="note" style="margin-top:4px">Singles: <b>${wl(p=>p.kind==='single')}</b> · 3-leg parlays: <b>${wl(p=>p.kind==='parlay3')}</b> · long shots: <b>${wl(p=>p.kind==='long')}</b></div>`; })()}
-    <div class="note">Every day before games start, the app places 3 bets on its own ($10 each, no real money) at DraftKings prices: a single, a 3-leg parlay and a long shot, then grades them from the final scores. A parlay only wins if every team in it wins. Profit is the number that shows whether it actually makes money.</div>
+      <div class="note" style="margin-top:4px">Single of the day: <b>${wl(p=>p.kind==='single')}</b> · Top 5 singles: <b>${wl(p=>p.kind.startsWith('top5'))}</b> · 3-leg: <b>${wl(p=>p.kind==='parlay3')}</b> · 5-leg: <b>${wl(p=>p.kind==='parlay5')}</b> · long shots: <b>${wl(p=>p.kind==='long')}</b></div>`; })()}
+    <div class="note">Every day before games start, the app bets on its own ($10 each, no real money) at DraftKings prices: a single of the day, its <b>Top 5</b> most likely winners as 5 singles and as a 5-leg parlay, a 3-leg parlay and a long shot. It grades them from the final scores. A parlay only wins if every team in it wins. Profit is the number that shows whether it actually makes money.</div>
     ${today.length?`<div class="mk">Today</div>${today.map(card).join('')}`:PK.busy?`<div class="note">Making today's picks…</div>`:`<div class="note">No picks yet today: they're made when games with posted lines haven't started.</div>`}
     ${recent.length?`<div class="mk">Earlier</div>${recent.map(card).join('')}`:''}
+  </div>${handPicksHTML()}`;
+}
+
+/* ================= Claude vs formula: hand-made picks from picks.json, graded here ================= */
+const HP={bets:null, res:{}, open:new Set(), t:0, busy:false};
+const HP_URL='https://evancleveland1-droid.github.io/easyprop/picks.json';
+async function loadHandPicks(){
+  if(HP.busy || Date.now()-HP.t<120e3) return; HP.busy=true;
+  try{ const j=await getJSON(HP_URL+'?t='+Date.now()); HP.bets=j.bets||[]; await gradeHandPicks(); HP.t=Date.now(); }catch(e){ HP.err=e.message; HP.t=Date.now(); }
+  HP.busy=false; renderPicks();
+}
+async function gradeHandPicks(){
+  const legs=HP.bets.flatMap(b=>b.legs);
+  const days=new Set(legs.map(l=>l.sk+'|'+l.d)), evs={}, sums={};
+  await pool([...days],4,async k=>{ const [sk,d]=k.split('|'); try{ for(const {ev} of await fetchSport(BY_KEY[sk], d)) evs[ev.id]=ev; }catch(e){} });
+  const propEvs=[...new Set(legs.filter(l=>l.kind==='prop').map(l=>l.sk+'|'+l.ev))].filter(k=>{ const ev=evs[k.split('|')[1]]; return ev && (ev.competitions[0].status||ev.status).type.state!=='pre'; });
+  await pool(propEvs,3,async k=>{ const [sk,id]=k.split('|'); try{ sums[id]=await getJSON(`${SITE}/${BY_KEY[sk].path}/summary?event=${id}`); }catch(e){} });
+  for(const l of legs){
+    const ev=evs[l.ev], key=l.ev+'|'+l.kind+'|'+l.side+'|'+(l.pid||l.teamId||'')+'|'+(l.stat||''); if(!ev) continue;
+    const c=ev.competitions[0], st=(c.status||ev.status).type;
+    const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'), hs=+H.score, as=+A.score;
+    const R={live: st.state==='in'?`${A.team.abbreviation} ${A.score}-${H.score} ${H.team.abbreviation} · ${st.shortDetail}`:null};
+    let val=null;
+    if(l.kind==='prop'){ const s=sums[l.ev];
+      if(s){ for(const tp of s.boxscore?.players||[]) for(const g of tp.statistics||[]) for(const a of g.athletes||[]) if(a.athlete?.id===l.pid){ (R.st ||= {}); statObj(g.keys||g.names, a.stats, R.st); R.dnp=a.didNotPlay; }
+        const f=[...BB_PROPS,...FB_PROPS].find(x=>x[0]===l.stat)?.[1]; if(R.st&&f) val=f(R.st)??0; if(R.st) R.now=`${val??0} ${l.stat}`; } }
+    if(st.state==='post'){
+      if(/postpon|cancel/i.test(st.description||'')) R.res='push';
+      else if(l.kind==='ml'){ const me=l.side==='home'?H:A, op=l.side==='home'?A:H; R.res=me.winner?'won':op.winner?'lost':(+me.score>+op.score?'won':+me.score<+op.score?'lost':'push'); }
+      else if(l.kind==='spread'){ const m=(l.side==='home'?hs-as:as-hs)+l.line; R.res=m>0?'won':m<0?'lost':'push'; }
+      else if(l.kind==='total'){ const t=hs+as; R.res=t===l.line?'push':(l.side==='over')===(t>l.line)?'won':'lost'; }
+      else if(l.kind==='prop'){ if(R.dnp) R.res='push'; else if(val!=null) R.res=val===l.line?'push':(l.side==='over')===(val>l.line)?'won':'lost'; }
+      R.final=`${A.team.abbreviation} ${A.score}-${H.score} ${H.team.abbreviation}`;
+    }
+    HP.res[key]=R; l._k=key;
+  }
+}
+function handBetStatus(b){
+  const rs=b.legs.map(l=>HP.res[l._k]?.res);
+  if(rs.includes('lost')) return 'lost';
+  if(rs.every(Boolean)){ const w=b.legs.filter(l=>HP.res[l._k].res==='won'); return w.length?'won':'push'; }
+  return 'pending';
+}
+function handPicksHTML(){
+  if(!HP.bets?.length) return '';
+  const icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
+  const stat=pk=>{ const bs=HP.bets.filter(b=>b.picker===pk), st=bs.map(b=>[b,handBetStatus(b)]);
+    let profit=0, w=0, l=0; for(const [b,s] of st){ const dec=b.legs.filter(x=>HP.res[x._k]?.res!=='push').reduce((t,x)=>t*decOdds(x.price),1);
+      if(s==='won'){ w++; profit+=b.stake*(dec-1); } else if(s==='lost'){ l++; profit-=b.stake; } }
+    return {w,l,profit,pend:st.filter(x=>x[1]==='pending').length}; };
+  const C=stat('claude'), F=stat('formula');
+  const card=b=>{ const s=handBetStatus(b), dec=b.legs.reduce((t,x)=>t*decOdds(x.price),1), open=HP.open.has(b.id);
+    return `<div class="bet ${s==='pending'?'':s}" data-hp="${esc(b.id)}" style="cursor:pointer">
+      <div class="row"><b>${s==='won'?'✅ ':s==='lost'?'❌ ':''}${esc(b.name)}</b><span>${toAmerican(dec)} · $${b.stake} → $${(b.stake*dec).toFixed(2)} ${open?'▴':'▾'}</span></div>
+      <div class="note" style="margin:2px 0 0">${b.picker==='claude'?'🤖 Claude':'🧮 Formula'} · ${b.legs.map(l=>icon(HP.res[l._k]?.res)).join(' ')}</div>
+      ${open?`<div style="cursor:default;margin-top:6px">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}${b.legs.map(l=>{ const r=HP.res[l._k]||{};
+        return `<div class="leg" style="padding:5px 0"><span>${icon(r.res)} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game)}</small></span><span>${fmtA(l.price)}${r.final?` · ${esc(r.final)}${r.now?' · '+esc(r.now):''}`:r.live?` · <span style="color:var(--live)">${esc(r.live)}${r.now?' · '+esc(r.now):''}</span>`:` · ${new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})}`}</span></div>`; }).join('')}</div>`:''}
+    </div>`; };
+  const days=[...new Set(HP.bets.map(b=>b.day))].sort().reverse();
+  const box=(t,x)=>`<div class="stat"><div class="k">${t}</div><div class="v">${x.w} / ${x.l} <span class="${x.profit>0?'hi':x.profit<0?'lo':''}" style="font-size:14px">${x.profit<0?'−':'+'}$${Math.abs(x.profit).toFixed(2)}</span></div><div class="note" style="margin:2px 0 0">${x.pend} pending</div></div>`;
+  return `<div class="pc" style="margin-top:12px;border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))">
+    <b style="font-size:16px">🤖 Claude vs 🧮 formula <span class="badge">hand-made picks · $10 paper bets</span></b>
+    <div class="stats" style="margin:10px 0 4px">${box('🤖 Claude · won / lost',C)}${box('🧮 Formula · won / lost',F)}</div>
+    <div class="note">Claude picks with reasons (injuries, line moves, matchups); the formula takes the market favorites. Both are graded here from final scores and box scores. Tap a bet for the legs and the reasoning.</div>
+    ${days.map(d=>`<div class="mk">${new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</div>${HP.bets.filter(b=>b.day===d).sort((a,b)=>a.picker.localeCompare(b.picker)).map(card).join('')}`).join('')}
   </div>`;
 }
 
@@ -979,7 +1049,7 @@ async function refresh(){
   lastUpdate=new Date(); loading=false;
   render(); status();
   schedule();
-  ensureDailyPicks(); gradePicks();
+  ensureDailyPicks(); gradePicks(); loadHandPicks();
 }
 function status(){
   const live=lastGames.filter(g=>g.state==='in').length;
@@ -1989,7 +2059,8 @@ function entryTray(){
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
 $('#slipfab').onclick=()=>{ location.hash='#odds'; };
-$('#picks').addEventListener('click',e=>{ const b=e.target.closest('[data-pk2]'); if(!b||e.target.closest('.leg')) return; const id=b.dataset.pk2; PK.open.has(id)?PK.open.delete(id):PK.open.add(id); renderPicks(); });
+$('#picks').addEventListener('click',e=>{ const h=e.target.closest('[data-hp]'); if(h){ if(e.target.closest('.leg')) return; const id=h.dataset.hp; HP.open.has(id)?HP.open.delete(id):HP.open.add(id); renderPicks(); return; }
+  const b=e.target.closest('[data-pk2]'); if(!b||e.target.closest('.leg')) return; const id=b.dataset.pk2; PK.open.has(id)?PK.open.delete(id):PK.open.add(id); renderPicks(); });
 $('#ppback').onclick=()=>{ if(location.hash) history.back(); else closeProps(); };
 $('#ppsports').addEventListener('click',e=>{ const b=e.target.closest('[data-pps]'); if(!b) return; PP.sport=b.dataset.pps; store.set('wc_ppsport',PP.sport); PP.game='all'; PP.prop=null; PP.book={}; PP.bookMsg=''; loadPPGames(); });
 $('#ppgames').addEventListener('click',e=>{ const b=e.target.closest('[data-ppg]'); if(!b) return; PP.game=b.dataset.ppg; loadPPPlayers(); });
