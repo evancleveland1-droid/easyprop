@@ -1072,10 +1072,16 @@ function tpCard(b){
     <div class="top"><span class="nm">${st==='won'?'✅ ':st==='lost'?'❌ ':''}${esc(b.name)}</span><span class="pay">${toAmerican(dec)}</span></div>
     <div class="sub">${b.picker==='claude'?'🤖 Claude':'🧮 Formula'} ${verdict} · $10 pays <b>$${(10*dec).toFixed(2)}</b>${ch?' · '+ch:''}${k==='futures'?' · settles at season end':''}</div>
     <div class="sub">${b.legs.map(l=>`${legIcon(legRes(l))} ${esc(l.label)}`).join(' · ')}</div>
-    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-tpcopy="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">📋 Copy</button>${b.legs.every(l=>l.kind!=='prop')?`<button class="addb" data-tpslip="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">➕ Add to slip</button>`:''}<span class="note" data-copied="${esc(b.id)}" style="margin:0"></span></div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-tpcopy="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">📋 Copy</button><button class="addb" data-tpslip="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">➕ Add to slip</button><span class="note" data-copied="${esc(b.id)}" style="margin:0"></span></div>
     <div class="det">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}
       ${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${legIcon(legRes(l))} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game||l.marketName||'')}</small></span><span>${fmtA(l.price)}${l.start?' · '+new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}</span></div>`).join('')}</div>
   </div>`;
+}
+// Put any legs on the bet slip (props included); prices are DraftKings via ESPN, or -110 for estimated prop lines.
+function addLegsToSlip(legs){
+  OB.allBooks.draftkings ||= 'DraftKings';
+  for(const l of legs){ const id=`x|${l.ev||''}|${l.label}`; if(!OB.slip.some(x=>x.id===id || x.label===l.label)) OB.slip.push({id, ev:l.ev||'', game:l.game||'', sport:l.sk||'', label:l.label, prices:{draftkings:l.price??-110}, fair:l.fair??null, start:l.start||''}); }
+  store.set('wc_slip',OB.slip); renderSlip(); updateSlipFab();
 }
 function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); ['nba','nfl','ncaaf','ncaam'].forEach(loadTPProps); }
 function closeTP(){ $('#tp').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
@@ -1115,9 +1121,8 @@ $('#tpwho').addEventListener('click',e=>{ if(e.target.closest('[data-tpsort]')){
 $('#tp').addEventListener('click',async e=>{
   const c=e.target.closest('[data-tpcopy]'); if(c){ const b=TP.list.find(x=>x.id===c.dataset.tpcopy); const t=copyText(b), el=document.querySelector(`[data-copied="${CSS.escape(b.id)}"]`);
     try{ await navigator.clipboard.writeText(t); el.textContent='Copied ✓'; }catch{ el.textContent=t; } return; }
-  const s=e.target.closest('[data-tpslip]'); if(s){ const b=TP.list.find(x=>x.id===s.dataset.tpslip); OB.allBooks.draftkings ||= 'DraftKings';
-    for(const l of b.legs){ const id=`tp|${b.id}|${l.label}`; if(!OB.slip.some(x=>x.id===id)) OB.slip.push({id, ev:l.ev||'', game:l.game||l.marketName||'', sport:l.sk||'', label:l.label, prices:{draftkings:l.price}, fair:null, start:l.start||''}); }
-    store.set('wc_slip',OB.slip); renderSlip(); s.textContent='Added ✓'; return; }
+  const s=e.target.closest('[data-tpslip]'); if(s){ const b=TP.list.find(x=>x.id===s.dataset.tpslip);
+    addLegsToSlip(b.legs.map(l=>({label:l.label+(l.kind==='prop'?' (est. line)':''), game:l.game||l.marketName||'', price:l.price, start:l.start, sk:l.sk, ev:l.ev}))); s.textContent='Added ✓'; return; }
   if(e.target.closest('.det')) return;
   const card=e.target.closest('[data-tp]'); if(card){ const id=card.dataset.tp; TP.open.has(id)?TP.open.delete(id):TP.open.add(id); renderTP(); }
 });
@@ -2218,7 +2223,7 @@ function entryTray(){
       ${ev!=null?` · expected return <b class="${ev>=0?'hi':'lo'}">${ev>=0?'+':''}${(ev*100).toFixed(1)}%</b> per dollar`:''}</div>
     ${games.size<E.length?'<div class="note lo">Some picks are from the same game; their results move together, so the real chance can differ.</div>':''}
     <div class="note">Chances come from sportsbook fair odds when loaded, otherwise from his hit rates; lines here may differ from your app's, so check before entering.</div>
-    <button class="tbtn" id="entrycopy">Copy entry</button> <span class="note" id="entrycopied"></span></div>`;
+    <button class="tbtn" id="entrycopy">Copy entry</button> <button class="tbtn" id="entryslip" style="border-color:var(--accent);color:var(--accent)">➕ Add to slip</button> <span class="note" id="entrycopied"></span></div>`;
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
 $('#slipfab').onclick=()=>{ location.hash='#odds'; };
@@ -2232,6 +2237,7 @@ $('#pp').addEventListener('click',e=>{
   if(e.target.id==='ppbook'){ loadPPBook(); return; }
   const v=e.target.closest('[data-ppv]'); if(v){ PP.view=v.dataset.ppv; store.set('wc_ppview',PP.view); renderPP(); return; }
   const pk=e.target.closest('[data-pk]'); if(pk){ togglePick(pk.dataset.pk, pk.dataset.side); return; }
+  if(e.target.id==='entryslip'){ addLegsToSlip(PP.entry.map(x=>({label:`${x.name} ${x.side==='more'?'over':'under'} ${f1(x.line)} ${x.label} (est. line)`, game:x.game, price:-110, start:x.start, sk:PP.sport, fair:x.side==='more'?x.pOver:1-x.pOver}))); $('#entrycopied').textContent='Added to slip ✓'; return; }
   if(e.target.id==='entryclear'){ PP.entry=[]; store.set('wc_entry',PP.entry); renderPP(); return; }
   if(e.target.id==='entrycopy'){ const t=PP.entry.map((x,i)=>`${i+1}. ${x.name} ${x.side==='more'?'More':'Less'} ${f1(x.line)} ${x.label} (${x.game})`).join('\n');
     navigator.clipboard?.writeText(t).then(()=>$('#entrycopied').textContent='Copied',()=>$('#entrycopied').textContent=t); return; }
@@ -2644,7 +2650,7 @@ function comboCard(c){
   return `<div class="combo ${open?'open':''}" data-cb="${esc(c.id)}"><div class="top"><span class="nm">${esc(c.name)}</span><span class="pay">${mult?`${mult}×`:`${pct(p)}`}</span></div>
     <div class="sub">${esc(P.map(x=>`${x.r.p.name.split(' ').slice(-1)[0]} ${x.side==='more'?'O':'U'} ${f1(x.r.line)} ${x.r.label}`).join(' · '))}</div>
     <div class="sub">${mult?`$${stake} pays <b>$${(stake*mult).toFixed(2)}</b> · `:''}${pct(p)} chance all hit · tap to see picks</div>
-    ${(()=>{ const inE=P.length===PP.entry.length && P.every(x=>PP.entry.some(e=>e.k===pickKey(x.r)&&e.side===x.side)); return `<div style="margin-top:8px"><button class="addb ${inE?'on':''}" data-cbentry="${esc(c.id)}" style="font-size:12.5px;padding:5px 10px">${inE?'✓ This is your entry':`+ Use all ${P.length} picks as my entry`}</button>${inE?' <a class="note" href="#props" style="color:var(--accent)">Open entry ›</a>':''}</div>`; })()}
+    ${(()=>{ const inE=P.length===PP.entry.length && P.every(x=>PP.entry.some(e=>e.k===pickKey(x.r)&&e.side===x.side)); return `<div style="margin-top:8px"><button class="addb ${inE?'on':''}" data-cbentry="${esc(c.id)}" style="font-size:12.5px;padding:5px 10px">${inE?'✓ This is your entry':`+ Use all ${P.length} picks as my entry`}</button> <button class="addb" data-cbpslip="${esc(c.id)}" style="font-size:12.5px;padding:5px 10px">➕ Add to slip</button>${inE?' <a class="note" href="#props" style="color:var(--accent)">Open entry ›</a>':''}</div>`; })()}
     <div class="det">
       ${P.map(x=>`<div class="leg"><div><b>${esc(x.r.p.name)} ${x.side==='more'?'More':'Less'} ${f1(x.r.line)} ${esc(x.r.label)}</b><div class="note" style="margin:2px 0 0">${esc(x.r.p.team)} ${x.r.p.at} ${esc(x.r.p.opp)} · L10 ${x.r.vals.slice(0,10).filter(v=>x.side==='more'?v>x.r.line:v<x.r.line).length}/${x.r.n10} · ${pct(x.p)} chance${x.r.b?' · sportsbook line':' · estimated line'}</div></div></div>`).join('')}
       <div class="note">Your app's payout for ${P.length} picks: <input type="number" class="cbmult" data-n="${P.length}" step="0.25" min="1" value="${mult||''}" placeholder="e.g. ${[0,0,3,5,10,20][P.length]||3}" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">× <span style="color:var(--muted)">(type what your app shows)</span></div>
@@ -2695,6 +2701,9 @@ $('#cb').addEventListener('click',e=>{
   if(c && e.target.closest('[data-cblog]')){ const dec=c.legs.reduce((t,l)=>t*decOdds(l.price),1);
     BT.draft={legs:c.legs.map(l=>({label:l.label, game:l.game, start:l.start})), book:c.legs[0].book, odds:+toAmerican(dec).replace('+',''), stake:+CB.stake||10, fair:c.legs.reduce((t,l)=>t*l.p,1)};
     location.hash='#bets'; return; }
+  const ps=e.target.closest('[data-cbpslip]'); if(ps){ const cc=(CB.list||[]).find(x=>x.id===ps.dataset.cbpslip);
+    if(cc) addLegsToSlip(cc.picks.map(x=>({label:`${x.r.p.name} ${x.side==='more'?'over':'under'} ${f1(x.r.line)} ${x.r.label}${x.r.b?'':' (est. line)'}`, game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, price:x.r.b?(x.side==='more'?x.r.b.over.best.p:x.r.b.under?.best.p):-110, start:x.r.p.start, sk:CB.propSport, ev:x.r.p.evId, fair:x.p})));
+    ps.textContent='Added ✓'; return; }
   if(c && e.target.closest('[data-cbentry]')){ PP.entry=c.picks.map(x=>({k:pickKey(x.r), pid:x.r.p.id, side:x.side, name:x.r.p.name, label:x.r.label, line:x.r.line, pOver:overChance(x.r), game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, start:x.r.p.start}));
     store.set('wc_entry',PP.entry); renderCombos(); return; }
   if(e.target.closest('.det')) return;
