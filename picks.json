@@ -355,6 +355,167 @@
           "start": "2026-11-20T01:00Z"
         }
       ]
+    },
+    {
+      "id": "c-fut-sb",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Jacksonville Jaguars to win the Super Bowl",
+      "why": "7-2 with the best point differential in the NFL (+125), better than the Bills (+88) and 49ers (+85), but priced behind both. The best value near the top of the board.",
+      "verdict": "Good bet",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "Super Bowl",
+          "marketName": "Super Bowl",
+          "teamId": "30",
+          "price": 750,
+          "label": "Jacksonville Jaguars to win Super Bowl",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "c-fut-nba",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Houston Rockets to win the NBA Finals",
+      "why": "12-4 with a +139 point differential, nearly as dominant as the Spurs and Celtics, at more than twice the payout of Boston.",
+      "verdict": "Lean",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "NBA champion",
+          "marketName": "NBA Finals",
+          "teamId": "10",
+          "price": 1100,
+          "label": "Houston Rockets to win NBA Finals",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "c-fut-cfb",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Utah Utes to win the College Football Playoff",
+      "why": "Utah is 10-0 and #2 in the Playoff Committee rankings, yet priced like the 7th-best team. Big payout for a team already in great playoff position.",
+      "verdict": "Good bet",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "CFB national title",
+          "marketName": "College Football Playoff",
+          "teamId": "254",
+          "price": 2200,
+          "label": "Utah Utes to win College Football Playoff",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "c-fut-mm",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Michigan State Spartans to win March Madness",
+      "why": "#2 in the AP poll and 4-0, priced as only the 5th favorite. A good number this early in the season.",
+      "verdict": "Lean",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "March Madness",
+          "marketName": "March Madness",
+          "teamId": "127",
+          "price": 1300,
+          "label": "Michigan State Spartans to win March Madness",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "f-fut-sb",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Buffalo Bills to win the Super Bowl",
+      "why": "The formula takes the favorite: Bills, 14% chance (tied with the 49ers).",
+      "verdict": "Favorite",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "Super Bowl",
+          "marketName": "Super Bowl",
+          "teamId": "2",
+          "price": 500,
+          "label": "Buffalo Bills to win Super Bowl",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "f-fut-nba",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
+      "name": "San Antonio Spurs to win the NBA Finals",
+      "why": "The formula takes the favorite: Spurs, 20% chance.",
+      "verdict": "Favorite",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "NBA champion",
+          "marketName": "NBA Finals",
+          "teamId": "24",
+          "price": 300,
+          "label": "San Antonio Spurs to win NBA Finals",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "f-fut-cfb",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Georgia Bulldogs to win the College Football Playoff",
+      "why": "The formula takes the favorite: Georgia, 28% chance.",
+      "verdict": "Favorite",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "CFB national title",
+          "marketName": "College Football Playoff",
+          "teamId": "61",
+          "price": 200,
+          "label": "Georgia Bulldogs to win College Football Playoff",
+          "sk": "futures"
+        }
+      ]
+    },
+    {
+      "id": "f-fut-mm",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Florida Gators to win March Madness",
+      "why": "The formula takes the favorite: Florida, 8% chance.",
+      "verdict": "Favorite",
+      "legs": [
+        {
+          "kind": "future",
+          "marketLabel": "March Madness",
+          "marketName": "March Madness",
+          "teamId": "57",
+          "price": 750,
+          "label": "Florida Gators to win March Madness",
+          "sk": "futures"
+        }
+      ]
     }
-  ]
+  ],
+  "insights": "Too early to judge: Claude's and the formula's first picks grade tonight (Nov 19). This note updates each afternoon with what's winning and what isn't, by bet type and sport, and the picks adjust to it."
 }

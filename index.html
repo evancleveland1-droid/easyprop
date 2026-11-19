@@ -298,6 +298,7 @@ main.wrap{padding-bottom:110px}
       <button class="iconbtn" id="theme" title="Toggle theme">◐</button>
     </div>
     <div class="tabs nav">
+      <button class="oddsbtn" id="tpopen" style="background:linear-gradient(135deg,#ff8a00,#ff3b5c);border-color:#ff5a3c">⭐ Today's picks</button>
       <button class="oddsbtn" id="combosopen" style="background:#7c4dff;border-color:#7c4dff">Suggested combos</button>
       <button class="oddsbtn" id="bestopen" style="background:var(--good);border-color:var(--good)">Best bets</button>
       <button class="oddsbtn" id="propsopen">Player props</button>
@@ -357,6 +358,15 @@ main.wrap{padding-bottom:110px}
     <div class="tabs" id="ppgames"></div>
   </div></div>
   <div class="wrap" id="ppbody"></div>
+</div>
+
+<div class="gv" id="tp" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="tpback">‹ Games</button><b style="font-size:16px">⭐ Today's picks</b></div>
+    <div class="tabs" id="tptabs"></div>
+    <div class="tabs" id="tpwho"></div>
+  </div></div>
+  <div class="wrap" id="tpbody"></div>
 </div>
 
 <div class="gv" id="cb" hidden>
@@ -865,6 +875,7 @@ async function gradePicks(force){
 }
 const pickProfit=p=>p.status==='won'?p.payout-p.stake:p.status==='lost'?-p.stake:0;
 function renderPicks(){
+  try{ renderTP(); }catch(e){}
   const el=$('#picks'); if(!el) return;
   if(dayOffset!==0 && !PK.list.length){ el.innerHTML=''; return; }
   const done=PK.list.filter(p=>p.status!=='pending'), w=done.filter(p=>p.status==='won').length, l=done.filter(p=>p.status==='lost').length;
@@ -899,11 +910,11 @@ const HP={bets:null, res:{}, open:new Set(), t:0, busy:false};
 const HP_URL='https://evancleveland1-droid.github.io/easyprop/picks.json';
 async function loadHandPicks(){
   if(HP.busy || Date.now()-HP.t<120e3) return; HP.busy=true;
-  try{ const j=await getJSON(HP_URL+'?t='+Date.now()); HP.bets=j.bets||[]; await gradeHandPicks(); HP.t=Date.now(); }catch(e){ HP.err=e.message; HP.t=Date.now(); }
+  try{ const j=await getJSON(HP_URL+'?t='+Date.now()); HP.bets=j.bets||[]; HP.insights=j.insights||''; await gradeHandPicks(); HP.t=Date.now(); }catch(e){ HP.err=e.message; HP.t=Date.now(); }
   HP.busy=false; renderPicks();
 }
 async function gradeHandPicks(){
-  const legs=HP.bets.flatMap(b=>b.legs);
+  const legs=HP.bets.flatMap(b=>b.legs).filter(l=>l.ev && l.kind!=='future');
   const days=new Set(legs.map(l=>l.sk+'|'+l.d)), evs={}, sums={};
   await pool([...days],4,async k=>{ const [sk,d]=k.split('|'); try{ for(const {ev} of await fetchSport(BY_KEY[sk], d)) evs[ev.id]=ev; }catch(e){} });
   const propEvs=[...new Set(legs.filter(l=>l.kind==='prop').map(l=>l.sk+'|'+l.ev))].filter(k=>{ const ev=evs[k.split('|')[1]]; return ev && (ev.competitions[0].status||ev.status).type.state!=='pre'; });
@@ -934,13 +945,16 @@ function handBetStatus(b){
   if(rs.every(Boolean)){ const w=b.legs.filter(l=>HP.res[l._k].res==='won'); return w.length?'won':'push'; }
   return 'pending';
 }
+function handStat(pk){
+  const bs=(HP.bets||[]).filter(b=>b.picker===pk), st=bs.map(b=>[b,handBetStatus(b)]);
+  let profit=0, w=0, l=0; for(const [b,s] of st){ const dec=b.legs.filter(x=>HP.res[x._k]?.res!=='push').reduce((t,x)=>t*decOdds(x.price),1);
+    if(s==='won'){ w++; profit+=b.stake*(dec-1); } else if(s==='lost'){ l++; profit-=b.stake; } }
+  return {w,l,profit,pend:st.filter(x=>x[1]==='pending').length};
+}
 function handPicksHTML(){
   if(!HP.bets?.length) return '';
   const icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
-  const stat=pk=>{ const bs=HP.bets.filter(b=>b.picker===pk), st=bs.map(b=>[b,handBetStatus(b)]);
-    let profit=0, w=0, l=0; for(const [b,s] of st){ const dec=b.legs.filter(x=>HP.res[x._k]?.res!=='push').reduce((t,x)=>t*decOdds(x.price),1);
-      if(s==='won'){ w++; profit+=b.stake*(dec-1); } else if(s==='lost'){ l++; profit-=b.stake; } }
-    return {w,l,profit,pend:st.filter(x=>x[1]==='pending').length}; };
+  const stat=handStat;
   const C=stat('claude'), F=stat('formula');
   const card=b=>{ const s=handBetStatus(b), dec=b.legs.reduce((t,x)=>t*decOdds(x.price),1), open=HP.open.has(b.id);
     return `<div class="bet ${s==='pending'?'':s}" data-hp="${esc(b.id)}" style="cursor:pointer">
@@ -958,6 +972,75 @@ function handPicksHTML(){
     ${days.map(d=>`<div class="mk">${new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</div>${HP.bets.filter(b=>b.day===d).sort((a,b)=>a.picker.localeCompare(b.picker)).map(card).join('')}`).join('')}
   </div>`;
 }
+
+/* ================= ⭐ Today's picks: one menu of Claude + formula bets, ready to copy ================= */
+const TP={type:store.get('wc_tptype','all'), who:store.get('wc_tpwho','all'), open:new Set()};
+const tpKind=b=>{ const ls=b.legs||[]; if(ls.some(l=>l.kind==='future')) return 'futures'; if(ls.some(l=>l.kind==='prop')) return 'props'; return ls.length===1?'singles':'parlays'; };
+function tpBets(){
+  const day=ymd(0), out=[];
+  for(const b of HP.bets||[]) if(b.day===day || (tpKind(b)==='futures' && handBetStatus(b)==='pending')) out.push({...b, src:'file'});
+  // the formula's automatic daily paper bets
+  for(const p of PK.list.filter(p=>p.day===day)) out.push({id:'pk:'+p.id, picker:'formula', day, stake:p.stake, name:p.name, auto:true, chance:p.p,
+    why:p.kind.startsWith('top5')?'One of the formula\'s 5 most likely winners today.':p.kind==='single'?'The formula\'s single of the day: its most likely winner with a reasonable price.':p.kind==='long'?'Every one of today\'s top favorites stacked: big payout, small chance.':'The formula\'s most likely winners combined.',
+    legs:p.legs.map(l=>({kind:'ml', label:`${l.team} moneyline`, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev, res:l.res}))});
+  return out;
+}
+const legIcon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
+function betResult(b){ if(b.auto){ const rs=b.legs.map(l=>l.res); return rs.includes('lost')?'lost':rs.every(Boolean)?'won':'pending'; } return handBetStatus(b); }
+function copyText(b){
+  const dec=b.legs.reduce((t,l)=>t*decOdds(l.price),1);
+  return [`${b.legs.length>1?`${b.legs.length}-leg parlay`:'Single'} · ${b.picker==='claude'?'Claude':'Formula'} pick (EasyProp)`,
+    ...b.legs.map((l,i)=>`${b.legs.length>1?(i+1)+'. ':''}${l.label} (${fmtA(l.price)})${l.game?' · '+l.game:''}`),
+    `Odds ${toAmerican(dec)} · $10 pays $${(10*dec).toFixed(2)}`].join('\n');
+}
+function tpCard(b){
+  const dec=b.legs.reduce((t,l)=>t*decOdds(l.price),1), open=TP.open.has(b.id), st=betResult(b), k=tpKind(b);
+  const verdict=b.verdict?`<span class="badge" style="background:${/good/i.test(b.verdict)?'color-mix(in srgb,var(--good) 20%,transparent);color:var(--good)':/skip/i.test(b.verdict)?'color-mix(in srgb,var(--live) 18%,transparent);color:var(--live)':'var(--chip)'}">${esc(b.verdict)}</span>`:'';
+  const ch=b.chance!=null?`${pct(b.chance)} chance`:'';
+  const legRes=l=>b.auto?l.res:(l._k?HP.res[l._k]?.res:null);
+  return `<div class="combo ${open?'open':''}" data-tp="${esc(b.id)}">
+    <div class="top"><span class="nm">${st==='won'?'✅ ':st==='lost'?'❌ ':''}${esc(b.name)}</span><span class="pay">${toAmerican(dec)}</span></div>
+    <div class="sub">${b.picker==='claude'?'🤖 Claude':'🧮 Formula'} ${verdict} · $10 pays <b>$${(10*dec).toFixed(2)}</b>${ch?' · '+ch:''}${k==='futures'?' · settles at season end':''}</div>
+    <div class="sub">${b.legs.map(l=>`${legIcon(legRes(l))} ${esc(l.label)}`).join(' · ')}</div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-tpcopy="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">📋 Copy</button>${b.legs.every(l=>l.kind!=='prop')?`<button class="addb" data-tpslip="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">➕ Add to slip</button>`:''}<span class="note" data-copied="${esc(b.id)}" style="margin:0"></span></div>
+    <div class="det">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}
+      ${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${legIcon(legRes(l))} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game||l.marketName||'')}</small></span><span>${fmtA(l.price)}${l.start?' · '+new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}</span></div>`).join('')}</div>
+  </div>`;
+}
+function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); }
+function closeTP(){ $('#tp').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+function renderTP(){
+  if($('#tp').hidden) return;
+  const all=tpBets();
+  const cnt=t=>all.filter(b=>(t==='all'||tpKind(b)===t)&&(TP.who==='all'||b.picker===TP.who)).length;
+  $('#tptabs').innerHTML=[['all','All'],['singles','Singles'],['parlays','Parlays'],['props','Player props'],['futures','🏆 Futures']].map(([k,l])=>`<button class="tab ${TP.type===k?'on':''}" data-tpt="${k}">${l} <span class="badge">${cnt(k)}</span></button>`).join('');
+  $('#tpwho').innerHTML=[['all','Claude + formula'],['claude','🤖 Claude only'],['formula','🧮 Formula only']].map(([k,l])=>`<button class="tab ${TP.who===k?'on':''}" data-tpw="${k}">${l}</button>`).join('');
+  const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
+  let h=`<div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
+  if(HP.insights) h+=`<div class="pc" style="border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))"><b>📈 What's working</b><div class="note" style="margin:4px 0 0">${esc(HP.insights)}</div></div>`;
+  const list=all.filter(b=>(TP.type==='all'||tpKind(b)===TP.type)&&(TP.who==='all'||b.picker===TP.who));
+  const order=['singles','parlays','props','futures'], title={singles:'Singles',parlays:'Parlays',props:'Player prop parlays',futures:'🏆 Futures'};
+  for(const k of order){ const bs=list.filter(b=>tpKind(b)===k).sort((a,b)=>(a.picker==='claude'?0:1)-(b.picker==='claude'?0:1)); if(!bs.length) continue;
+    h+=`<h2 class="sec">${title[k]} · ${bs.length}</h2>${bs.map(tpCard).join('')}`; }
+  if(!list.length) h+=`<div class="empty">${HP.busy||PK.busy?'Loading picks…':'No picks here yet today. Claude\'s picks post every afternoon around 3 PM, and the formula\'s once games with lines are posted.'}</div>`;
+  if(TP.type==='futures'||TP.type==='all') h+=`<div class="note">Full futures boards (every team's price for the Super Bowl, NBA title, college championships and more) are in <a href="#futures" style="color:var(--accent)">Futures</a>.</div>`;
+  h+=`<footer>Prices are DraftKings via ESPN at the time of the pick; your book's may differ slightly. Nothing is guaranteed: bet only what you're fine losing. Not betting advice.</footer>`;
+  TP.list=all;
+  const y=$('#tp').scrollTop; $('#tpbody').innerHTML=h; $('#tp').scrollTop=y;
+}
+$('#tpopen').onclick=()=>{ location.hash='#today'; };
+$('#tpback').onclick=()=>{ if(location.hash) history.back(); else closeTP(); };
+$('#tptabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tpt]'); if(!b) return; TP.type=b.dataset.tpt; store.set('wc_tptype',TP.type); renderTP(); });
+$('#tpwho').addEventListener('click',e=>{ const b=e.target.closest('[data-tpw]'); if(!b) return; TP.who=b.dataset.tpw; store.set('wc_tpwho',TP.who); renderTP(); });
+$('#tp').addEventListener('click',async e=>{
+  const c=e.target.closest('[data-tpcopy]'); if(c){ const b=TP.list.find(x=>x.id===c.dataset.tpcopy); const t=copyText(b), el=document.querySelector(`[data-copied="${CSS.escape(b.id)}"]`);
+    try{ await navigator.clipboard.writeText(t); el.textContent='Copied ✓'; }catch{ el.textContent=t; } return; }
+  const s=e.target.closest('[data-tpslip]'); if(s){ const b=TP.list.find(x=>x.id===s.dataset.tpslip); OB.allBooks.draftkings ||= 'DraftKings';
+    for(const l of b.legs){ const id=`tp|${b.id}|${l.label}`; if(!OB.slip.some(x=>x.id===id)) OB.slip.push({id, ev:l.ev||'', game:l.game||l.marketName||'', sport:l.sk||'', label:l.label, prices:{draftkings:l.price}, fair:null, start:l.start||''}); }
+    store.set('wc_slip',OB.slip); renderSlip(); s.textContent='Added ✓'; return; }
+  if(e.target.closest('.det')) return;
+  const card=e.target.closest('[data-tp]'); if(card){ const id=card.dataset.tp; TP.open.has(id)?TP.open.delete(id):TP.open.add(id); renderTP(); }
+});
 
 /* Whole season for a chosen sport: football by week (incl. playoffs, bowls, title games), others day by day for 4 weeks. */
 const SEASON={};
@@ -2259,8 +2342,82 @@ $('#scsports').addEventListener('click',e=>{ const b=e.target.closest('[data-scs
 $('#scrange').addEventListener('click',e=>{ const b=e.target.closest('[data-scr]'); if(!b) return; SC.range=b.dataset.scr; loadSched(); });
 
 /* ================= Futures (championship winners etc.) via The Odds API outrights ================= */
-const FU={list:null, sel:store.get('wc_fusel',null), data:{}, err:null, loading:false};
-function openFut(){ $('#fu').hidden=false; document.body.style.overflow='hidden'; renderFut(); if(OB.key && !FU.list) loadFutList(); }
+const FU={list:null, sel:store.get('wc_fusel',null), data:{}, err:null, loading:false, mode:'espn'};
+function openFut(){ $('#fu').hidden=false; document.body.style.overflow='hidden'; FU.mode='espn'; renderFutESPN(); loadHandPicks(); }
+
+/* Free DraftKings futures from ESPN (no key). Markets are found by name each season. */
+const FUT_MK=[
+  ['🏈 Super Bowl','football','nfl',/Super Bowl Winner/i,'team'],
+  ['🏈 AFC champion','football','nfl',/^Pro Football \(A\) Conference/i,'team'],
+  ['🏈 NFC champion','football','nfl',/^Pro Football \(N\) Conference/i,'team'],
+  ['🏈 NFL MVP','football','nfl',/^Regular Season MVP/i,'athlete'],
+  ['🏀 NBA champion','basketball','nba',/^NBA - Winner/i,'team'],
+  ['🏀 East','basketball','nba',/Eastern Conference - Winner/i,'team'],
+  ['🏀 West','basketball','nba',/Western Conference - Winner/i,'team'],
+  ['🏀 NBA MVP','basketball','nba',/NBA - Regular Season MVP/i,'athlete'],
+  ['🎓 CFB national title','football','college-football',/NCAA\(F\) - Championship/i,'team'],
+  ['🎓 Heisman','football','college-football',/Heisman/i,'athlete'],
+  ['🎓 March Madness','basketball','mens-college-basketball',/NCAA\(B\) - Winner/i,'team'],
+  ['⚾ World Series','baseball','mlb',/World Series/i,'team'],
+  ['🏒 NHL MVP (Hart)','hockey','nhl',/Hart Trophy/i,'athlete'],
+];
+const FE={sel:store.get('wc_fesel',0), data:{}, names:{}, loading:false, err:null};
+const CORE='https://sports.core.api.espn.com/v2/sports';
+async function seasonYear(sp,lg){ return cached('yr'+sp+lg, async()=>{ const j=await getJSON(`${SITE}/${sp}/${lg}/scoreboard`); return j.leagues?.[0]?.season?.year || new Date().getFullYear(); }); }
+async function teamNames(sp,lg){ return cached('tn'+sp+lg, async()=>{ const j=await getJSON(`${SITE}/${sp}/${lg}/teams?limit=1000`); const m={};
+  for(const t of j.sports?.[0]?.leagues?.[0]?.teams||[]) m[t.team.id]={name:t.team.displayName, logo:t.team.logos?.[0]?.href}; return m; }); }
+async function loadFutESPN(i){
+  const [label,sp,lg,rx,who]=FUT_MK[i];
+  if(FE.data[i]) return renderFutESPN();
+  FE.loading=true; FE.err=null; renderFutESPN();
+  try{
+    const yr=await seasonYear(sp,lg);
+    const list=await cached('fl'+sp+lg+yr, ()=>getJSON(`${CORE}/${sp}/leagues/${lg}/seasons/${yr}/futures?limit=100`));
+    const it=(list.items||[]).find(x=>rx.test(x.name||''));
+    if(!it) throw new Error('DraftKings has no '+label.replace(/^\S+ /,'')+' market posted right now');
+    const books=(it.futures?.[0]?.books||[]).map(b=>{ const ref=(b.team||b.athlete)?.$ref||''; const id=(ref.match(/(teams|athletes)\/(\d+)/)||[])[2];
+      return {id, ref:ref.replace(/^http:/,'https:'), price:parseFloat(String(b.value).replace('+','')), kind:b.team?'team':'athlete'}; }).filter(b=>b.id&&isFinite(b.price));
+    const s=books.reduce((t,b)=>t+impl(b.price),0);
+    for(const b of books) b.fair=impl(b.price)/s;
+    books.sort((a,b)=>decOdds(a.price)-decOdds(b.price));
+    // names and logos for the top of the board (ESPN's core API allows browser access)
+    await pool(books.slice(0,40),6,async b=>{ try{ const a=await cached(b.kind+b.id+sp+lg,()=>getJSON(b.ref)); b.name=a.displayName; b.logo=a.logos?.[0]?.href||a.headshot?.href; }catch(e){ b.name=(b.kind==='team'?'Team ':'Player ')+b.id; } });
+    FE.data[i]={books:books.filter(b=>b.name), market:it.name, label};
+  }catch(e){ FE.err=e.message; }
+  FE.loading=false; renderFutESPN();
+}
+function renderFutESPN(){
+  if($('#fu').hidden || FU.mode!=='espn') return;
+  $('#fulist').innerHTML=FUT_MK.map((m,i)=>`<button class="tab ${FE.sel===i?'on':''}" data-fe="${i}">${m[0]}</button>`).join('');
+  const D=FE.data[FE.sel], label=FUT_MK[FE.sel][0].replace(/^\S+ /,'');
+  if(!D && !FE.loading && !FE.err) return loadFutESPN(FE.sel);
+  let h=`<div class="note" style="margin-top:12px">DraftKings futures via ESPN. “Chance” is each team's price with the book's cut removed. Futures pay only if they win at season's end, and the book's cut on futures is much bigger than on single games, so keep these small.${OB.key?` <a href="#" id="fubooks" style="color:var(--accent)">Compare every sportsbook ›</a>`:''}</div>`;
+  if(FE.err) h+=`<div class="empty">${esc(FE.err)}</div>`;
+  else if(FE.loading||!D) h+=skel(3);
+  else {
+    const fx=(HP.bets||[]).flatMap(b=>b.legs.filter(l=>l.kind==='future').map(l=>({...l,picker:b.picker})));
+    const mine=b=>fx.filter(l=>l.marketLabel===label && (String(l.teamId||l.athleteId)===String(b.id) || normName(l.label).includes(normName(b.name))));
+    const fav=D.books[0];
+    h+=`<div class="pc"><div class="tscroll"><table class="pt"><tr><th>#</th><th>${FUT_MK[FE.sel][4]==='athlete'?'Player':'Team'}</th><th>Price</th><th>$10 pays</th><th>Chance</th><th></th></tr>
+      ${D.books.slice(0,40).map((b,i)=>{ const tags=mine(b).map(l=>l.picker==='claude'?'🤖':'🧮').join('')+(b===fav?'🧮':''); const id=`fut|${label}|${b.id}`, on=OB.slip.some(x=>x.id===id);
+        return `<tr><td>${i+1}</td><td class="pn2" style="min-width:150px">${b.logo?`<img src="${esc(b.logo)}" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:6px">`:''}${esc(b.name)} ${tags?`<small style="display:inline">${[...new Set(tags)].join('')}</small>`:''}</td>
+          <td>${fmtA(b.price)}</td><td>$${(10*decOdds(b.price)).toFixed(0)}</td><td>${b.fair<0.01?'<1%':pct(b.fair)}</td>
+          <td><button class="addb ${on?'on':''}" data-feadd="${esc(b.id)}">${on?'✓':'+'}</button></td></tr>`; }).join('')}
+    </table></div></div>
+    <div class="note">🧮 = the formula's pick (the favorite, ${esc(fav.name)} at ${fmtA(fav.price)}, ${pct(fav.fair)} chance). 🤖 = Claude's pick when one is posted, with reasoning in ⭐ Today's picks → Futures. Tap + to add a team to your slip.</div>`;
+  }
+  h+=`<footer>Futures: DraftKings via ESPN. Not betting advice.</footer>`;
+  $('#fubody').innerHTML=h;
+}
+$('#fulist').addEventListener('click',e=>{ const b=e.target.closest('[data-fe]'); if(!b) return; FE.sel=+b.dataset.fe; store.set('wc_fesel',FE.sel); FE.err=null; renderFutESPN(); },true);
+$('#fubody').addEventListener('click',e=>{
+  if(e.target.id==='fubooks'){ e.preventDefault(); FU.mode='books'; renderFut(); if(!FU.list) loadFutList(); return; }
+  const a=e.target.closest('[data-feadd]'); if(!a) return; e.stopPropagation();
+  const D=FE.data[FE.sel], label=FUT_MK[FE.sel][0].replace(/^\S+ /,''), b=D.books.find(x=>x.id===a.dataset.feadd), id=`fut|${label}|${b.id}`;
+  const i=OB.slip.findIndex(x=>x.id===id); if(i>=0) OB.slip.splice(i,1);
+  else { OB.allBooks.draftkings ||= 'DraftKings'; OB.slip.push({id, ev:'', game:label, sport:'futures', label:`${b.name} to win ${label}`, prices:{draftkings:b.price}, fair:b.fair, start:''}); }
+  store.set('wc_slip',OB.slip); renderSlip(); renderFutESPN();
+},true);
 function closeFut(){ $('#fu').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
 async function loadFutList(){
   FU.loading=true; renderFut();
@@ -2278,6 +2435,7 @@ async function loadFut(k, quiet){
 }
 function renderFut(){
   if($('#fu').hidden) return;
+  if(FU.mode==='espn') return renderFutESPN();
   if(!OB.key){ $('#fulist').innerHTML=''; $('#fubody').innerHTML=`<div class="pc" style="margin-top:14px"><b>Add your odds key first</b><div class="note">Futures prices (Super Bowl, NBA Finals, World Series, Stanley Cup, college championships and more) come from The Odds API. Paste your key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>.</div></div>`; return; }
   const L=FU.list||[];
   const pretty=t=>t.replace(/ Winner$/,'').replace('Championship','Champ.');
@@ -2468,6 +2626,7 @@ $('#cb').addEventListener('change',e=>{
 });
 
 function route(){
+  if(location.hash==='#today'){ openTP(); return; } else if(!$('#tp').hidden) closeTP();
   if(location.hash==='#combos'){ openCombos(); return; } else if(!$('#cb').hidden) closeCombos();
   if(location.hash==='#schedule'){ openSched(); return; } else if(!$('#sc').hidden) closeSched();
   if(location.hash==='#futures'){ openFut(); return; } else if(!$('#fu').hidden) closeFut();
