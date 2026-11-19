@@ -875,9 +875,15 @@ function renderPicks(){
       ${open?`<div style="margin-top:8px;cursor:default">${p.legs.map(x=>`<div class="leg" style="padding:5px 0"><span>${icon(x.res)} <b>${esc(x.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[x.sk]?.label||'')} · ${esc(x.game)}</small></span><span>${fmtA(x.price)}${x.final?` · ${esc(x.final)}`:x.live&&!x.res?` · <span style="color:var(--live)">${esc(x.live)}</span>`:` · ${new Date(x.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`}</span></div>`).join('')}</div>`:''}
     </div>`; };
   el.innerHTML=`<div class="pc" style="margin-top:12px;border-color:color-mix(in srgb,var(--accent) 40%,var(--line))">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><b style="font-size:16px">📊 EasyProp picks <span class="badge">paper bets</span></b>
-      <span class="note" style="margin:0">Record <b>${w}-${l}</b> · Profit <b class="${profit>0?'hi':profit<0?'lo':''}">${profit<0?'−':'+'}$${Math.abs(profit).toFixed(2)}</b>${staked?` · ROI ${(profit/staked*100).toFixed(0)}%`:''}${legsDone.length?` · legs ${legW}/${legsDone.length}`:''}</span></div>
-    <div class="note">Every day before games start the app places 3 test bets on its own ($10 each, no real money) at DraftKings prices, then grades them from the final scores. This is the honest scoreboard for whether its picks actually win.</div>
+    <b style="font-size:16px">💵 Paper bets <span class="badge">the app's own daily bets · no real money</span></b>
+    ${(()=>{ const wl=k=>{ const s=done.filter(p=>k(p)); return `${s.filter(p=>p.status==='won').length} won · ${s.filter(p=>p.status==='lost').length} lost`; };
+      return `<div class="stats" style="margin:10px 0 4px">
+      <div class="stat"><div class="k">Bets won / lost</div><div class="v">${w} / ${l}</div></div>
+      <div class="stat"><div class="k">Profit on $10 bets</div><div class="v ${profit>0?'hi':profit<0?'lo':''}">${profit<0?'−':'+'}$${Math.abs(profit).toFixed(2)}</div></div>
+      <div class="stat"><div class="k">Return on money bet</div><div class="v ${profit>0?'hi':profit<0?'lo':''}">${staked?(profit/staked*100).toFixed(0)+'%':'–'}</div></div>
+      <div class="stat"><div class="k">Teams picked that won</div><div class="v">${legsDone.length?`${legW} of ${legsDone.length}`:'–'}</div></div></div>
+      <div class="note" style="margin-top:4px">Singles: <b>${wl(p=>p.kind==='single')}</b> · 3-leg parlays: <b>${wl(p=>p.kind==='parlay3')}</b> · long shots: <b>${wl(p=>p.kind==='long')}</b></div>`; })()}
+    <div class="note">Every day before games start, the app places 3 bets on its own ($10 each, no real money) at DraftKings prices: a single, a 3-leg parlay and a long shot, then grades them from the final scores. A parlay only wins if every team in it wins. Profit is the number that shows whether it actually makes money.</div>
     ${today.length?`<div class="mk">Today</div>${today.map(card).join('')}`:PK.busy?`<div class="note">Making today's picks…</div>`:`<div class="note">No picks yet today: they're made when games with posted lines haven't started.</div>`}
     ${recent.length?`<div class="mk">Earlier</div>${recent.map(card).join('')}`:''}
   </div>`;
@@ -945,10 +951,11 @@ function render(){
   const tr=trackRecord();
   const rec=$('#record');
   if(tr){ rec.hidden=false; rec.innerHTML=`
-      <div><div class="k">Games graded</div><div class="v">${tr.n}</div></div>
-      <div><div class="k">Picks correct</div><div class="v">${Math.round(tr.acc*100)}%</div></div>
-      <div><div class="k">Brier score</div><div class="v">${tr.brier.toFixed(3)}</div></div>
-      <div class="note">Win-chance model: before each game it records which team it gives the better chance, then checks once the game ends whether that team won. Lower Brier is better (it also rewards being confident only when right); a coin flip scores 0.500.</div>`; }
+      <b style="font-size:16px;flex-basis:100%">🎯 Picking winners <span class="badge">no betting</span></b>
+      <div><div class="k">Favorite won</div><div class="v">${Math.round(tr.acc*tr.n)} of ${tr.n} games</div></div>
+      <div><div class="k">Hit rate</div><div class="v">${Math.round(tr.acc*100)}%</div></div>
+      <div><div class="k">Accuracy score</div><div class="v">${tr.brier.toFixed(3)}</div></div>
+      <div class="note">Before each game, the app notes which team it thinks is more likely to win; after the game it checks whether that team won. No odds or money: just "did it pick the winner?" These calls are made automatically by the app's formula, which mostly follows the sportsbook's favorite, so this is close to "how often the betting favorite won." Accuracy score (Brier): lower is better, a coin flip scores 0.500.</div>`; }
   else rec.hidden=true;
 }
 
