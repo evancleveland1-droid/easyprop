@@ -2,61 +2,358 @@
   "note": "Hand-made picks graded by the app. 'claude' = Claude's picks with reasoning; 'formula' = the app formula's market favorites. $10 paper stakes.",
   "bets": [
     {
-      "id": "c-20261119-nfl", "picker": "claude", "day": "20261119", "stake": 10,
+      "id": "c-20261119-nfl",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
       "name": "NFL: Texans win + under",
       "why": "The line jumped from Texans -5.5 to -12.5, which almost always means big Colts news (likely at QB). A weaker Colts offense means a Texans win and a lower-scoring game. Same-game: books may price this combo differently.",
       "legs": [
-        {"ev": "401873066", "sk": "nfl", "d": "20261119", "kind": "ml", "side": "home", "teamId": "34", "price": -690, "label": "Texans moneyline", "game": "IND @ HOU", "start": "2026-11-20T01:15Z"},
-        {"ev": "401873066", "sk": "nfl", "d": "20261119", "kind": "total", "side": "under", "line": 44.5, "price": -116, "label": "Under 44.5", "game": "IND @ HOU", "start": "2026-11-20T01:15Z"}
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        },
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "total",
+          "side": "under",
+          "line": 44.5,
+          "price": -116,
+          "label": "Under 44.5",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        }
       ]
     },
     {
-      "id": "c-20261119-nba", "picker": "claude", "day": "20261119", "stake": 10,
+      "id": "c-20261119-nba",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
       "name": "NBA: Knicks, Blazers + Knicks/Wolves under",
       "why": "Minnesota is without Anthony Edwards and Donte DiVincenzo, so the Knicks are the right side at -113 and that game should run lower. Milwaukee is 1-14 and has lost 5 straight. I skipped the Spurs (-1040 adds almost nothing to the payout) and the Grizzlies (money moved Memphis from -8.5 to -6.5).",
       "legs": [
-        {"ev": "401910021", "sk": "nba", "d": "20261119", "kind": "ml", "side": "away", "teamId": "18", "price": -113, "label": "Knicks moneyline", "game": "NY @ MIN", "start": "2026-11-20T01:00Z"},
-        {"ev": "401910020", "sk": "nba", "d": "20261119", "kind": "ml", "side": "away", "teamId": "22", "price": -467, "label": "Trail Blazers moneyline", "game": "POR @ MIL", "start": "2026-11-20T01:00Z"},
-        {"ev": "401910021", "sk": "nba", "d": "20261119", "kind": "total", "side": "under", "line": 216.5, "price": -110, "label": "Knicks/Wolves under 216.5", "game": "NY @ MIN", "start": "2026-11-20T01:00Z"}
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -467,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "total",
+          "side": "under",
+          "line": 216.5,
+          "price": -110,
+          "label": "Knicks/Wolves under 216.5",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        }
       ]
     },
     {
-      "id": "c-20261119-college", "picker": "claude", "day": "20261119", "stake": 10,
+      "id": "c-20261119-college",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
       "name": "College: Florida, Houston + Rice +2.5",
       "why": "#1 Florida is the clear better team at West Virginia. Money pushed #8 Houston from -2.5 to -3.5 at #11 Kansas. In Rice at Temple (two teams that have lost 5 straight), money moved Rice from +4 to +2.5, so I'm taking the points.",
       "legs": [
-        {"ev": "401920517", "sk": "ncaam", "d": "20261119", "kind": "ml", "side": "away", "teamId": "57", "price": -380, "label": "Florida moneyline", "game": "FLA @ WVU", "start": "2026-11-19T19:30Z"},
-        {"ev": "401920518", "sk": "ncaam", "d": "20261119", "kind": "ml", "side": "away", "teamId": "248", "price": -155, "label": "Houston moneyline", "game": "HOU @ KU", "start": "2026-11-20T04:00Z"},
-        {"ev": "401862830", "sk": "ncaaf", "d": "20261119", "kind": "spread", "side": "away", "teamId": "242", "line": 2.5, "price": -105, "label": "Rice +2.5", "game": "RICE @ TEM", "start": "2026-11-20T00:30Z"}
+        {
+          "ev": "401920517",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "57",
+          "price": -380,
+          "label": "Florida moneyline",
+          "game": "FLA @ WVU",
+          "start": "2026-11-19T19:30Z"
+        },
+        {
+          "ev": "401920518",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "248",
+          "price": -155,
+          "label": "Houston moneyline",
+          "game": "HOU @ KU",
+          "start": "2026-11-20T04:00Z"
+        },
+        {
+          "ev": "401862830",
+          "sk": "ncaaf",
+          "d": "20261119",
+          "kind": "spread",
+          "side": "away",
+          "teamId": "242",
+          "line": 2.5,
+          "price": -105,
+          "label": "Rice +2.5",
+          "game": "RICE @ TEM",
+          "start": "2026-11-20T00:30Z"
+        }
       ]
     },
     {
-      "id": "f-20261119-nfl", "picker": "formula", "day": "20261119", "stake": 10,
+      "id": "f-20261119-nfl",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
       "name": "NFL: Texans win (only game tonight)",
       "why": "The formula's favorite: Texans 87% to win at -690.",
       "legs": [
-        {"ev": "401873066", "sk": "nfl", "d": "20261119", "kind": "ml", "side": "home", "teamId": "34", "price": -690, "label": "Texans moneyline", "game": "IND @ HOU", "start": "2026-11-20T01:15Z"}
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        }
       ]
     },
     {
-      "id": "f-20261119-nba", "picker": "formula", "day": "20261119", "stake": 10,
+      "id": "f-20261119-nba",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
       "name": "NBA: all 4 favorites",
       "why": "The formula's favorite in every NBA game tonight: Spurs, Blazers, Grizzlies, Knicks.",
       "legs": [
-        {"ev": "401910022", "sk": "nba", "d": "20261119", "kind": "ml", "side": "home", "teamId": "24", "price": -1040, "label": "Spurs moneyline", "game": "LAC @ SA", "start": "2026-11-20T01:00Z"},
-        {"ev": "401910020", "sk": "nba", "d": "20261119", "kind": "ml", "side": "away", "teamId": "22", "price": -467, "label": "Trail Blazers moneyline", "game": "POR @ MIL", "start": "2026-11-20T01:00Z"},
-        {"ev": "401910019", "sk": "nba", "d": "20261119", "kind": "ml", "side": "home", "teamId": "29", "price": -243, "label": "Grizzlies moneyline", "game": "GS @ MEM", "start": "2026-11-20T01:00Z"},
-        {"ev": "401910021", "sk": "nba", "d": "20261119", "kind": "ml", "side": "away", "teamId": "18", "price": -113, "label": "Knicks moneyline", "game": "NY @ MIN", "start": "2026-11-20T01:00Z"}
+        {
+          "ev": "401910022",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "24",
+          "price": -1040,
+          "label": "Spurs moneyline",
+          "game": "LAC @ SA",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -467,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910019",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "29",
+          "price": -243,
+          "label": "Grizzlies moneyline",
+          "game": "GS @ MEM",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        }
       ]
     },
     {
-      "id": "f-20261119-college", "picker": "formula", "day": "20261119", "stake": 10,
+      "id": "f-20261119-college",
+      "picker": "formula",
+      "day": "20261119",
+      "stake": 10,
       "name": "College: Florida, Houston, Temple",
       "why": "The formula's college favorites with a posted moneyline (USC at -100000 and the Texas/Louisville games with no moneyline are left out).",
       "legs": [
-        {"ev": "401920517", "sk": "ncaam", "d": "20261119", "kind": "ml", "side": "away", "teamId": "57", "price": -380, "label": "Florida moneyline", "game": "FLA @ WVU", "start": "2026-11-19T19:30Z"},
-        {"ev": "401920518", "sk": "ncaam", "d": "20261119", "kind": "ml", "side": "away", "teamId": "248", "price": -155, "label": "Houston moneyline", "game": "HOU @ KU", "start": "2026-11-20T04:00Z"},
-        {"ev": "401862830", "sk": "ncaaf", "d": "20261119", "kind": "ml", "side": "home", "teamId": "218", "price": -142, "label": "Temple moneyline", "game": "RICE @ TEM", "start": "2026-11-20T00:30Z"}
+        {
+          "ev": "401920517",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "57",
+          "price": -380,
+          "label": "Florida moneyline",
+          "game": "FLA @ WVU",
+          "start": "2026-11-19T19:30Z"
+        },
+        {
+          "ev": "401920518",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "248",
+          "price": -155,
+          "label": "Houston moneyline",
+          "game": "HOU @ KU",
+          "start": "2026-11-20T04:00Z"
+        },
+        {
+          "ev": "401862830",
+          "sk": "ncaaf",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "218",
+          "price": -142,
+          "label": "Temple moneyline",
+          "game": "RICE @ TEM",
+          "start": "2026-11-20T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-best-safe",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Best bet A (safest): Texans + Blazers + Spurs",
+      "why": "Three favorites I'm confident in, not just because the numbers say so: the Texans line jumped 7 points on Colts news, the Bucks are 1-14 with money still pouring onto Portland, and the Spurs face a Clippers team without Ingram or Beal. About a 60% chance all three win, but it only pays about $15 on $10.",
+      "legs": [
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910022",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "24",
+          "price": -1040,
+          "label": "Spurs moneyline",
+          "game": "LAC @ SA",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-best-single",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Best bet B (best value): Knicks single",
+      "why": "Minnesota is without Anthony Edwards and Donte DiVincenzo, and the Knicks are basically a coin flip at -113. I think New York wins this more often than that price says. One bet, nothing else has to go right.",
+      "legs": [
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-best-mid",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Best bet C (balanced): Knicks + Blazers",
+      "why": "My two favorite NBA spots tonight together: the Knicks against an Edwards-less Minnesota and Portland at 1-14 Milwaukee. Better payout than A, better chance than a long parlay.",
+      "legs": [
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        }
       ]
     }
   ]
