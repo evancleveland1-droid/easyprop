@@ -974,7 +974,35 @@ function handPicksHTML(){
 }
 
 /* ================= ⭐ Today's picks: one menu of Claude + formula bets, ready to copy ================= */
-const TP={type:store.get('wc_tptype','all'), who:store.get('wc_tpwho','all'), open:new Set()};
+const TP={type:store.get('wc_tptype','all'), who:store.get('wc_tpwho','all'), sort:store.get('wc_tpsort','low'), open:new Set()};
+/* Extra formula options built in the app from today's lines: lots of singles and parlay ladders. */
+const TPA={legs:null, t:0, busy:false};
+async function loadTPGames(){
+  if(TPA.busy || Date.now()-TPA.t<10*60e3) return; TPA.busy=true;
+  const day=ymd(0), legs=[];
+  await pool(PK_SPORTS,6,async sk=>{ try{ for(const {ev} of await fetchSport(BY_KEY[sk], day)){
+    const c=ev.competitions[0]; if((c.status||ev.status).type.state!=='pre' || new Date(ev.date)<new Date(Date.now()+10*60e3)) continue;
+    const ml=rawML(c); if(!ml) continue;
+    const h=c.competitors.find(x=>x.homeAway==='home'), a=c.competitors.find(x=>x.homeAway==='away');
+    const ih=impl(ml.home), ia=impl(ml.away), idr=ml.draw?impl(ml.draw):0, s=ih+ia+idr;
+    const fav=ih>=ia?{t:h,price:ml.home,p:ih/s}:{t:a,price:ml.away,p:ia/s};
+    legs.push({ev:ev.id, sk, team:fav.t.team.displayName, game:`${a.team.abbreviation} @ ${h.team.abbreviation}`, price:fav.price, p:fav.p, start:ev.date});
+  } }catch(e){} });
+  TPA.legs=legs.sort((x,y)=>y.p-x.p); TPA.t=Date.now(); TPA.busy=false; renderTP();
+}
+function autoBets(){
+  const L=(TPA.legs||[]).filter(l=>l.price>=-400 && l.price<=150), out=[];
+  const leg=l=>({kind:'ml', label:`${l.team} moneyline`, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev});
+  const bet=(id,name,ls,why)=>{ if(!ls) return; const p=ls.reduce((t,l)=>t*l.p,1);
+    out.push({id:'auto:'+id, picker:'formula', auto:true, gen:true, day:ymd(0), stake:10, name, chance:p, verdict:'Favorite', why, legs:ls.map(leg)}); };
+  L.slice(0,14).forEach(l=>bet('s:'+l.ev, `${l.team} to win`, [l], `Market favorite: ${pct(l.p)} chance to win (${BY_KEY[l.sk]?.label||''}).`));
+  for(let n=2;n<=6;n++) bet('top'+n, `Top ${n} favorites parlay`, pickDistinct(L,n,l=>l.ev), `The ${n} most likely winners on today's board, one per game.`);
+  for(let n=2;n<=4;n++) bet('mix'+n, `${n}-sport parlay`, pickDistinct(L,n,l=>l.sk), `The top favorite from ${n} different sports.`);
+  const mid=L.filter(l=>l.p>=0.55&&l.p<=0.72);
+  for(let n=2;n<=4;n++) bet('mid'+n, `Bigger payout ${n}-leg`, pickDistinct(mid,n,l=>l.ev), `Solid favorites (55–72% each) at better prices than the heavy favorites.`);
+  const big=L.slice(0,8); if(big.length>=7) bet('top'+big.length, `${big.length}-leg ladder`, big, `Today's ${big.length} most likely winners stacked: big payout, small chance.`);
+  return out;
+}
 const tpKind=b=>{ const ls=b.legs||[]; if(ls.some(l=>l.kind==='future')) return 'futures'; if(ls.some(l=>l.kind==='prop')) return 'props'; return ls.length===1?'singles':'parlays'; };
 function tpBets(){
   const day=ymd(0), out=[];
@@ -983,6 +1011,9 @@ function tpBets(){
   for(const p of PK.list.filter(p=>p.day===day)) out.push({id:'pk:'+p.id, picker:'formula', day, stake:p.stake, name:p.name, auto:true, chance:p.p,
     why:p.kind.startsWith('top5')?'One of the formula\'s 5 most likely winners today.':p.kind==='single'?'The formula\'s single of the day: its most likely winner with a reasonable price.':p.kind==='long'?'Every one of today\'s top favorites stacked: big payout, small chance.':'The formula\'s most likely winners combined.',
     legs:p.legs.map(l=>({kind:'ml', label:`${l.team} moneyline`, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev, res:l.res}))});
+  // add the app-built formula options, skipping any that duplicate a bet already listed
+  const key=b=>b.legs.map(l=>(l.ev||'')+'|'+l.label).sort().join('~'), seen=new Set(out.map(key));
+  for(const b of autoBets()){ const k=key(b); if(!seen.has(k)){ seen.add(k); out.push(b); } }
   return out;
 }
 const legIcon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
@@ -1007,20 +1038,22 @@ function tpCard(b){
       ${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${legIcon(legRes(l))} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game||l.marketName||'')}</small></span><span>${fmtA(l.price)}${l.start?' · '+new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}</span></div>`).join('')}</div>
   </div>`;
 }
-function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); }
+function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); }
 function closeTP(){ $('#tp').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
 function renderTP(){
   if($('#tp').hidden) return;
   const all=tpBets();
   const cnt=t=>all.filter(b=>(t==='all'||tpKind(b)===t)&&(TP.who==='all'||b.picker===TP.who)).length;
   $('#tptabs').innerHTML=[['all','All'],['singles','Singles'],['parlays','Parlays'],['props','Player props'],['futures','🏆 Futures']].map(([k,l])=>`<button class="tab ${TP.type===k?'on':''}" data-tpt="${k}">${l} <span class="badge">${cnt(k)}</span></button>`).join('');
-  $('#tpwho').innerHTML=[['all','Claude + formula'],['claude','🤖 Claude only'],['formula','🧮 Formula only']].map(([k,l])=>`<button class="tab ${TP.who===k?'on':''}" data-tpw="${k}">${l}</button>`).join('');
+  $('#tpwho').innerHTML=[['all','Claude + formula'],['claude','🤖 Claude only'],['formula','🧮 Formula only']].map(([k,l])=>`<button class="tab ${TP.who===k?'on':''}" data-tpw="${k}">${l}</button>`).join('')
+    +`<button class="tab" data-tpsort="1" style="margin-left:8px">💲 Payout: ${TP.sort==='high'?'biggest first ↓':'smallest first ↑'}</button>`;
   const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
   let h=`<div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
   if(HP.insights) h+=`<div class="pc" style="border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))"><b>📈 What's working</b><div class="note" style="margin:4px 0 0">${esc(HP.insights)}</div></div>`;
   const list=all.filter(b=>(TP.type==='all'||tpKind(b)===TP.type)&&(TP.who==='all'||b.picker===TP.who));
   const order=['singles','parlays','props','futures'], title={singles:'Singles',parlays:'Parlays',props:'Player prop parlays',futures:'🏆 Futures'};
-  for(const k of order){ const bs=list.filter(b=>tpKind(b)===k).sort((a,b)=>(a.picker==='claude'?0:1)-(b.picker==='claude'?0:1)); if(!bs.length) continue;
+  const pay=b=>b.legs.reduce((t,l)=>t*decOdds(l.price),1);
+  for(const k of order){ const bs=list.filter(b=>tpKind(b)===k).sort((a,b)=>TP.sort==='high'?pay(b)-pay(a):pay(a)-pay(b)); if(!bs.length) continue;
     h+=`<h2 class="sec">${title[k]} · ${bs.length}</h2>${bs.map(tpCard).join('')}`; }
   if(!list.length) h+=`<div class="empty">${HP.busy||PK.busy?'Loading picks…':'No picks here yet today. Claude\'s picks post every afternoon around 3 PM, and the formula\'s once games with lines are posted.'}</div>`;
   if(TP.type==='futures'||TP.type==='all') h+=`<div class="note">Full futures boards (every team's price for the Super Bowl, NBA title, college championships and more) are in <a href="#futures" style="color:var(--accent)">Futures</a>.</div>`;
@@ -1031,7 +1064,8 @@ function renderTP(){
 $('#tpopen').onclick=()=>{ location.hash='#today'; };
 $('#tpback').onclick=()=>{ if(location.hash) history.back(); else closeTP(); };
 $('#tptabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tpt]'); if(!b) return; TP.type=b.dataset.tpt; store.set('wc_tptype',TP.type); renderTP(); });
-$('#tpwho').addEventListener('click',e=>{ const b=e.target.closest('[data-tpw]'); if(!b) return; TP.who=b.dataset.tpw; store.set('wc_tpwho',TP.who); renderTP(); });
+$('#tpwho').addEventListener('click',e=>{ if(e.target.closest('[data-tpsort]')){ TP.sort=TP.sort==='high'?'low':'high'; store.set('wc_tpsort',TP.sort); renderTP(); return; }
+  const b=e.target.closest('[data-tpw]'); if(!b) return; TP.who=b.dataset.tpw; store.set('wc_tpwho',TP.who); renderTP(); });
 $('#tp').addEventListener('click',async e=>{
   const c=e.target.closest('[data-tpcopy]'); if(c){ const b=TP.list.find(x=>x.id===c.dataset.tpcopy); const t=copyText(b), el=document.querySelector(`[data-copied="${CSS.escape(b.id)}"]`);
     try{ await navigator.clipboard.writeText(t); el.textContent='Copied ✓'; }catch{ el.textContent=t; } return; }

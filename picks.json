@@ -515,6 +515,357 @@
           "sk": "futures"
         }
       ]
+    },
+    {
+      "id": "c-20261119-s-por",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Trail Blazers single",
+      "verdict": "Good bet",
+      "chance": 0.8,
+      "why": "Milwaukee is 1-14 and has lost 5 straight, and money keeps coming in on Portland (-10.5 to -11.5). Very likely, small payout.",
+      "legs": [
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-s-uh",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Houston (college hoops) single",
+      "verdict": "Lean",
+      "chance": 0.6,
+      "why": "#8 Houston at #11 Kansas: money moved Houston from -2.5 to -3.5. Both are unbeaten, so it's closer than the safe singles.",
+      "legs": [
+        {
+          "ev": "401920518",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "248",
+          "price": -166,
+          "label": "Houston moneyline",
+          "game": "HOU @ KU",
+          "start": "2026-11-20T04:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-s-rice",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Rice +2.5 single",
+      "verdict": "Lean",
+      "chance": 0.52,
+      "why": "Two struggling teams; sharp money moved this from Rice +4 to +2.5, so the points look like the right side.",
+      "legs": [
+        {
+          "ev": "401862830",
+          "sk": "ncaaf",
+          "d": "20261119",
+          "kind": "spread",
+          "side": "away",
+          "teamId": "242",
+          "line": 2.5,
+          "price": -105,
+          "label": "Rice +2.5",
+          "game": "RICE @ TEM",
+          "start": "2026-11-20T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-s-hou",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Texans single",
+      "verdict": "Good bet",
+      "chance": 0.84,
+      "why": "The line jumped 7 points toward Houston on Colts news. Very likely to win, but it pays only about $1.45 per $10.",
+      "legs": [
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-s-nyu",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "Knicks/Wolves under 216.5",
+      "verdict": "Lean",
+      "chance": 0.53,
+      "why": "Without Anthony Edwards and Donte DiVincenzo, Minnesota loses its two best scorers on the perimeter, which should slow this game down.",
+      "legs": [
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "total",
+          "side": "under",
+          "line": 216.5,
+          "price": -110,
+          "label": "Knicks/Wolves under 216.5",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-p2-safe",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "2-leg: Blazers + Spurs",
+      "verdict": "Good bet",
+      "chance": 0.71,
+      "why": "Two of the safest spots on the board. Low payout, high chance.",
+      "legs": [
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910022",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "24",
+          "price": -1040,
+          "label": "Spurs moneyline",
+          "game": "LAC @ SA",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-p2-nyk-rice",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "2-leg: Knicks + Rice +2.5",
+      "verdict": "Lean",
+      "chance": 0.28,
+      "why": "My two best value spots together: the Knicks against an Edwards-less Minnesota, and Rice getting points after sharp money.",
+      "legs": [
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401862830",
+          "sk": "ncaaf",
+          "d": "20261119",
+          "kind": "spread",
+          "side": "away",
+          "teamId": "242",
+          "line": 2.5,
+          "price": -105,
+          "label": "Rice +2.5",
+          "game": "RICE @ TEM",
+          "start": "2026-11-20T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-p3-hou-por-uh",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "3-leg: Texans + Blazers + Houston",
+      "verdict": "Good bet",
+      "chance": 0.41,
+      "why": "Three favorites with real reasons behind them across NFL, NBA and college hoops.",
+      "legs": [
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401920518",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "248",
+          "price": -166,
+          "label": "Houston moneyline",
+          "game": "HOU @ KU",
+          "start": "2026-11-20T04:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-p4-mix",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "4-leg mix: Knicks, Blazers, Houston, Rice +2.5",
+      "verdict": "Long shot",
+      "chance": 0.13,
+      "why": "All four of my value spots tonight in one ticket. Pays about $70 on $10, but four things have to go right.",
+      "legs": [
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "18",
+          "price": -113,
+          "label": "Knicks moneyline",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401910020",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "22",
+          "price": -494,
+          "label": "Trail Blazers moneyline",
+          "game": "POR @ MIL",
+          "start": "2026-11-20T01:00Z"
+        },
+        {
+          "ev": "401920518",
+          "sk": "ncaam",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "248",
+          "price": -166,
+          "label": "Houston moneyline",
+          "game": "HOU @ KU",
+          "start": "2026-11-20T04:00Z"
+        },
+        {
+          "ev": "401862830",
+          "sk": "ncaaf",
+          "d": "20261119",
+          "kind": "spread",
+          "side": "away",
+          "teamId": "242",
+          "line": 2.5,
+          "price": -105,
+          "label": "Rice +2.5",
+          "game": "RICE @ TEM",
+          "start": "2026-11-20T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261119-p3-unders",
+      "picker": "claude",
+      "day": "20261119",
+      "stake": 10,
+      "name": "3-leg: Texans + both unders",
+      "verdict": "Long shot",
+      "chance": 0.23,
+      "why": "A low-scoring night: Colts offense hurt, Minnesota missing two scorers. Same-game legs, so your book may price it differently.",
+      "legs": [
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "34",
+          "price": -690,
+          "label": "Texans moneyline",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        },
+        {
+          "ev": "401873066",
+          "sk": "nfl",
+          "d": "20261119",
+          "kind": "total",
+          "side": "under",
+          "line": 44.5,
+          "price": -116,
+          "label": "Colts/Texans under 44.5",
+          "game": "IND @ HOU",
+          "start": "2026-11-20T01:15Z"
+        },
+        {
+          "ev": "401910021",
+          "sk": "nba",
+          "d": "20261119",
+          "kind": "total",
+          "side": "under",
+          "line": 216.5,
+          "price": -110,
+          "label": "Knicks/Wolves under 216.5",
+          "game": "NY @ MIN",
+          "start": "2026-11-20T01:00Z"
+        }
+      ]
     }
   ],
   "insights": "Too early to judge: Claude's and the formula's first picks grade tonight (Nov 19). This note updates each afternoon with what's winning and what isn't, by bet type and sport, and the picks adjust to it."
