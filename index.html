@@ -150,7 +150,6 @@ table.pt input{width:58px;font:inherit;font-family:'JetBrains Mono',monospace;te
 .keybox input{flex:1;min-width:200px;font:inherit;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
 .nav{padding-bottom:8px}
 .nav .oddsbtn,.nav .tab{flex:none}
-#propsopen{background:var(--text);border-color:var(--text);color:var(--bg)}
 table.pt td.pn2{white-space:normal;min-width:130px}
 table.pt td.pn2 small{display:block;color:var(--muted);font-weight:500;font-size:11px}
 .addb{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:6px;padding:2px 6px;cursor:pointer}
@@ -275,6 +274,69 @@ h2.sec{font-size:12px;letter-spacing:.12em;margin:26px 0 12px}
 .gact a{font-size:12.5px;font-weight:800;color:var(--accent);text-decoration:none}
 .morebtn{display:block;margin:16px auto;padding:10px 20px;border-radius:999px}
 main.wrap{padding-bottom:110px}
+
+/* ================= Clean white + purple theme (final layer) ================= */
+:root,:root[data-theme="light"]{
+  --bg:#ffffff; --panel:#ffffff; --panel2:#f6f4ff; --chip:#f3f0ff; --text:#14121f; --muted:#5f5c70; --line:#e8e5f3;
+  --accent:#6d28d9; --accent2:#6d28d9; --good:#047857; --live:#dc2626;
+  --shadow:0 1px 3px rgba(20,18,31,.06),0 6px 18px -10px rgba(76,29,149,.18);
+  --grad:linear-gradient(135deg,#7c3aed,#6d28d9);
+}
+:root[data-theme="dark"]{
+  --bg:#0d0b16; --panel:#16131f; --panel2:#1f1b2c; --chip:#231e33; --text:#f4f2fb; --muted:#a29db8; --line:#2c2740;
+  --accent:#a78bfa; --accent2:#a78bfa; --good:#34d399; --live:#f87171; --shadow:none; --grad:linear-gradient(135deg,#a78bfa,#8b5cf6);
+}
+body{font-size:15px}
+header{background:color-mix(in srgb,var(--bg) 94%,transparent);border-bottom:1px solid var(--line)}
+.top{padding:12px 0 8px}
+.brand{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--accent);font-size:22px}
+.brand .dot{background:var(--accent)}
+.tab{background:var(--chip);color:var(--text);border:1px solid transparent;font-size:13.5px}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab .n{background:var(--accent)}
+.badge{background:var(--chip);color:var(--accent)}
+.card,.pc,.ev,.combo,.bet,.stat,.pk,.sg,.gc{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}
+.gc.live{border-color:color-mix(in srgb,var(--live) 45%,var(--line))}
+.gnote{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--accent)}
+.gch .sp{background:var(--chip);color:var(--accent)}
+.obtn{background:var(--panel2);border:1px solid var(--line)}
+.obtn .pr{color:var(--accent)}
+.obtn.on{background:var(--accent);border-color:var(--accent)}
+.combo .pay{color:var(--accent)}
+.combo.open{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.addb{border-color:var(--accent);color:var(--accent)}
+.addb.on{background:var(--accent);color:#fff}
+.tbtn{border-color:var(--line)}
+.oddsbtn{background:var(--accent);border-color:var(--accent);box-shadow:none}
+.fab{background:var(--accent);box-shadow:0 10px 24px -10px rgba(109,40,217,.7);bottom:calc(76px + env(safe-area-inset-bottom))}
+.fab .c{color:var(--accent)}
+h2.sec{color:var(--muted)}
+.note{color:var(--muted);font-size:13px}
+/* bottom navigation */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);background:var(--panel);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px -14px rgba(20,18,31,.35)}
+.bnav button{border:0;background:transparent;color:var(--muted);font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:12px;cursor:pointer}
+.bnav button b{font-size:20px;line-height:1;filter:grayscale(1);opacity:.75}
+.bnav button span{font-size:11.5px;font-weight:700}
+.bnav button.on{color:var(--accent);background:var(--chip)}
+.bnav button.on b{filter:none;opacity:1}
+.gv{bottom:calc(64px + env(safe-area-inset-bottom))}
+main.wrap{padding-bottom:150px}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(20,18,31,.35);display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sheetin{background:var(--panel);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:10px 12px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:4px;animation:pop .2s ease both}
+.sheeth{font-weight:800;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:8px 10px}
+.sheetin button{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--text);font:inherit;font-size:16px;font-weight:600;padding:14px 12px;border-radius:12px;cursor:pointer;text-align:left}
+.sheetin button:hover{background:var(--chip)}
+.sheetin button .n{margin-left:auto;background:var(--accent);color:#fff;border-radius:999px;padding:1px 8px;font-size:12px}
+.sheetin .sheetx{justify-content:center;color:var(--muted);font-size:14px}
+header .wrap,.gvh .wrap{padding-bottom:0}
+header .tabs{padding-bottom:10px}
+.recstrip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:10px 0 2px}
+.recstrip::-webkit-scrollbar{display:none}
+.recstrip button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;border-radius:14px;padding:8px 12px;cursor:pointer}
+.recstrip button span{font-size:11.5px;color:var(--muted);font-weight:700}
+.recstrip button b{font-size:15px;font-family:'JetBrains Mono',monospace}
+.recstrip .more{justify-content:center;color:var(--accent);font-weight:700;font-size:13px;background:transparent}
 .fab{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:30;border:0;border-radius:999px;padding:13px 22px;font:inherit;font-weight:800;font-size:15px;color:#fff;background:var(--grad);box-shadow:0 14px 30px -10px rgba(109,74,255,.7);cursor:pointer;display:flex;gap:10px;align-items:center;animation:pop .3s ease both}
 .fab[hidden]{display:none}
 .fab .c{background:#fff;color:#6d4aff;border-radius:999px;min-width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
@@ -295,17 +357,6 @@ main.wrap{padding-bottom:110px}
         <span class="d" id="dlabel">Today</span>
         <button id="next" aria-label="Next day">›</button>
       </div>
-      <button class="iconbtn" id="theme" title="Toggle theme">◐</button>
-    </div>
-    <div class="tabs nav">
-      <button class="oddsbtn" id="tpopen" style="background:linear-gradient(135deg,#ff8a00,#ff3b5c);border-color:#ff5a3c">⭐ Today's picks</button>
-      <button class="oddsbtn" id="combosopen" style="background:#7c4dff;border-color:#7c4dff">Suggested combos</button>
-      <button class="oddsbtn" id="bestopen" style="background:var(--good);border-color:var(--good)">Best bets</button>
-      <button class="oddsbtn" id="propsopen">Player props</button>
-      <button class="tab" id="schedopen">Schedule &amp; holidays</button>
-      <button class="tab" id="futopen">Futures</button>
-      <button class="oddsbtn" id="oddsopen">Best odds &amp; parlay<span class="n" id="slipcount" hidden></span></button>
-      <button class="tab" id="betsopen">My bets</button>
     </div>
     <div class="tabs" id="tabs"></div>
   </div>
@@ -325,6 +376,27 @@ main.wrap{padding-bottom:110px}
 </main>
 
 <button class="fab" id="slipfab" hidden></button>
+
+<!-- bottom navigation -->
+<nav class="bnav" id="bnav">
+  <button data-nav=""><b>🏠</b><span>Games</span></button>
+  <button data-nav="#today" id="tpopen"><b>⭐</b><span>Picks</span></button>
+  <button data-nav="#props" id="propsopen"><b>🎯</b><span>Props</span></button>
+  <button data-nav="#futures" id="futopen"><b>🏆</b><span>Futures</span></button>
+  <button id="moreopen"><b>☰</b><span>More</span></button>
+</nav>
+<div class="sheet" id="moresheet" hidden>
+  <div class="sheetin">
+    <div class="sheeth">More</div>
+    <button id="oddsopen">🧾 <span>Bet slip &amp; best odds</span><span class="n" id="slipcount" hidden></span></button>
+    <button id="betsopen">📒 <span>My bets</span></button>
+    <button id="combosopen">🎲 <span>Suggested combos</span></button>
+    <button id="bestopen">💡 <span>Best bets (edge finder)</span></button>
+    <button id="schedopen">📅 <span>Schedule &amp; holidays</span></button>
+    <button id="theme">◐ <span>Dark / light mode</span></button>
+    <button id="moreclose" class="sheetx">Close</button>
+  </div>
+</div>
 
 <div class="gv" id="gv" hidden>
   <div class="gvh"><div class="wrap">
@@ -890,7 +962,17 @@ function renderPicks(){
       <div class="note" style="margin:2px 0 0">${p.legs.map(x=>icon(x.res)).join(' ')} · ${pct(p.p)} chance when picked${p.day!==ymd(0)?' · '+new Date(p.made).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''}</div>
       ${open?`<div style="margin-top:8px;cursor:default">${p.legs.map(x=>`<div class="leg" style="padding:5px 0"><span>${icon(x.res)} <b>${esc(x.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[x.sk]?.label||'')} · ${esc(x.game)}</small></span><span>${fmtA(x.price)}${x.final?` · ${esc(x.final)}`:x.live&&!x.res?` · <span style="color:var(--live)">${esc(x.live)}</span>`:` · ${new Date(x.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`}</span></div>`).join('')}</div>`:''}
     </div>`; };
-  el.innerHTML=`<div class="pc" style="margin-top:12px;border-color:color-mix(in srgb,var(--accent) 40%,var(--line))">
+  // compact by default: one tappable line per scoreboard so the games stay on top
+  if(!PK.showAll){
+    const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
+    el.innerHTML=`<div class="recstrip">
+      <button data-showrec="1"><span>💵 App's paper bets</span><b>${w}-${l} · <span class="${profit>0?'hi':profit<0?'lo':''}">${profit<0?'−':'+'}$${Math.abs(profit).toFixed(0)}</span></b></button>
+      ${C?`<button data-showrec="1"><span>🤖 Claude vs 🧮 formula</span><b>${C.w}-${C.l} vs ${F.w}-${F.l}</b></button>`:''}
+      <button data-showrec="1" class="more">See records & details ›</button></div>`;
+    $('#record').hidden=true;
+    return;
+  }
+  el.innerHTML=`<button class="tbtn" data-showrec="0" style="margin-top:10px">‹ Hide records</button><div class="pc" style="margin-top:12px;border-color:color-mix(in srgb,var(--accent) 40%,var(--line))">
     <b style="font-size:16px">💵 Paper bets <span class="badge">the app's own daily bets · no real money</span></b>
     ${(()=>{ const wl=k=>{ const s=done.filter(p=>k(p)); return `${s.filter(p=>p.status==='won').length} won · ${s.filter(p=>p.status==='lost').length} lost`; };
       return `<div class="stats" style="margin:10px 0 4px">
@@ -1188,7 +1270,7 @@ function render(){
   fillWeather($('#list'), id=>allBoardGames().find(g=>g.ev.id===id)?.ev);
   const tr=trackRecord();
   const rec=$('#record');
-  if(tr){ rec.hidden=false; rec.innerHTML=`
+  if(tr && PK.showAll){ rec.hidden=false; rec.innerHTML=`
       <b style="font-size:16px;flex-basis:100%">🎯 Picking winners <span class="badge">no betting</span></b>
       <div><div class="k">Favorite won</div><div class="v">${Math.round(tr.acc*tr.n)} of ${tr.n} games</div></div>
       <div><div class="k">Hit rate</div><div class="v">${Math.round(tr.acc*100)}%</div></div>
@@ -2236,7 +2318,8 @@ function entryTray(){
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
 $('#slipfab').onclick=()=>{ location.hash='#odds'; };
-$('#picks').addEventListener('click',e=>{ const h=e.target.closest('[data-hp]'); if(h){ if(e.target.closest('.leg')) return; const id=h.dataset.hp; HP.open.has(id)?HP.open.delete(id):HP.open.add(id); renderPicks(); return; }
+$('#picks').addEventListener('click',e=>{ const sr=e.target.closest('[data-showrec]'); if(sr){ PK.showAll=sr.dataset.showrec==='1'; render(); return; }
+  const h=e.target.closest('[data-hp]'); if(h){ if(e.target.closest('.leg')) return; const id=h.dataset.hp; HP.open.has(id)?HP.open.delete(id):HP.open.add(id); renderPicks(); return; }
   const b=e.target.closest('[data-pk2]'); if(!b||e.target.closest('.leg')) return; const id=b.dataset.pk2; PK.open.has(id)?PK.open.delete(id):PK.open.add(id); renderPicks(); });
 $('#ppback').onclick=()=>{ if(location.hash) history.back(); else closeProps(); };
 $('#ppsports').addEventListener('click',e=>{ const b=e.target.closest('[data-pps]'); if(!b) return; PP.sport=b.dataset.pps; store.set('wc_ppsport',PP.sport); PP.game='all'; PP.prop=null; PP.book={}; PP.bookMsg=''; loadPPGames(); });
@@ -2723,7 +2806,13 @@ $('#cb').addEventListener('change',e=>{
   if(e.target.classList.contains('cbmult')){ PP.mult[e.target.dataset.n]=+e.target.value||0; store.set('wc_mult',PP.mult); renderCombos(); }
 });
 
+/* bottom nav + More sheet */
+function updNav(){ const h=location.hash; document.querySelectorAll('#bnav [data-nav]').forEach(b=>b.classList.toggle('on', b.dataset.nav===h || (b.dataset.nav==='' && (!h||h==='#'||h.startsWith('#g/'))))); }
+$('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]'); if(b){ const h=b.dataset.nav; if(!h){ if(location.hash&&location.hash!=='#') location.hash=''; else window.scrollTo({top:0,behavior:'smooth'}); } else location.hash=h; return; }
+  if(e.target.closest('#moreopen')) $('#moresheet').hidden=false; });
+$('#moresheet').addEventListener('click',e=>{ if(e.target.closest('button')||!e.target.closest('.sheetin')) setTimeout(()=>{ $('#moresheet').hidden=true; },0); });
 function route(){
+  updNav();
   if(location.hash==='#today'){ openTP(); return; } else if(!$('#tp').hidden) closeTP();
   if(location.hash==='#combos'){ openCombos(); return; } else if(!$('#cb').hidden) closeCombos();
   if(location.hash==='#schedule'){ openSched(); return; } else if(!$('#sc').hidden) closeSched();
@@ -2744,8 +2833,8 @@ $('#list').addEventListener('click',e=>{
   if(e.target.closest('a')) return; const c=e.target.closest('.card'); if(!c) return; const id=c.dataset.id; open.has(id)?open.delete(id):open.add(id); c.classList.toggle('open'); });
 $('#prev').onclick=()=>{ dayOffset--; $('#dlabel').textContent=dayLabel(dayOffset); lastGames=[]; refresh(); };
 $('#next').onclick=()=>{ dayOffset++; $('#dlabel').textContent=dayLabel(dayOffset); lastGames=[]; refresh(); };
-$('#theme').onclick=()=>{ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme=dark?'light':'dark'; store.set('wc_theme',r.dataset.theme); render(); };
-const th=store.get('wc_theme',null); if(th) document.documentElement.dataset.theme=th;
+$('#theme').onclick=()=>{ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme=dark?'light':'dark'; store.set('wc_theme2',r.dataset.theme); render(); };
+const th=store.get('wc_theme2',null); document.documentElement.dataset.theme=th||'light';
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refresh(); });
 if(tab!=='all' && !BY_KEY[tab]) tab='all';
 renderTabs({});
