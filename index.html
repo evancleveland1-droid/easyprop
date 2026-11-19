@@ -990,6 +990,41 @@ async function loadTPGames(){
   } }catch(e){} });
   TPA.legs=legs.sort((x,y)=>y.p-x.p); TPA.t=Date.now(); TPA.busy=false; renderTP();
 }
+/* Player-prop parlays for Today's picks: each sport's leading players today, from their ESPN game logs. */
+const TPP={};
+const SPORT_NAME={nfl:'NFL',nba:'NBA',ncaaf:'College football',ncaam:'College basketball',nhl:'NHL',mlb:'MLB',wnba:'WNBA',epl:'Premier League',ucl:'Champions League',laliga:'La Liga',mls:'MLS'};
+async function loadTPProps(sk){
+  const S=TPP[sk] ||= {rows:[], t:0, busy:false}; if(S.busy || Date.now()-S.t<15*60e3) return; S.busy=true;
+  const sport=BY_KEY[sk], bb=isBB(sport), players=[], seen=new Set();
+  try{
+    const games=(await fetchSport(sport, ymd(0))).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state==='pre');
+    // skip anyone on the injury report as Out, Doubtful or Questionable
+    const hurt=new Set();
+    await pool(games,4,async ev=>{ try{ const s=await cached('sum'+ev.id,()=>getJSON(`${SITE}/${sport.path}/summary?event=${ev.id}`));
+      for(const t of s.injuries||[]) for(const i of t.injuries||[]) if(/out|doubt|quest|injured reserve|suspend/i.test(i.status||'')) hurt.add(String(i.athlete?.id)); }catch(e){} });
+    for(const ev of games){ const comp=ev.competitions[0];
+      for(const c of comp.competitors){ const opp=comp.competitors.find(x=>x!==c);
+        for(const L of c.leaders||[]) for(const l of (L.leaders||[]).slice(0,2)){ const a=l.athlete; if(!a?.id||seen.has(a.id)||hurt.has(String(a.id))) continue; seen.add(a.id);
+          players.push({id:a.id, name:a.displayName, pos:a.position?.abbreviation||'', evId:ev.id, team:c.team.abbreviation, opp:opp.team.abbreviation, at:c.homeAway==='home'?'vs':'@', state:'pre', start:ev.date}); } } }
+    await pool(players,6,async p=>{ try{ p.log=await gamelog(sport,p.id); }catch(e){ p.log=null; } });
+    const rows=[];
+    for(const p of players){ const log=(p.log||[]).filter(r=>bb?(r.s.minutes||0)>0:true);
+      for(const [label,f] of (bb?BB_PROPS:FB_PROPS)){ const vals=log.map(r=>f(r.s)).filter(v=>v!=null); if(vals.length<3) continue;
+        const a=avg(vals), line=Math.floor(a)+0.5, hit=x=>x.length?x.filter(v=>v>line).length/x.length:null;
+        rows.push({p,label,vals,a,l5:avg(vals.slice(0,5)),line,b:null,h5:hit(vals.slice(0,5)),h10:hit(vals.slice(0,10)),hs:hit(vals),n10:Math.min(10,vals.length)}); } }
+    S.rows=rows;
+  }catch(e){}
+  S.t=Date.now(); S.busy=false; renderTP();
+}
+function autoPropBets(){
+  const out=[];
+  for(const [sk,S] of Object.entries(TPP)){ if(!S.rows?.length) continue;
+    for(const c of propCombos(S.rows)){ const P=c.picks, p=P.reduce((t,x)=>t*x.p,1);
+      out.push({id:`auto:p:${sk}:${c.name}`, picker:'formula', auto:true, gen:true, day:ymd(0), stake:10, name:`${SPORT_NAME[sk]} props · ${c.name}`, chance:p, verdict:'Favorite',
+        why:`${c.why}. Lines are estimates (each player's season average): match them to your app's lines before betting.`,
+        legs:P.map(x=>({kind:'prop', sk, ev:x.r.p.evId, label:`${x.r.p.name} ${x.side==='more'?'over':'under'} ${f1(x.r.line)} ${x.r.label}`, game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, price:-110, start:x.r.p.start}))}); } }
+  return out;
+}
 function autoBets(){
   const L=(TPA.legs||[]).filter(l=>l.price>=-400 && l.price<=150), out=[];
   const leg=l=>({kind:'ml', label:`${l.team} moneyline`, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev});
@@ -1001,7 +1036,11 @@ function autoBets(){
   const mid=L.filter(l=>l.p>=0.55&&l.p<=0.72);
   for(let n=2;n<=4;n++) bet('mid'+n, `Bigger payout ${n}-leg`, pickDistinct(mid,n,l=>l.ev), `Solid favorites (55–72% each) at better prices than the heavy favorites.`);
   const big=L.slice(0,8); if(big.length>=7) bet('top'+big.length, `${big.length}-leg ladder`, big, `Today's ${big.length} most likely winners stacked: big payout, small chance.`);
-  return out;
+  // each sport on its own: its own favorites only
+  for(const sk of [...new Set(L.map(l=>l.sk))]){ const S=L.filter(l=>l.sk===sk);
+    for(let n=2;n<=Math.min(5,S.length);n++) bet(`${sk}${n}`, `${SPORT_NAME[sk]} top ${n} parlay`, pickDistinct(S,n,l=>l.ev), `The ${n} most likely ${SPORT_NAME[sk]} winners today.`);
+    const Sm=S.filter(l=>l.p>=0.55&&l.p<=0.72); for(let n=2;n<=Math.min(3,Sm.length);n++) bet(`${sk}mid${n}`, `${SPORT_NAME[sk]} bigger payout ${n}-leg`, pickDistinct(Sm,n,l=>l.ev), `Solid ${SPORT_NAME[sk]} favorites (55–72% each) at better prices.`); }
+  return [...out, ...autoPropBets()];
 }
 const tpKind=b=>{ const ls=b.legs||[]; if(ls.some(l=>l.kind==='future')) return 'futures'; if(ls.some(l=>l.kind==='prop')) return 'props'; return ls.length===1?'singles':'parlays'; };
 function tpBets(){
@@ -1038,7 +1077,7 @@ function tpCard(b){
       ${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${legIcon(legRes(l))} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game||l.marketName||'')}</small></span><span>${fmtA(l.price)}${l.start?' · '+new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}</span></div>`).join('')}</div>
   </div>`;
 }
-function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); }
+function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); ['nba','nfl','ncaaf','ncaam'].forEach(loadTPProps); }
 function closeTP(){ $('#tp').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
 function renderTP(){
   if($('#tp').hidden) return;
@@ -1053,8 +1092,15 @@ function renderTP(){
   const list=all.filter(b=>(TP.type==='all'||tpKind(b)===TP.type)&&(TP.who==='all'||b.picker===TP.who));
   const order=['singles','parlays','props','futures'], title={singles:'Singles',parlays:'Parlays',props:'Player prop parlays',futures:'🏆 Futures'};
   const pay=b=>b.legs.reduce((t,l)=>t*decOdds(l.price),1);
-  for(const k of order){ const bs=list.filter(b=>tpKind(b)===k).sort((a,b)=>TP.sort==='high'?pay(b)-pay(a):pay(a)-pay(b)); if(!bs.length) continue;
-    h+=`<h2 class="sec">${title[k]} · ${bs.length}</h2>${bs.map(tpCard).join('')}`; }
+  const sortPay=bs=>bs.sort((a,b)=>TP.sort==='high'?pay(b)-pay(a):pay(a)-pay(b));
+  const groupOf=b=>{ const s=[...new Set(b.legs.map(l=>l.sk).filter(Boolean))]; return s.length===1?s[0]:'mixed'; };
+  const SPORT_ORDER=['nfl','ncaaf','nba','ncaam','nhl','mlb','wnba','epl','ucl','laliga','mls','mixed'];
+  for(const k of order){ const bs=list.filter(b=>tpKind(b)===k); if(!bs.length) continue;
+    if(k==='parlays'||k==='props'){
+      h+=`<h2 class="sec" style="font-size:14px;color:var(--text)">${title[k]} · ${bs.length}</h2>`;
+      for(const g of SPORT_ORDER){ const gb=sortPay(bs.filter(b=>groupOf(b)===g)); if(!gb.length) continue;
+        h+=`<div class="dayh">${g==='mixed'?'🔀 Mixed sports':`${SPORT_ICON[g]||''} ${SPORT_NAME[g]||g}`} <span class="note" style="margin:0">${gb.length}</span></div>${gb.map(tpCard).join('')}`; }
+    } else h+=`<h2 class="sec">${title[k]} · ${bs.length}</h2>${sortPay(bs).map(tpCard).join('')}`; }
   if(!list.length) h+=`<div class="empty">${HP.busy||PK.busy?'Loading picks…':'No picks here yet today. Claude\'s picks post every afternoon around 3 PM, and the formula\'s once games with lines are posted.'}</div>`;
   if(TP.type==='futures'||TP.type==='all') h+=`<div class="note">Full futures boards (every team's price for the Super Bowl, NBA title, college championships and more) are in <a href="#futures" style="color:var(--accent)">Futures</a>.</div>`;
   h+=`<footer>Prices are DraftKings via ESPN at the time of the pick; your book's may differ slightly. Nothing is guaranteed: bet only what you're fine losing. Not betting advice.</footer>`;
@@ -2561,9 +2607,9 @@ function gameSingles(){
 }
 // Without a sportsbook line, only use real, high-volume prop stats (no "Gobert under 0.5 threes"), and cap estimated chances.
 const COMBO_MIN={PTS:10,REB:4,AST:3,'3PM':1.5,PRA:18,'Pass Yds':150,'Comp':12,'Rush Yds':30,'Rec':2.5,'Rec Yds':25};
-function propCombos(){
+function propCombos(rows){
   const best={};
-  for(const r of ppRows()){
+  for(const r of rows||ppRows()){
     if(!r.b && !(COMBO_MIN[r.label]!=null && r.a>=COMBO_MIN[r.label])) continue;
     let po=overChance(r); if(!r.b) po=clamp(po,0.25,0.75);
     const side=po>=0.5?'more':'less', p=side==='more'?po:1-po;

@@ -7,7 +7,7 @@
       "day": "20261119",
       "stake": 10,
       "name": "NFL: Texans win + under",
-      "why": "The line jumped from Texans -5.5 to -12.5, which almost always means big Colts news (likely at QB). A weaker Colts offense means a Texans win and a lower-scoring game. Same-game: books may price this combo differently.",
+      "why": "Correction: the Colts' injury report shows no QB issue. The 7-point line move lines up with their secondary being gutted (CB Charvarius Ward out, CB Sauce Gardner questionable) and LT Jalen Travis out. That supports a Texans win, but a weak Colts secondary can mean more Texans points, so the Under is shakier than I first said.",
       "legs": [
         {
           "ev": "401873066",
@@ -33,7 +33,8 @@
           "game": "IND @ HOU",
           "start": "2026-11-20T01:15Z"
         }
-      ]
+      ],
+      "verdict": "Long shot"
     },
     {
       "id": "c-20261119-nba",
@@ -260,7 +261,7 @@
       "day": "20261119",
       "stake": 10,
       "name": "Best bet A (safest): Texans + Blazers + Spurs",
-      "why": "Three favorites I'm confident in, not just because the numbers say so: the Texans line jumped 7 points on Colts news, the Bucks are 1-14 with money still pouring onto Portland, and the Spurs face a Clippers team without Ingram or Beal. About a 60% chance all three win, but it only pays about $15 on $10.",
+      "why": "Three favorites I'm confident in: the Texans line jumped 7 points as the Colts lost two starting cornerbacks and their left tackle, the Bucks are 1-14 with money still pouring onto Portland, and the Spurs face a Clippers team without Ingram or Beal. About a 60% chance all three win, but it only pays about $15 on $10.",
       "legs": [
         {
           "ev": "401873066",
@@ -597,7 +598,7 @@
       "name": "Texans single",
       "verdict": "Good bet",
       "chance": 0.84,
-      "why": "The line jumped 7 points toward Houston on Colts news. Very likely to win, but it pays only about $1.45 per $10.",
+      "why": "The line jumped 7 points toward Houston as the Colts lost CB Charvarius Ward and LT Jalen Travis, with CB Sauce Gardner questionable. Very likely to win, but it pays only about $1.45 per $10.",
       "legs": [
         {
           "ev": "401873066",
@@ -827,7 +828,7 @@
       "name": "3-leg: Texans + both unders",
       "verdict": "Long shot",
       "chance": 0.23,
-      "why": "A low-scoring night: Colts offense hurt, Minnesota missing two scorers. Same-game legs, so your book may price it differently.",
+      "why": "Correction: the Colts' QB isn't on the injury report; the line move is more about their missing cornerbacks, which can push scoring UP, so the NFL under is a weaker leg than I first thought. The Knicks/Wolves under still has the Edwards/DiVincenzo absences behind it.",
       "legs": [
         {
           "ev": "401873066",
