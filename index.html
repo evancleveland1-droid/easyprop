@@ -1481,7 +1481,10 @@ function renderTP(){
   $('#tpwho').innerHTML=[['all','Claude + formula'],['claude','🤖 Claude only'],['formula','🧮 Formula only']].map(([k,l])=>`<button class="tab ${TP.who===k?'on':''}" data-tpw="${k}">${l}</button>`).join('')
     +`<button class="tab" data-tpsort="1" style="margin-left:8px">💲 Payout: ${TP.sort==='high'?'biggest first ↓':'smallest first ↑'}</button>`;
   const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
-  let h=`<a href="#build" class="oddsbtn" style="display:inline-flex;margin-top:12px;text-decoration:none">🛠 Build my own bet (pick sports, legs &amp; style)</a><div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
+  const cl=(HP.bets||[]).filter(b=>b.picker==='claude'), clN=o=>cl.filter(b=>b.day===ymd(o)&&tpKind(b)!=='futures').length, clF=cl.filter(b=>tpKind(b)==='futures').length;
+  let h=`<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🤖 Claude's picks</b><div class="note" style="margin:2px 0 6px">My own picks with reasons, posted ahead and re-checked. Tap a day:</div>
+    <div class="tabs" style="padding:0;flex-wrap:wrap">${[0,1,2].map(o=>`<button class="tab ${TP.who==='claude'&&TP.off===o&&TP.type!=='futures'?'on':''}" data-cl="${o}">${dayChipLabel(o)} · ${clN(o)}</button>`).join('')}<button class="tab ${TP.who==='claude'&&TP.type==='futures'?'on':''}" data-cl="fut">🏆 Futures · ${clF}</button>${TP.who==='claude'?`<button class="tab" data-cl="all">Show everyone's</button>`:''}</div></div>`;
+  h+=`<a href="#build" class="oddsbtn" style="display:inline-flex;margin-top:12px;text-decoration:none">🛠 Build my own bet (pick sports, legs &amp; style)</a><div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
   const alerted=all.filter(b=>b.legs.some(l=>l._k&&alertsFor(l._k).some(a=>a.k!=='live')));
   if(alerted.length) h+=`<div class="pc" style="border-color:#f59e0b"><b>🔔 ${alerted.length} pick${alerted.length>1?'s':''} changed since posted</b><div class="note" style="margin:4px 0 0">Price moves or injury news. Tap a pick with the 🔔 to see what changed. Checked every few minutes while the app is open${LW.t?` · last check ${new Date(LW.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`:''}.</div></div>`;
   if(HP.insights) h+=`<div class="pc" style="border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))"><b>📈 What's working</b><div class="note" style="margin:4px 0 0">${esc(HP.insights)}</div></div>`;
@@ -1510,6 +1513,9 @@ $('#tpday').addEventListener('click',e=>{ const b=e.target.closest('[data-tpd]')
 $('#tpwho').addEventListener('click',e=>{ if(e.target.closest('[data-tpsort]')){ TP.sort=TP.sort==='high'?'low':'high'; store.set('wc_tpsort',TP.sort); renderTP(); return; }
   const b=e.target.closest('[data-tpw]'); if(!b) return; TP.who=b.dataset.tpw; store.set('wc_tpwho',TP.who); renderTP(); });
 $('#tp').addEventListener('click',async e=>{
+  const cb=e.target.closest('[data-cl]'); if(cb){ const v=cb.dataset.cl;
+    if(v==='all'){ TP.who='all'; TP.type='all'; } else if(v==='fut'){ TP.who='claude'; TP.type='futures'; } else { TP.who='claude'; TP.type='all'; TP.off=+v; loadTPGames(); }
+    store.set('wc_tpwho',TP.who); store.set('wc_tptype',TP.type); TP.open=new Set(); renderTP(); $('#tp').scrollTop=0; return; }
   const c=e.target.closest('[data-tpcopy]'); if(c){ const b=TP.list.find(x=>x.id===c.dataset.tpcopy); const t=copyText(b), el=document.querySelector(`[data-copied="${CSS.escape(b.id)}"]`);
     try{ await navigator.clipboard.writeText(t); el.textContent='Copied ✓'; }catch{ el.textContent=t; } return; }
   const s=e.target.closest('[data-tpslip]'); if(s){ const b=TP.list.find(x=>x.id===s.dataset.tpslip);
@@ -2879,7 +2885,13 @@ function renderFutESPN(){
   $('#fulist').innerHTML=FUT_MK.map((m,i)=>`<button class="tab ${FE.sel===i?'on':''}" data-fe="${i}">${m[0]}</button>`).join('');
   const D=FE.data[FE.sel], label=FUT_MK[FE.sel][0].replace(/^\S+ /,'');
   if(!D && !FE.loading && !FE.err) return loadFutESPN(FE.sel);
-  let h=`<div class="note" style="margin-top:12px">DraftKings futures via ESPN. “Chance” is each team's price with the book's cut removed. Futures pay only if they win at season's end, and the book's cut on futures is much bigger than on single games, so keep these small.${OB.key?` <a href="#" id="fubooks" style="color:var(--accent)">Compare every sportsbook ›</a>`:''}</div>`;
+  const fp=(HP.bets||[]).filter(b=>b.legs.some(l=>l.kind==='future')).sort((a,b)=>(a.picker==='claude'?0:1)-(b.picker==='claude'?0:1));
+  const mkIndex=lbl=>FUT_MK.findIndex(m=>m[0].split(' ').slice(1).join(' ')===lbl);
+  let h=fp.length?`<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🤖 Claude's & 🧮 formula's futures picks</b>
+    ${fp.map(b=>{ const l=b.legs[0], i=mkIndex(l.marketLabel);
+      return `<div class="leg" style="padding:8px 0;cursor:pointer" ${i>=0?`data-fe="${i}"`:''}><span>${b.picker==='claude'?'🤖':'🧮'} <b>${esc(l.label)}</b>${b.verdict?` <span class="badge">${esc(b.verdict)}</span>`:''}<br><small style="color:var(--muted)">${esc(b.why||'')}</small></span><span style="white-space:nowrap;margin-left:8px"><b>${fmtA(l.price)}</b><br><small>$10 → $${(10*decOdds(l.price)).toFixed(0)}</small></span></div>`; }).join('')}
+    <div class="note" style="margin:6px 0 0">Tap a pick to see that market's full board below. Futures settle at season's end; keep them small.</div></div>`:'';
+  h+=`<div class="note" style="margin-top:12px">DraftKings futures via ESPN. “Chance” is each team's price with the book's cut removed. Futures pay only if they win at season's end, and the book's cut on futures is much bigger than on single games, so keep these small.${OB.key?` <a href="#" id="fubooks" style="color:var(--accent)">Compare every sportsbook ›</a>`:''}</div>`;
   if(FE.err) h+=`<div class="empty">${esc(FE.err)}</div>`;
   else if(FE.loading||!D) h+=skel(3);
   else {
@@ -2900,6 +2912,7 @@ function renderFutESPN(){
 $('#fulist').addEventListener('click',e=>{ const b=e.target.closest('[data-fe]'); if(!b) return; FE.sel=+b.dataset.fe; store.set('wc_fesel',FE.sel); FE.err=null; renderFutESPN(); },true);
 $('#fubody').addEventListener('click',e=>{
   if(e.target.id==='fubooks'){ e.preventDefault(); FU.mode='books'; renderFut(); if(!FU.list) loadFutList(); return; }
+  const fe=e.target.closest('[data-fe]'); if(fe){ FE.sel=+fe.dataset.fe; store.set('wc_fesel',FE.sel); FE.err=null; renderFutESPN(); setTimeout(()=>document.querySelector('#fubody table.pt')?.scrollIntoView({behavior:'smooth'}),400); return; }
   const a=e.target.closest('[data-feadd]'); if(!a) return; e.stopPropagation();
   const D=FE.data[FE.sel], label=FUT_MK[FE.sel][0].replace(/^\S+ /,''), b=D.books.find(x=>x.id===a.dataset.feadd), id=`fut|${label}|${b.id}`;
   const i=OB.slip.findIndex(x=>x.id===id); if(i>=0) OB.slip.splice(i,1);
