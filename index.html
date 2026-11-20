@@ -993,6 +993,7 @@ function renderPicks(){
     const res=p.status==='won'?`<b class="hi">+$${(p.payout-p.stake).toFixed(2)}</b>`:p.status==='lost'?`<b class="lo">−$${p.stake.toFixed(2)}</b>`:p.status==='push'?'Push':`$${p.stake} → $${(p.stake*dec).toFixed(2)}`;
     return `<div class="bet ${p.status==='pending'?'':p.status}" data-pk2="${p.id}" style="cursor:pointer">
       <div class="row"><b>${p.status==='won'?'✅ ':p.status==='lost'?'❌ ':''}${esc(p.name)}</b><span>${fmtA(p.odds)} · ${res} ${open?'▴':'▾'}</span></div>
+      ${p.status==='pending'?`<div style="margin:6px 0 2px">${slipBtn('pk:'+p.id, p.legs.map(x=>({label:`${x.team} moneyline`, price:x.price, kind:'ml', ev:x.ev, sk:x.sk, start:x.start, game:x.game})))}</div>`:''}
       <div class="note" style="margin:2px 0 0">${p.legs.map(x=>icon(x.res)).join(' ')} · ${pct(p.p)} chance when picked${p.day!==ymd(0)?' · '+new Date(p.made).toLocaleDateString(undefined,{month:'short',day:'numeric'}):''}</div>
       ${open?`<div style="margin-top:8px;cursor:default">${p.legs.map(x=>`<div class="leg" style="padding:5px 0"><span>${icon(x.res)} <b>${esc(x.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[x.sk]?.label||'')} · ${esc(x.game)}</small></span><span>${fmtA(x.price)}${x.final?` · ${esc(x.final)}`:x.live&&!x.res?` · <span style="color:var(--live)">${esc(x.live)}</span>`:` · ${new Date(x.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`}</span></div>`).join('')}</div>`:''}
     </div>`; };
@@ -1076,6 +1077,7 @@ function handPicksHTML(){
     return `<div class="bet ${s==='pending'?'':s}" data-hp="${esc(b.id)}" style="cursor:pointer">
       <div class="row"><b>${s==='won'?'✅ ':s==='lost'?'❌ ':''}${esc(b.name)}</b><span>${toAmerican(dec)} · $${b.stake} → $${(b.stake*dec).toFixed(2)} ${open?'▴':'▾'}</span></div>
       <div class="note" style="margin:2px 0 0">${b.picker==='claude'?'🤖 Claude':'🧮 Formula'} · ${b.legs.map(l=>icon(HP.res[l._k]?.res)).join(' ')}</div>
+      ${s==='pending'?`<div style="margin-top:6px">${slipBtn('hp:'+b.id, b.legs)}</div>`:''}
       ${open?`<div style="cursor:default;margin-top:6px">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}${b.legs.map(l=>{ const r=HP.res[l._k]||{};
         return `<div class="leg" style="padding:5px 0"><span>${icon(r.res)} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game)}</small></span><span>${fmtA(l.price)}${r.final?` · ${esc(r.final)}${r.now?' · '+esc(r.now):''}`:r.live?` · <span style="color:var(--live)">${esc(r.live)}${r.now?' · '+esc(r.now):''}</span>`:` · ${new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'})}`}</span></div>`; }).join('')}</div>`:''}
     </div>`; };
@@ -1309,9 +1311,9 @@ function rsBets(){
     const dec=b.legs.filter(x=>HP.res[x._k]?.res!=='push').reduce((t,x)=>t*decOdds(x.price),1), full=b.legs.reduce((t,x)=>t*decOdds(x.price),1);
     out.push({who:b.picker, id:'h:'+b.id, name:b.name, day:b.day, stake:b.stake, odds:full, status:st, fut, why:b.why,
       profit:st==='won'?b.stake*(dec-1):st==='lost'?-b.stake:0,
-      legs:b.legs.map(l=>{ const r=HP.res[l._k]||{}; return {key:l._k, label:l.label, res:r.res, price:l.price, note:r.final||r.live||(l.start?new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'settles at season end')}; })}); }
+      legs:b.legs.map(l=>{ const r=HP.res[l._k]||{}; return {key:l._k, label:l.label, res:r.res, price:l.price, kind:l.kind, ev:l.ev, sk:l.sk, start:l.start, game:l.game, note:r.final||r.live||(l.start?new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'settles at season end')}; })}); }
   for(const p of PK.list) out.push({who:'formula', id:'p:'+p.id, name:'Auto · '+p.name, day:p.day, stake:p.stake, odds:decOdds(p.odds), status:p.status, profit:pickProfit(p),
-    legs:p.legs.map(l=>({label:`${l.team} moneyline`, res:l.res, price:l.price, note:l.final||l.live||new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}))});
+    legs:p.legs.map(l=>({label:`${l.team} moneyline`, res:l.res, price:l.price, kind:'ml', ev:l.ev, sk:l.sk, start:l.start, game:l.game, note:l.final||l.live||new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}))});
   for(const b of BT.bets) out.push({who:'you', id:'b:'+b.id, name:b.legs?.length>1?`${b.legs.length}-leg parlay`:(b.legs?.[0]?.label||b.desc||'Bet'), day:dayOfISO(b.placed), stake:b.stake, odds:decOdds(b.odds), status:b.status, profit:profitOf(b), book:b.book,
     legs:(b.legs||[]).map(l=>({label:l.label, res:null, price:null, note:l.game||''}))});
   return out.filter(b=>inPer(b.day));
@@ -1342,6 +1344,7 @@ function renderRS(){
       return `<div class="bet ${b.status==='pending'?'':b.status}" data-rso="${esc(b.id)}" style="cursor:pointer">
         ${b.status==='pending'&&b.legs.some(l=>l.key&&alertsFor(l.key).some(a=>a.k!=='live'))?'<div class="lwbadge">🔔 changed since posted</div>':''}<div class="row"><b>${icon(b.status)} ${esc(b.name)}</b><span>${toAmerican(b.odds)} · ${b.status==='pending'?`$${b.stake} → $${(b.stake*b.odds).toFixed(2)}`:b.status==='push'?'Push':`<b class="${b.profit>0?'hi':'lo'}">${money(b.profit)}</b>`} ${open?'▴':'▾'}</span></div>
         ${b.legs.length>1||open?`<div class="note" style="margin:2px 0 0">${b.legs.map(l=>icon(l.res)).join(' ')}${b.book?' · '+esc(b.book):''}</div>`:''}
+        ${b.status==='pending'&&b.who!=='you'&&!b.fut?`<div style="margin-top:6px">${slipBtn('rs:'+b.id, b.legs)}</div>`:''}
         ${open?`<div style="margin-top:6px;cursor:default">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${icon(l.res)} ${esc(l.label)}</span><span>${l.price!=null?fmtA(l.price)+' · ':''}${esc(l.note||'')}</span></div>${l.key?alertHTML(l.key):''}`).join('')}</div>`:''}
       </div>`; }).join('');
   }
@@ -1482,11 +1485,25 @@ function tpCard(b){
     <div class="top"><span class="nm">${st==='won'?'✅ ':st==='lost'?'❌ ':''}${esc(b.name)}</span><span class="pay">${toAmerican(dec)}</span></div>
     <div class="sub">${b.picker==='claude'?'🤖 Claude':'🧮 Formula'} ${verdict} · $10 pays <b>$${(10*dec).toFixed(2)}</b>${ch?' · '+ch:''}${k==='futures'?' · settles at season end':''}</div>
     <div class="sub">${b.legs.map(l=>`${legIcon(legRes(l))} ${esc(l.label)}`).join(' · ')}</div>
-    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-tpcopy="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">📋 Copy</button><button class="addb" data-tpslip="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">➕ Add to slip</button><span class="note" data-copied="${esc(b.id)}" style="margin:0"></span></div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-tpcopy="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">📋 Copy</button><button class="addb" data-tpslip="${esc(b.id)}" style="font-size:12.5px;padding:5px 10px">${b.legs.length>1?`➕ Add all ${b.legs.length} legs to slip`:'➕ Add to slip'}</button><span class="note" data-copied="${esc(b.id)}" style="margin:0"></span></div>
     <div class="det">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}
       ${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${legIcon(legRes(l))} <b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game||l.marketName||'')}</small></span><span>${fmtA(l.price)}${l.start?' · '+new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}</span></div>${l._k?alertHTML(l._k):''}`).join('')}</div>
   </div>`;
 }
+// Shared "Add to slip" button for any bet card: legs are kept in a registry keyed by button id.
+const BTNLEGS={};
+function slipBtn(id, legs){
+  const L=(legs||[]).filter(l=>l.price!=null && l.kind!=='future'); if(!L.length) return '';
+  BTNLEGS[id]=L; const on=L.every(l=>OB.slip.some(x=>x.label===l.label));
+  return `<button class="addb ${on?'on':''}" data-addlegs="${esc(id)}" style="font-size:12.5px;padding:5px 10px">${on?'✓ On your slip':L.length>1?`➕ Add all ${L.length} legs to slip`:'➕ Add to slip'}</button>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-addlegs]'); if(!b) return;
+  e.stopPropagation(); e.preventDefault();
+  const L=BTNLEGS[b.dataset.addlegs]; if(!L) return;
+  addLegsToSlip(L.map(l=>({label:l.label+(l.kind==='prop'&&!/est\. line/.test(l.label)?' (est. line)':''), game:l.game||'', price:l.price, start:l.start, sk:l.sk, ev:l.ev})));
+  b.textContent='✓ Added to slip'; b.classList.add('on');
+},true);
 // Put any legs on the bet slip (props included); prices are DraftKings via ESPN, or -110 for estimated prop lines.
 function addLegsToSlip(legs){
   OB.allBooks.draftkings ||= 'DraftKings';
