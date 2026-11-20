@@ -394,6 +394,7 @@ header .tabs{padding-bottom:10px}
 <div class="sheet" id="moresheet" hidden>
   <div class="sheetin">
     <div class="sheeth">More</div>
+    <button id="bdopen">🛠 <span>Build my bet (Claude &amp; formula)</span></button>
     <button id="futopen">🏆 <span>Futures (Super Bowl, titles, MVPs)</span></button>
     <button id="oddsopen">🧾 <span>Bet slip &amp; best odds</span><span class="n" id="slipcount" hidden></span></button>
     <button id="betsopen">📒 <span>My bets</span></button>
@@ -446,6 +447,13 @@ header .tabs{padding-bottom:10px}
     <div class="tabs" id="tpwho"></div>
   </div></div>
   <div class="wrap" id="tpbody"></div>
+</div>
+
+<div class="gv" id="bd" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="bdback">‹ Back</button><b style="font-size:16px">🛠 Build my bet</b></div>
+  </div></div>
+  <div class="wrap" id="bdbody"></div>
 </div>
 
 <div class="gv" id="rs" hidden>
@@ -1071,6 +1079,156 @@ function handPicksHTML(){
   </div>`;
 }
 
+/* ================= 🛠 Build my bet: you choose, the app (or Claude) builds ================= */
+const BD={sports:store.get('wc_bdsp',['all']), type:store.get('wc_bdtype','parlay'), legs:store.get('wc_bdlegs',3), style:store.get('wc_bdstyle','balanced'), stake:store.get('wc_stake',10),
+  cands:null, t:0, busy:false, builds:null, claude:null, claudeBusy:false, claudeErr:null, seed:0, sample:undefined};
+const BD_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','wnba','epl','ucl','mls'];
+async function loadBDCands(){
+  const want=ymd(dayOffset);
+  if(BD.busy || (Date.now()-BD.t<10*60e3 && BD.req===want)) return; BD.busy=true; BD.req=want; renderBD();
+  let out=[], day=want;
+  const scan=async day=>{ const o=[]; await pool(BD_SPORTS,6,async sk=>{ try{ for(const {sport,ev} of await fetchSport(BY_KEY[sk], day)){
+    const c=ev.competitions[0]; if((c.status||ev.status).type.state!=='pre' || new Date(ev.date)<new Date(Date.now()+10*60e3)) continue;
+    const L=linesOf(ev); if(!L) continue;
+    const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'), game=`${A.team.abbreviation} @ ${H.team.abbreviation}`;
+    const base={ev:ev.id, sk, game, start:ev.date};
+    if(L.ml.h&&L.ml.a){ const [ph,pa]=pairFair(L.ml.h,L.ml.a);
+      o.push({...base, id:`${ev.id}|ml|h`, kind:'ml', side:'home', label:`${H.team.displayName} moneyline`, price:L.ml.h, p:ph});
+      o.push({...base, id:`${ev.id}|ml|a`, kind:'ml', side:'away', label:`${A.team.displayName} moneyline`, price:L.ml.a, p:pa}); }
+    if(L.sp.h[0]!=null){ const [ph,pa]=pairFair(L.sp.h[1]??-110,L.sp.a[1]??-110);
+      o.push({...base, id:`${ev.id}|sp|h`, kind:'spread', side:'home', label:`${H.team.displayName} ${fmtLine(L.sp.h[0])}`, price:L.sp.h[1]??-110, p:ph, line:L.sp.h[0]});
+      o.push({...base, id:`${ev.id}|sp|a`, kind:'spread', side:'away', label:`${A.team.displayName} ${fmtLine(L.sp.a[0])}`, price:L.sp.a[1]??-110, p:pa, line:L.sp.a[0]}); }
+    if(L.tot.line!=null){ const [po,pu]=pairFair(L.tot.o??-110,L.tot.u??-110);
+      o.push({...base, id:`${ev.id}|tot|o`, kind:'total', side:'over', label:`${game} over ${L.tot.line}`, price:L.tot.o??-110, p:po, line:L.tot.line});
+      o.push({...base, id:`${ev.id}|tot|u`, kind:'total', side:'under', label:`${game} under ${L.tot.line}`, price:L.tot.u??-110, p:pu, line:L.tot.line}); }
+  } }catch(e){} }); return o; };
+  out=await scan(day);
+  // tonight's games are over: build for tomorrow instead
+  if(!out.length && dayOffset===0){ day=ymd(1); out=await scan(day); BD.rolled=out.length>0; } else BD.rolled=false;
+  BD.day=day;
+  // where the money moved (spread open vs now), for the games we can check
+  const evIds=[...new Set(out.map(x=>x.ev))].slice(0,40);
+  await pool(evIds,4,async id=>{ const x=out.find(o=>o.ev===id); try{ const s=await cached('sum'+id,()=>getJSON(`${SITE}/${BY_KEY[x.sk].path}/summary?event=${id}`));
+    const ps=s.pickcenter?.[0]?.pointSpread?.home, o=num(ps?.open?.line), c2=num(ps?.close?.line);
+    if(o!=null&&c2!=null&&o!==c2){ const towardHome=c2<o; for(const l of out.filter(q=>q.ev===id)){ if(l.kind==='ml'||l.kind==='spread') l.mv=(l.side==='home')===towardHome?Math.abs(c2-o):-Math.abs(c2-o); } }
+    const inj=(s.injuries||[]).flatMap(t=>(t.injuries||[]).filter(i=>/out/i.test(i.status||'')).map(i=>t.team.abbreviation+': '+i.athlete?.displayName)); for(const l of out.filter(q=>q.ev===id)) l.inj=inj.slice(0,6);
+  }catch(e){} });
+  BD.cands=out; BD.t=Date.now(); BD.busy=false; renderBD();
+  ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk, day));
+}
+function bdPropCands(){
+  const out=[];
+  for(const [key,S] of Object.entries(TPP)){ const [sk,day]=key.split('|'); if(day!==BD.day || !S.rows) continue; const best={};
+    for(const r of S.rows){ if(!(COMBO_MIN[r.label]!=null && r.a>=COMBO_MIN[r.label])) continue;
+      const po=clamp(overChance(r),0.25,0.75), side=po>=0.5?'over':'under', p=side==='over'?po:1-po, cur=best[r.p.id];
+      if(!cur||p>cur.p) best[r.p.id]={id:`prop|${r.p.id}|${r.label}`, kind:'prop', ev:r.p.evId, sk, game:`${r.p.team} ${r.p.at} ${r.p.opp}`, start:r.p.start, price:-110, p, player:r.p.id,
+        label:`${r.p.name} ${side} ${f1(r.line)} ${r.label}`, hit:`L10 ${r.vals.slice(0,10).filter(v=>side==='over'?v>r.line:v<r.line).length}/${r.n10}`}; }
+    out.push(...Object.values(best)); }
+  return out;
+}
+function bdPool(){
+  const want=s=>BD.sports.includes('all')||BD.sports.includes(s);
+  let c=[];
+  if(BD.type!=='props') c.push(...(BD.cands||[]).filter(x=>want(x.sk)));
+  if(BD.type==='props'||BD.type==='mix') c.push(...bdPropCands().filter(x=>want(x.sk)));
+  return c;
+}
+// Claude-style scoring: likely winners, no near-worthless heavy favorites, a nudge toward where sharp money moved.
+function bdScore(l){
+  if(l.kind==='spread' && Math.abs(l.line)>20) return -1;   // giant college spreads are noise
+  const d=decOdds(l.price), mv=(l.mv||0)>0?0.03:(l.mv||0)<0?-0.03:0;
+  if(BD.style==='safest') return l.price<-450?-1:l.p+mv;
+  if(BD.style==='balanced') return l.price<-260||l.p<0.5?-1:l.p+0.5*(l.p*d-1)+mv;
+  return l.p<0.3||l.price<-160?-1:l.p*d+0.2*l.p+mv;   // big payout
+}
+function bdBuild(seed){
+  const n=BD.type==='single'?1:BD.legs, P=bdPool().map(l=>({l,s:bdScore(l)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+  let rnd=seed*9301+49297; const r=()=>{ rnd=(rnd*9301+49297)%233280; return rnd/233280; };
+  const order=seed===0?P:[...P].sort((a,b)=>(b.s+r()*0.12)-(a.s+r()*0.12));
+  const pick=[], games=new Map(), players=new Set();
+  const maxProps=BD.type==='mix'?Math.floor(n/2):n, maxGame=BD.type==='mix'?Math.ceil(n/2):n; let np=0, ng=0;
+  for(const {l} of order){ const g=games.get(l.ev)||0;
+    if(l.kind==='prop'){ if(players.has(l.player)||g>=2||np>=maxProps) continue; np++; } else { if(g>=1||ng>=maxGame) continue; ng++; }
+    pick.push(l); games.set(l.ev,g+1); if(l.player) players.add(l.player); if(pick.length===n) break; }
+  return pick.length===n?pick:null;
+}
+function bdMakeAll(){ const seen=new Set(), out=[]; for(let s=0;s<12&&out.length<3;s++){ const b=bdBuild(s+BD.seed); if(!b) continue; const k=b.map(l=>l.id).sort().join(); if(seen.has(k)) continue; seen.add(k); out.push(b); } BD.builds=out; }
+async function askClaude(){
+  if(!BD.sample) return;
+  BD.claudeBusy=true; BD.claudeErr=null; BD.claude=null; renderBD();
+  const P=bdPool().sort((a,b)=>b.p-a.p).slice(0,70);
+  const list=P.map(l=>({id:l.id, bet:l.label, game:l.game, sport:SPORT_NAME[l.sk]||l.sk, price:l.price, chance:Math.round(l.p*100), moneyMoved:l.mv?(l.mv>0?'toward':'against'):'', out:(l.inj||[]).join('; '), hit:l.hit||''}));
+  const prompt=`You are Claude, the user's betting analyst inside their app EasyProp. Build bets from ONLY the candidate legs below (today's DraftKings prices via ESPN; "chance" = market no-vig chance; player-prop lines are estimates at -110).
+The user wants: ${BD.type==='single'?'single bets (1 leg each)':BD.type==='props'?`player-prop parlays of ${BD.legs} legs`:BD.type==='mix'?`parlays of ${BD.legs} legs mixing game lines and player props`:`parlays of ${BD.legs} legs`}; style: ${BD.style==='safest'?'SAFEST: highest chance the whole bet wins':BD.style==='balanced'?'BALANCED: good chance and good payout':'BIG PAYOUT: worth it for the price, lower chance'}; sports: ${BD.sports.includes('all')?'any':BD.sports.map(s=>SPORT_NAME[s]).join(', ')}.
+Use real judgment: injuries (players OUT), where the money moved, mismatches, and avoid -1000 style legs that add nothing. One leg per game for game lines; one prop per player. Be honest: nothing is guaranteed.
+Return ONLY JSON: {"builds":[{"name":"short name","legs":["<id>",...],"verdict":"Good bet|Lean|Long shot","why":"2-3 plain sentences"}]} with 1 to 3 builds.
+Candidates: ${JSON.stringify(list)}`;
+  try{
+    const res=await BD.sample(prompt);
+    const t=(res.text||'').replace(/```json|```/g,''), j=JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}')+1));
+    const byId=Object.fromEntries(P.map(l=>[l.id,l]));
+    BD.claude=(j.builds||[]).map(b=>({...b, legs:(b.legs||[]).map(id=>byId[id]).filter(Boolean)})).filter(b=>b.legs.length);
+    if(!BD.claude.length) BD.claudeErr='Claude didn’t return a usable build. Try again.';
+  }catch(e){ BD.claudeErr=e?.code==='rate_limited'?'Claude is busy right now. Try again in a minute.':e?.code==='not_granted'?'Claude access was declined for this page.':'Couldn’t reach Claude: '+(e?.message||e?.code||'error'); }
+  BD.claudeBusy=false; renderBD();
+}
+function bdCard(legs, title, sub, why, verdict, key){
+  const dec=legs.reduce((t,l)=>t*decOdds(l.price),1), p=legs.reduce((t,l)=>t*l.p,1), st=+BD.stake||10;
+  return `<div class="combo open" style="cursor:default">
+    <div class="top"><span class="nm">${esc(title)}</span><span class="pay">${toAmerican(dec)}</span></div>
+    <div class="sub">${sub} ${verdict?`<span class="badge">${esc(verdict)}</span>`:''} · $${st} pays <b>$${(st*dec).toFixed(2)}</b> · ${pct(p)} chance all hit</div>
+    ${why?`<div class="note" style="margin:6px 0">${esc(why)}</div>`:''}
+    ${legs.map(l=>`<div class="leg" style="padding:5px 0"><span><b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(SPORT_NAME[l.sk]||'')} · ${esc(l.game)}${l.hit?' · '+esc(l.hit):''}${l.mv>0?' · money moved this way':''}</small></span><span>${fmtA(l.price)} · ${pct(l.p)}</span></div>`).join('')}
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-bdcopy="${key}">📋 Copy</button><button class="addb" data-bdslip="${key}">➕ Add to slip</button><button class="addb" data-bdlog="${key}">📒 Log it</button><span class="note" data-bdmsg="${key}" style="margin:0"></span></div>
+  </div>`;
+}
+function openBD(){ $('#bd').hidden=false; document.body.style.overflow='hidden'; BD.t=BD.req===ymd(dayOffset)?BD.t:0; loadBDCands(); renderBD();
+  if(BD.sample===undefined){ BD.sample=null; if(window.claude?.use) claude.use('sample').then(s=>{ BD.sample=s; renderBD(); }).catch(()=>{}); } }
+function closeBD(){ $('#bd').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+function renderBD(){
+  if($('#bd').hidden) return;
+  const chip=(grp,k,l,on)=>`<button class="tab ${on?'on':''}" data-bd="${grp}" data-v="${k}">${l}</button>`;
+  let h=`<div class="pc" style="margin-top:12px"><div class="mk" style="margin-top:0">Sports</div><div class="tabs" style="flex-wrap:wrap;padding:0">${chip('sp','all','All',BD.sports.includes('all'))}${BD_SPORTS.map(s=>chip('sp',s,`${SPORT_ICON[s]||''} ${SPORT_NAME[s]}`,BD.sports.includes(s))).join('')}</div>
+    <div class="mk">Bet type</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[['single','Single'],['parlay','Parlay'],['props','Player props'],['mix','Games + props']].map(([k,l])=>chip('type',k,l,BD.type===k)).join('')}</div>
+    ${BD.type!=='single'?`<div class="mk">Legs</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[2,3,4,5,6,8,10].map(n=>chip('legs',n,n,BD.legs===n)).join('')}</div>`:''}
+    <div class="mk">Style</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[['safest','🛡 Safest'],['balanced','⚖️ Balanced'],['payout','💰 Big payout']].map(([k,l])=>chip('style',k,l,BD.style===k)).join('')}</div>
+    <div class="note">Stake $<input type="number" id="bdstake" value="${BD.stake}" min="1" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="oddsbtn" id="bdgo">🧮 Build it</button>${BD.sample?`<button class="oddsbtn" id="bdclaude" style="background:#14121f;border-color:#14121f">🤖 Ask Claude to build it</button>`:''}</div>
+    ${BD.sample?'':`<div class="note">🤖 <b>Ask Claude</b> works when you open EasyProp inside the Claude app (<a href="https://claude.ai/artifact/UUjVvMYds6UrsWRPeRBmE4" target="_blank" style="color:var(--accent)">open it here</a>), or just message Claude what you want.</div>`}
+  </div>`;
+  if(BD.busy) h+=`<div class="note">Loading the day's lines…</div>${skel(2)}`;
+  else if(BD.day) h+=`<div class="note">Building from <b>${BD.day===ymd(0)?'today':BD.day===ymd(1)?'tomorrow':new Date(+BD.day.slice(0,4),+BD.day.slice(4,6)-1,+BD.day.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</b>'s games${BD.rolled?' (tonight’s games are over)':''} · ${(BD.cands||[]).length} lines available.</div>`;
+  if(BD.claudeBusy) h+=`<div class="note">🤖 Claude is building your bet…</div>${skel(1)}`;
+  if(BD.claudeErr) h+=`<div class="note err">${esc(BD.claudeErr)}</div>`;
+  if(BD.claude?.length) h+=`<h2 class="sec">🤖 Claude's builds</h2>`+BD.claude.map((b,i)=>bdCard(b.legs, b.name||`Claude build ${i+1}`, '🤖 Claude', b.why, b.verdict, 'c'+i)).join('');
+  if(BD.builds){ h+=`<h2 class="sec">🧮 Instant builds</h2>`;
+    h+= BD.builds.length? BD.builds.map((b,i)=>bdCard(b, `Build ${i+1}${BD.type==='single'?' · single':` · ${b.length}-leg`}`, '🧮 Formula', '', BD.style==='safest'?'Safest':BD.style==='balanced'?'Balanced':'Big payout', 'f'+i)).join('')+`<button class="tbtn" id="bdagain">🔀 Shuffle for different builds</button>`
+      : `<div class="empty">Not enough ${BD.type==='props'?'player props':'games'} today for that. Try fewer legs, more sports${BD.style!=='safest'?' or a different style':''}.</div>`; }
+  h+=`<footer>Builds use today's DraftKings prices via ESPN. Player-prop lines are estimates: match them to your app before betting. Nothing is guaranteed; bet only what you're fine losing.</footer>`;
+  const y=$('#bd').scrollTop; $('#bdbody').innerHTML=h; $('#bd').scrollTop=y;
+}
+function bdLegsFor(key){ return key[0]==='c'? BD.claude?.[+key.slice(1)]?.legs : BD.builds?.[+key.slice(1)]; }
+$('#bdopen').onclick=()=>{ location.hash='#build'; };
+$('#bdback').onclick=()=>{ if(location.hash) history.back(); else closeBD(); };
+$('#bdbody').addEventListener('click',async e=>{
+  const c=e.target.closest('[data-bd]'); if(c){ const g=c.dataset.bd, v=c.dataset.v;
+    if(g==='sp'){ if(v==='all') BD.sports=['all']; else { let s=BD.sports.filter(x=>x!=='all'); s=s.includes(v)?s.filter(x=>x!==v):[...s,v]; BD.sports=s.length?s:['all']; } store.set('wc_bdsp',BD.sports); }
+    if(g==='type'){ BD.type=v; store.set('wc_bdtype',v); } if(g==='legs'){ BD.legs=+v; store.set('wc_bdlegs',BD.legs); } if(g==='style'){ BD.style=v; store.set('wc_bdstyle',v); }
+    if(BD.builds) bdMakeAll(); renderBD(); return; }
+
+  if(e.target.id==='bdgo'){ BD.seed=0; bdMakeAll(); renderBD(); return; }
+  if(e.target.id==='bdagain'){ BD.seed+=13; bdMakeAll(); renderBD(); return; }
+  if(e.target.id==='bdclaude'){ askClaude(); return; }
+  const k=e.target.closest('[data-bdcopy],[data-bdslip],[data-bdlog]'); if(!k) return;
+  const key=k.dataset.bdcopy||k.dataset.bdslip||k.dataset.bdlog, legs=bdLegsFor(key), msg=document.querySelector(`[data-bdmsg="${key}"]`); if(!legs) return;
+  const dec=legs.reduce((t,l)=>t*decOdds(l.price),1);
+  if(k.dataset.bdcopy){ const t=[`${legs.length>1?legs.length+'-leg parlay':'Single'} (EasyProp)`,...legs.map((l,i)=>`${legs.length>1?(i+1)+'. ':''}${l.label} (${fmtA(l.price)}) · ${l.game}`),`Odds ${toAmerican(dec)} · $${BD.stake} pays $${(BD.stake*dec).toFixed(2)}`].join('\n');
+    try{ await navigator.clipboard.writeText(t); msg.textContent='Copied ✓'; }catch{ msg.textContent=t; } return; }
+  if(k.dataset.bdslip){ addLegsToSlip(legs.map(l=>({label:l.label+(l.kind==='prop'?' (est. line)':''), game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev, fair:l.p}))); msg.textContent='Added to slip ✓'; return; }
+  if(k.dataset.bdlog){ BT.draft={legs:legs.map(l=>({label:l.label, game:l.game, start:l.start})), book:'DraftKings', odds:+toAmerican(dec).replace('+',''), stake:+BD.stake||10, fair:legs.reduce((t,l)=>t*l.p,1)}; location.hash='#bets'; }
+});
+$('#bdbody').addEventListener('change',e=>{ if(e.target.id==='bdstake'){ BD.stake=+e.target.value||10; store.set('wc_stake',BD.stake); renderBD(); } });
+
 /* ================= 📊 Results: Claude vs formula vs you, with earnings ================= */
 const RS={who:store.get('wc_rswho','claude'), per:store.get('wc_rsper','all'), open:new Set()};
 const dayOfISO=s=>{ const d=new Date(s); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); };
@@ -1148,11 +1306,12 @@ async function loadTPGames(){
 /* Player-prop parlays for Today's picks: each sport's leading players today, from their ESPN game logs. */
 const TPP={};
 const SPORT_NAME={nfl:'NFL',nba:'NBA',ncaaf:'College football',ncaam:'College basketball',nhl:'NHL',mlb:'MLB',wnba:'WNBA',epl:'Premier League',ucl:'Champions League',laliga:'La Liga',mls:'MLS'};
-async function loadTPProps(sk){
-  const S=TPP[sk] ||= {rows:[], t:0, busy:false}; if(S.busy || Date.now()-S.t<15*60e3) return; S.busy=true;
+async function loadTPProps(sk, day){
+  day=day||ymd(0);
+  const S=TPP[sk+'|'+day] ||= {rows:[], t:0, busy:false}; if(S.busy || Date.now()-S.t<15*60e3) return; S.busy=true;
   const sport=BY_KEY[sk], bb=isBB(sport), players=[], seen=new Set();
   try{
-    const games=(await fetchSport(sport, ymd(0))).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state==='pre');
+    const games=(await fetchSport(sport, day)).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state==='pre');
     // skip anyone on the injury report as Out, Doubtful or Questionable
     const hurt=new Set();
     await pool(games,4,async ev=>{ try{ const s=await cached('sum'+ev.id,()=>getJSON(`${SITE}/${sport.path}/summary?event=${ev.id}`));
@@ -1169,11 +1328,11 @@ async function loadTPProps(sk){
         rows.push({p,label,vals,a,l5:avg(vals.slice(0,5)),line,b:null,h5:hit(vals.slice(0,5)),h10:hit(vals.slice(0,10)),hs:hit(vals),n10:Math.min(10,vals.length)}); } }
     S.rows=rows;
   }catch(e){}
-  S.t=Date.now(); S.busy=false; renderTP();
+  S.t=Date.now(); S.busy=false; renderTP(); try{ renderBD(); }catch(e){}
 }
 function autoPropBets(){
   const out=[];
-  for(const [sk,S] of Object.entries(TPP)){ if(!S.rows?.length) continue;
+  for(const [key,S] of Object.entries(TPP)){ const [sk,day]=key.split('|'); if(day!==ymd(0) || !S.rows?.length) continue;
     for(const c of propCombos(S.rows)){ const P=c.picks, p=P.reduce((t,x)=>t*x.p,1);
       out.push({id:`auto:p:${sk}:${c.name}`, picker:'formula', auto:true, gen:true, day:ymd(0), stake:10, name:`${SPORT_NAME[sk]} props · ${c.name}`, chance:p, verdict:'Favorite',
         why:`${c.why}. Lines are estimates (each player's season average): match them to your app's lines before betting.`,
@@ -1248,7 +1407,7 @@ function renderTP(){
   $('#tpwho').innerHTML=[['all','Claude + formula'],['claude','🤖 Claude only'],['formula','🧮 Formula only']].map(([k,l])=>`<button class="tab ${TP.who===k?'on':''}" data-tpw="${k}">${l}</button>`).join('')
     +`<button class="tab" data-tpsort="1" style="margin-left:8px">💲 Payout: ${TP.sort==='high'?'biggest first ↓':'smallest first ↑'}</button>`;
   const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
-  let h=`<div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
+  let h=`<a href="#build" class="oddsbtn" style="display:inline-flex;margin-top:12px;text-decoration:none">🛠 Build my own bet (pick sports, legs &amp; style)</a><div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
   if(HP.insights) h+=`<div class="pc" style="border-color:color-mix(in srgb,var(--accent2) 45%,var(--line))"><b>📈 What's working</b><div class="note" style="margin:4px 0 0">${esc(HP.insights)}</div></div>`;
   const list=all.filter(b=>(TP.type==='all'||tpKind(b)===TP.type)&&(TP.who==='all'||b.picker===TP.who));
   const order=['singles','parlays','props','futures'], title={singles:'Singles',parlays:'Parlays',props:'Player prop parlays',futures:'🏆 Futures'};
@@ -2887,6 +3046,7 @@ $('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]');
 $('#moresheet').addEventListener('click',e=>{ if(e.target.closest('button')||!e.target.closest('.sheetin')) setTimeout(()=>{ $('#moresheet').hidden=true; },0); });
 function route(){
   updNav();
+  if(location.hash==='#build'){ openBD(); return; } else if(!$('#bd').hidden) closeBD();
   if(location.hash==='#results'){ openRS(); return; } else if(!$('#rs').hidden) closeRS();
   if(location.hash==='#today'){ openTP(); return; } else if(!$('#tp').hidden) closeTP();
   if(location.hash==='#combos'){ openCombos(); return; } else if(!$('#cb').hidden) closeCombos();
