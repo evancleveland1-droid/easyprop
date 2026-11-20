@@ -867,6 +867,538 @@
           "start": "2026-11-20T01:00Z"
         }
       ]
+    },
+    {
+      "id": "c-20261120-s-det",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "Pistons single",
+      "verdict": "Good bet",
+      "chance": 0.72,
+      "why": "Toronto is without Kawhi Leonard and RJ Barrett and has lost 5 straight. The line jumped from Detroit -1.5 to -8.5, so the market agrees. Only pays about $13.40 on $10.",
+      "legs": [
+        {
+          "ev": "401909308",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "8",
+          "price": -291,
+          "label": "Pistons moneyline",
+          "game": "TOR @ DET",
+          "start": "2026-11-21T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-s-hou",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "Rockets single (+101)",
+      "verdict": "Good bet",
+      "chance": 0.49,
+      "why": "The 12-4 Rockets are an underdog at Denver, but money moved the line from Nuggets -3.5 to -1.5. Plus-money on the better team.",
+      "legs": [
+        {
+          "ev": "401909312",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "10",
+          "price": 101,
+          "label": "Rockets moneyline",
+          "game": "HOU @ DEN",
+          "start": "2026-11-21T03:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-s-phx",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "Suns single",
+      "verdict": "Good bet",
+      "chance": 0.62,
+      "why": "Utah is without Lauri Markkanen, Jaren Jackson Jr. and Jusuf Nurkic, and Phoenix has won 4 of 5.",
+      "legs": [
+        {
+          "ev": "401909311",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "21",
+          "price": -180,
+          "label": "Suns moneyline",
+          "game": "PHX @ UTAH",
+          "start": "2026-11-21T02:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-s-wyo",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "Wyoming +7.5 single",
+      "verdict": "Lean",
+      "chance": 0.5,
+      "why": "Money moved this from Wyoming +10.5 to +7.5, and Wyoming has won 5 straight. Taking the points in a low total (37.5) game.",
+      "legs": [
+        {
+          "ev": "401864542",
+          "sk": "ncaaf",
+          "d": "20261120",
+          "kind": "spread",
+          "side": "home",
+          "teamId": "2751",
+          "price": -118,
+          "label": "Wyoming +7.5",
+          "game": "UNM @ WYO",
+          "start": "2026-11-21T02:00Z",
+          "line": 7.5
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-p2",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "2-leg safest: Pistons + Suns",
+      "verdict": "Good bet",
+      "chance": 0.44,
+      "why": "My two most confident NBA spots, both driven by key players being out on the other side.",
+      "legs": [
+        {
+          "ev": "401909308",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "8",
+          "price": -291,
+          "label": "Pistons moneyline",
+          "game": "TOR @ DET",
+          "start": "2026-11-21T00:30Z"
+        },
+        {
+          "ev": "401909311",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "21",
+          "price": -180,
+          "label": "Suns moneyline",
+          "game": "PHX @ UTAH",
+          "start": "2026-11-21T02:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-p3",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "3-leg: Pistons + Suns + Rockets",
+      "verdict": "Lean",
+      "chance": 0.22,
+      "why": "Adds the Rockets at plus-money, where the sharp money went. Pays about $42 on $10.",
+      "legs": [
+        {
+          "ev": "401909308",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "8",
+          "price": -291,
+          "label": "Pistons moneyline",
+          "game": "TOR @ DET",
+          "start": "2026-11-21T00:30Z"
+        },
+        {
+          "ev": "401909311",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "21",
+          "price": -180,
+          "label": "Suns moneyline",
+          "game": "PHX @ UTAH",
+          "start": "2026-11-21T02:30Z"
+        },
+        {
+          "ev": "401909312",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "10",
+          "price": 101,
+          "label": "Rockets moneyline",
+          "game": "HOU @ DEN",
+          "start": "2026-11-21T03:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-p3safe",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "3-leg safe mix: Pistons + Lakers + Duke",
+      "verdict": "Good bet",
+      "chance": 0.53,
+      "why": "Three big favorites with real reasons: Toronto missing two stars, Sacramento 1-13, and the Clemson-Duke line moved 5 points toward Duke. Low payout, best chance.",
+      "legs": [
+        {
+          "ev": "401909308",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "8",
+          "price": -291,
+          "label": "Pistons moneyline",
+          "game": "TOR @ DET",
+          "start": "2026-11-21T00:30Z"
+        },
+        {
+          "ev": "401909313",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "13",
+          "price": -1040,
+          "label": "Lakers moneyline",
+          "game": "SAC @ LAL",
+          "start": "2026-11-21T03:00Z"
+        },
+        {
+          "ev": "401858303",
+          "sk": "ncaaf",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "150",
+          "price": -575,
+          "label": "Duke moneyline",
+          "game": "CLEM @ DUKE",
+          "start": "2026-11-21T00:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261120-p4",
+      "picker": "claude",
+      "day": "20261120",
+      "stake": 10,
+      "name": "4-leg payout: Pistons, Suns, Rockets + Wyoming +7.5",
+      "verdict": "Long shot",
+      "chance": 0.11,
+      "why": "All four of my best Friday spots. Pays about $83 on $10, but four things have to go right.",
+      "legs": [
+        {
+          "ev": "401909308",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "8",
+          "price": -291,
+          "label": "Pistons moneyline",
+          "game": "TOR @ DET",
+          "start": "2026-11-21T00:30Z"
+        },
+        {
+          "ev": "401909311",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "21",
+          "price": -180,
+          "label": "Suns moneyline",
+          "game": "PHX @ UTAH",
+          "start": "2026-11-21T02:30Z"
+        },
+        {
+          "ev": "401909312",
+          "sk": "nba",
+          "d": "20261120",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "10",
+          "price": 101,
+          "label": "Rockets moneyline",
+          "game": "HOU @ DEN",
+          "start": "2026-11-21T03:00Z"
+        },
+        {
+          "ev": "401864542",
+          "sk": "ncaaf",
+          "d": "20261120",
+          "kind": "spread",
+          "side": "home",
+          "teamId": "2751",
+          "price": -118,
+          "label": "Wyoming +7.5",
+          "game": "UNM @ WYO",
+          "start": "2026-11-21T02:00Z",
+          "line": 7.5
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-s-utah",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "Utah single",
+      "verdict": "Good bet",
+      "chance": 0.7,
+      "why": "10-0 Utah (#2 in the Playoff rankings); money moved the line from -5.5 to -7.5 at TCU.",
+      "legs": [
+        {
+          "ev": "401856872",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "254",
+          "price": -270,
+          "label": "Utah moneyline",
+          "game": "UTAH @ TCU",
+          "start": "2026-11-22T02:00Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-s-ou",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "Oklahoma single",
+      "verdict": "Good bet",
+      "chance": 0.71,
+      "why": "The line moved 5 points toward Oklahoma (-2.5 to -7.5) and the total collapsed from 51.5 to 38.5. That usually means big Texas A&M injury news or bad weather, both of which favor the home favorite.",
+      "legs": [
+        {
+          "ev": "401856752",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "201",
+          "price": -290,
+          "label": "Oklahoma moneyline",
+          "game": "TA&M @ OU",
+          "start": "2026-11-21T20:45Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-s-iowa",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "Iowa single",
+      "verdict": "Good bet",
+      "chance": 0.73,
+      "why": "Money pushed Iowa from -5.5 to -8.5 at Illinois, with the total dropping too: a slower game suits Iowa.",
+      "legs": [
+        {
+          "ev": "401858527",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "2294",
+          "price": -325,
+          "label": "Iowa moneyline",
+          "game": "IOWA @ ILL",
+          "start": "2026-11-21T19:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-s-ksu",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "Kansas State +7 single",
+      "verdict": "Lean",
+      "chance": 0.52,
+      "why": "Money moved this from K-State +10.5 to +7 against #19 Arizona. Taking the points at home.",
+      "legs": [
+        {
+          "ev": "401856865",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "spread",
+          "side": "home",
+          "teamId": "2306",
+          "price": -110,
+          "label": "Kansas State +7",
+          "game": "ARIZ @ KSU",
+          "start": "2026-11-22T00:00Z",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-p2",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "2-leg safest: Utah + Iowa",
+      "verdict": "Good bet",
+      "chance": 0.51,
+      "why": "Two favorites the sharp money pushed further. About a coin flip to cash at -126.",
+      "legs": [
+        {
+          "ev": "401856872",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "254",
+          "price": -270,
+          "label": "Utah moneyline",
+          "game": "UTAH @ TCU",
+          "start": "2026-11-22T02:00Z"
+        },
+        {
+          "ev": "401858527",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "2294",
+          "price": -325,
+          "label": "Iowa moneyline",
+          "game": "IOWA @ ILL",
+          "start": "2026-11-21T19:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-p3",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "3-leg: Utah + Oklahoma + Texas Tech",
+      "verdict": "Lean",
+      "chance": 0.32,
+      "why": "Three road or home favorites the market moved toward (Texas Tech went from -1.5 to -4.5 at Baylor). Pays about $27 on $10.",
+      "legs": [
+        {
+          "ev": "401856872",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "254",
+          "price": -270,
+          "label": "Utah moneyline",
+          "game": "UTAH @ TCU",
+          "start": "2026-11-22T02:00Z"
+        },
+        {
+          "ev": "401856752",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "201",
+          "price": -290,
+          "label": "Oklahoma moneyline",
+          "game": "TA&M @ OU",
+          "start": "2026-11-21T20:45Z"
+        },
+        {
+          "ev": "401856871",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "2641",
+          "price": -205,
+          "label": "Texas Tech moneyline",
+          "game": "TTU @ BAY",
+          "start": "2026-11-21T20:30Z"
+        }
+      ]
+    },
+    {
+      "id": "c-20261121-p4",
+      "picker": "claude",
+      "day": "20261121",
+      "stake": 10,
+      "name": "4-leg payout: Utah, Oklahoma, Tennessee + K-State +7",
+      "verdict": "Long shot",
+      "chance": 0.12,
+      "why": "Adds Tennessee (the line flipped from +1.5 to -1.5, money on the Vols) and K-State with the points. Pays about $69 on $10.",
+      "legs": [
+        {
+          "ev": "401856872",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "away",
+          "teamId": "254",
+          "price": -270,
+          "label": "Utah moneyline",
+          "game": "UTAH @ TCU",
+          "start": "2026-11-22T02:00Z"
+        },
+        {
+          "ev": "401856752",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "201",
+          "price": -290,
+          "label": "Oklahoma moneyline",
+          "game": "TA&M @ OU",
+          "start": "2026-11-21T20:45Z"
+        },
+        {
+          "ev": "401856754",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "ml",
+          "side": "home",
+          "teamId": "2633",
+          "price": -105,
+          "label": "Tennessee moneyline",
+          "game": "LSU @ TENN",
+          "start": "2026-11-21T20:30Z"
+        },
+        {
+          "ev": "401856865",
+          "sk": "ncaaf",
+          "d": "20261121",
+          "kind": "spread",
+          "side": "home",
+          "teamId": "2306",
+          "price": -110,
+          "label": "Kansas State +7",
+          "game": "ARIZ @ KSU",
+          "start": "2026-11-22T00:00Z",
+          "line": 7
+        }
+      ]
     }
   ],
   "insights": "Too early to judge: Claude's and the formula's first picks grade tonight (Nov 19). This note updates each afternoon with what's winning and what isn't, by bet type and sport, and the picks adjust to it."
