@@ -1429,9 +1429,32 @@ function autoBets(){
   return [...out, ...autoPropBets()];
 }
 const tpKind=b=>{ const ls=b.legs||[]; if(ls.some(l=>l.kind==='future')) return 'futures'; if(ls.some(l=>l.kind==='prop')) return 'props'; return ls.length===1?'singles':'parlays'; };
+/* 🔗 Combos built from Claude's own singles for a day: pairs, triples and an all-in parlay. */
+function claudeCombos(day){
+  const singles=(HP.bets||[]).filter(b=>b.picker==='claude' && b.day===day && b.legs.length===1 && b.legs[0].kind!=='future' && !/skip/i.test(b.verdict||''))
+    .map(b=>({b, l:b.legs[0], p:b.chance??0.5})).sort((x,y)=>y.p-x.p);
+  // one leg per game
+  const S=[]; for(const x of singles) if(!S.some(y=>y.l.ev===x.l.ev)) S.push(x);
+  if(S.length<2) return [];
+  const top=S.slice(0,5), out=[], seen=new Set();
+  const make=combo=>{ const k=combo.map(x=>x.b.id).sort().join('+'); if(seen.has(k)) return; seen.add(k);
+    const p=combo.reduce((t,x)=>t*x.p,1), short=x=>x.l.label.replace(/ moneyline$/,'');
+    out.push({id:'cc:'+day+':'+k, picker:'claude', day, stake:10, combo:true,
+      name:`🔗 Claude combo: ${combo.map(short).join(' + ')}`, chance:p,
+      verdict:p>=0.45?'Good bet':p>=0.25?'Lean':'Long shot',
+      why:`Built from Claude's singles: ${combo.map(x=>`${short(x)} (${x.b.verdict||'pick'}): ${(x.b.why||'').split('. ')[0].replace(/\.$/,'')}`).join('. ')}.`,
+      legs:combo.map(x=>x.l)}); };
+  for(let i=0;i<top.length;i++) for(let j=i+1;j<top.length;j++) make([top[i],top[j]]);
+  if(top.length>=3) for(let i=0;i<top.length;i++) for(let j=i+1;j<top.length;j++) for(let k=j+1;k<top.length;k++) if(i<3&&j<4) make([top[i],top[j],top[k]]);
+  if(S.length>=4) make(S.slice(0,Math.min(6,S.length)));
+  // drop combos identical to a parlay Claude already posted
+  const posted=new Set((HP.bets||[]).filter(b=>b.picker==='claude'&&b.day===day).map(b=>b.legs.map(l=>l._k||l.label).sort().join('~')));
+  return out.filter(c=>!posted.has(c.legs.map(l=>l._k||l.label).sort().join('~')));
+}
 function tpBets(){
   const day=tpDay(), out=[];
   for(const b of HP.bets||[]) if(b.day===day || (tpKind(b)==='futures' && handBetStatus(b)==='pending')) out.push({...b, src:'file'});
+  out.push(...claudeCombos(day));
   // the formula's automatic daily paper bets
   for(const p of PK.list.filter(p=>p.day===day && TP.off===0)) out.push({id:'pk:'+p.id, picker:'formula', day, stake:p.stake, name:p.name, auto:true, chance:p.p,
     why:p.kind.startsWith('top5')?'One of the formula\'s 5 most likely winners today.':p.kind==='single'?'The formula\'s single of the day: its most likely winner with a reasonable price.':p.kind==='long'?'Every one of today\'s top favorites stacked: big payout, small chance.':'The formula\'s most likely winners combined.',
