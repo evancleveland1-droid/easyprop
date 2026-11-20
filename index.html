@@ -331,6 +331,12 @@ main.wrap{padding-bottom:150px}
 .sheetin .sheetx{justify-content:center;color:var(--muted);font-size:14px}
 header .wrap,.gvh .wrap{padding-bottom:0}
 header .tabs{padding-bottom:10px}
+.rsgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.rscard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;border-radius:16px;padding:10px;cursor:pointer;box-shadow:var(--shadow);text-align:left;min-width:0}
+.rscard.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.rscard .rsn{font-size:12.5px;font-weight:800}
+.rscard .rsp{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:800}
+.rscard .rsr{font-size:11.5px;color:var(--muted);font-weight:600}
 .recstrip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:10px 0 2px}
 .recstrip::-webkit-scrollbar{display:none}
 .recstrip button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;border-radius:14px;padding:8px 12px;cursor:pointer}
@@ -382,12 +388,13 @@ header .tabs{padding-bottom:10px}
   <button data-nav=""><b>🏠</b><span>Games</span></button>
   <button data-nav="#today" id="tpopen"><b>⭐</b><span>Picks</span></button>
   <button data-nav="#props" id="propsopen"><b>🎯</b><span>Props</span></button>
-  <button data-nav="#futures" id="futopen"><b>🏆</b><span>Futures</span></button>
+  <button data-nav="#results"><b>📊</b><span>Results</span></button>
   <button id="moreopen"><b>☰</b><span>More</span></button>
 </nav>
 <div class="sheet" id="moresheet" hidden>
   <div class="sheetin">
     <div class="sheeth">More</div>
+    <button id="futopen">🏆 <span>Futures (Super Bowl, titles, MVPs)</span></button>
     <button id="oddsopen">🧾 <span>Bet slip &amp; best odds</span><span class="n" id="slipcount" hidden></span></button>
     <button id="betsopen">📒 <span>My bets</span></button>
     <button id="combosopen">🎲 <span>Suggested combos</span></button>
@@ -439,6 +446,14 @@ header .tabs{padding-bottom:10px}
     <div class="tabs" id="tpwho"></div>
   </div></div>
   <div class="wrap" id="tpbody"></div>
+</div>
+
+<div class="gv" id="rs" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="rsback">‹ Games</button><b style="font-size:16px">📊 Results</b></div>
+    <div class="tabs" id="rsper"></div>
+  </div></div>
+  <div class="wrap" id="rsbody"></div>
 </div>
 
 <div class="gv" id="cb" hidden>
@@ -948,6 +963,7 @@ async function gradePicks(force){
 const pickProfit=p=>p.status==='won'?p.payout-p.stake:p.status==='lost'?-p.stake:0;
 function renderPicks(){
   try{ renderTP(); }catch(e){}
+  try{ renderRS(); }catch(e){}
   const el=$('#picks'); if(!el) return;
   if(dayOffset!==0 && !PK.list.length){ el.innerHTML=''; return; }
   const done=PK.list.filter(p=>p.status!=='pending'), w=done.filter(p=>p.status==='won').length, l=done.filter(p=>p.status==='lost').length;
@@ -1054,6 +1070,63 @@ function handPicksHTML(){
     ${days.map(d=>`<div class="mk">${new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</div>${HP.bets.filter(b=>b.day===d).sort((a,b)=>a.picker.localeCompare(b.picker)).map(card).join('')}`).join('')}
   </div>`;
 }
+
+/* ================= 📊 Results: Claude vs formula vs you, with earnings ================= */
+const RS={who:store.get('wc_rswho','claude'), per:store.get('wc_rsper','all'), open:new Set()};
+const dayOfISO=s=>{ const d=new Date(s); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); };
+function inPer(day){ if(RS.per==='all') return true; if(RS.per==='today') return day>=ymd(-1); return day>=ymd(-6); }
+// Every bet as one shape: {who, id, name, day, stake, odds, status, profit, legs:[{label, res, note, price}]}
+function rsBets(){
+  const out=[];
+  for(const b of HP.bets||[]){ const fut=b.legs.some(l=>l.kind==='future'); const st=fut?'pending':handBetStatus(b);
+    const dec=b.legs.filter(x=>HP.res[x._k]?.res!=='push').reduce((t,x)=>t*decOdds(x.price),1), full=b.legs.reduce((t,x)=>t*decOdds(x.price),1);
+    out.push({who:b.picker, id:'h:'+b.id, name:b.name, day:b.day, stake:b.stake, odds:full, status:st, fut, why:b.why,
+      profit:st==='won'?b.stake*(dec-1):st==='lost'?-b.stake:0,
+      legs:b.legs.map(l=>{ const r=HP.res[l._k]||{}; return {label:l.label, res:r.res, price:l.price, note:r.final||r.live||(l.start?new Date(l.start).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'settles at season end')}; })}); }
+  for(const p of PK.list) out.push({who:'formula', id:'p:'+p.id, name:'Auto · '+p.name, day:p.day, stake:p.stake, odds:decOdds(p.odds), status:p.status, profit:pickProfit(p),
+    legs:p.legs.map(l=>({label:`${l.team} moneyline`, res:l.res, price:l.price, note:l.final||l.live||new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}))});
+  for(const b of BT.bets) out.push({who:'you', id:'b:'+b.id, name:b.legs?.length>1?`${b.legs.length}-leg parlay`:(b.legs?.[0]?.label||b.desc||'Bet'), day:dayOfISO(b.placed), stake:b.stake, odds:decOdds(b.odds), status:b.status, profit:profitOf(b), book:b.book,
+    legs:(b.legs||[]).map(l=>({label:l.label, res:null, price:null, note:l.game||''}))});
+  return out.filter(b=>inPer(b.day));
+}
+function rsStats(bs){ const s=bs.filter(b=>!b.fut), set=s.filter(b=>b.status!=='pending');
+  const w=set.filter(b=>b.status==='won').length, l=set.filter(b=>b.status==='lost').length, staked=set.reduce((t,b)=>t+b.stake,0), profit=set.reduce((t,b)=>t+b.profit,0);
+  const pend=s.filter(b=>b.status==='pending'); return {w,l,staked,profit,roi:staked?profit/staked:null,wr:w+l?w/(w+l):null,pend:pend.length,risk:pend.reduce((t,b)=>t+b.stake,0),futs:bs.filter(b=>b.fut).length}; }
+function openRS(){ $('#rs').hidden=false; document.body.style.overflow='hidden'; renderRS(); loadHandPicks(); gradePicks(true); }
+function closeRS(){ $('#rs').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+function renderRS(){
+  if($('#rs').hidden) return;
+  $('#rsper').innerHTML=[['today','Today & last night'],['7','Last 7 days'],['all','All time']].map(([k,l])=>`<button class="tab ${RS.per===k?'on':''}" data-rsp="${k}">${l}</button>`).join('');
+  const all=rsBets(), who=[['claude','🤖','Claude'],['formula','🧮','Formula'],['you','👤','You']];
+  const money=v=>`${v<0?'−':'+'}$${Math.abs(v).toFixed(2)}`;
+  let h=`<div class="rsgrid">${who.map(([k,ic,nm])=>{ const s=rsStats(all.filter(b=>b.who===k));
+    return `<button class="rscard ${RS.who===k?'on':''}" data-rsw="${k}"><span class="rsn">${ic} ${nm}</span>
+      <b class="rsp ${s.profit>0?'hi':s.profit<0?'lo':''}">${money(s.profit)}</b>
+      <span class="rsr">${s.w}-${s.l}${s.wr!=null?` · ${Math.round(s.wr*100)}% won`:''}</span>
+      <span class="rsr">${s.roi!=null?`${s.roi>=0?'+':''}${Math.round(s.roi*100)}% return`:'no settled bets'}</span>
+      <span class="rsr">${s.pend} pending${s.risk?` ($${s.risk.toFixed(0)})`:''}</span></button>`; }).join('')}</div>`;
+  h+=`<div class="note">Profit uses $10 per bet for Claude and the formula (the formula includes its automatic daily bets), and your real stakes for you. Futures stay pending until the season ends and aren't counted yet.${RS.who==='you'?' Log your bets in <a href="#bets" style="color:var(--accent)">My bets</a> (or tap “Log this bet” on your slip) and mark them won or lost.':''}</div>`;
+  const list=all.filter(b=>b.who===RS.who).sort((a,b)=>b.day.localeCompare(a.day)||(a.status==='pending'?-1:1));
+  const icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
+  const days=[...new Set(list.map(b=>b.day))];
+  for(const d of days){ const bs=list.filter(b=>b.day===d), s=rsStats(bs);
+    h+=`<div class="dayh">${new Date(+d.slice(0,4),+d.slice(4,6)-1,+d.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}<span class="note" style="margin:0">${s.w}-${s.l} · <b class="${s.profit>0?'hi':s.profit<0?'lo':''}">${money(s.profit)}</b></span></div>`;
+    h+=bs.map(b=>{ const open=RS.open.has(b.id);
+      return `<div class="bet ${b.status==='pending'?'':b.status}" data-rso="${esc(b.id)}" style="cursor:pointer">
+        <div class="row"><b>${icon(b.status)} ${esc(b.name)}</b><span>${toAmerican(b.odds)} · ${b.status==='pending'?`$${b.stake} → $${(b.stake*b.odds).toFixed(2)}`:b.status==='push'?'Push':`<b class="${b.profit>0?'hi':'lo'}">${money(b.profit)}</b>`} ${open?'▴':'▾'}</span></div>
+        ${b.legs.length>1||open?`<div class="note" style="margin:2px 0 0">${b.legs.map(l=>icon(l.res)).join(' ')}${b.book?' · '+esc(b.book):''}</div>`:''}
+        ${open?`<div style="margin-top:6px;cursor:default">${b.why?`<div class="note" style="margin:4px 0 8px">${esc(b.why)}</div>`:''}${b.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${icon(l.res)} ${esc(l.label)}</span><span>${l.price!=null?fmtA(l.price)+' · ':''}${esc(l.note||'')}</span></div>`).join('')}</div>`:''}
+      </div>`; }).join('');
+  }
+  if(!list.length) h+=`<div class="empty">${RS.who==='you'?'No bets logged yet. Tap “Log this bet” on your slip, or + Log a bet in My bets.':'No bets in this period yet.'}</div>`;
+  h+=`<footer>Graded automatically from ESPN final scores and box scores. Paper bets, no real money, except the ones you log. Not betting advice.</footer>`;
+  const y=$('#rs').scrollTop; $('#rsbody').innerHTML=h; $('#rs').scrollTop=y;
+}
+$('#rsback').onclick=()=>{ if(location.hash) history.back(); else closeRS(); };
+$('#rsper').addEventListener('click',e=>{ const b=e.target.closest('[data-rsp]'); if(!b) return; RS.per=b.dataset.rsp; store.set('wc_rsper',RS.per); renderRS(); });
+$('#rsbody').addEventListener('click',e=>{ const c=e.target.closest('[data-rsw]'); if(c){ RS.who=c.dataset.rsw; store.set('wc_rswho',RS.who); renderRS(); return; }
+  if(e.target.closest('.leg')||e.target.closest('a')) return;
+  const o=e.target.closest('[data-rso]'); if(o){ const id=o.dataset.rso; RS.open.has(id)?RS.open.delete(id):RS.open.add(id); renderRS(); } });
 
 /* ================= ⭐ Today's picks: one menu of Claude + formula bets, ready to copy ================= */
 const TP={type:store.get('wc_tptype','all'), who:store.get('wc_tpwho','all'), sort:store.get('wc_tpsort','low'), open:new Set()};
@@ -2059,6 +2132,7 @@ function profitChart(settled){
     <path d="${d}" fill="none" stroke="${up?'var(--good)':'var(--live)'}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg></div>`;
 }
 function renderBets(){
+  try{ renderRS(); }catch(e){}
   if($('#mb').hidden) return;
   const all=[...BT.bets].sort((a,b)=>new Date(b.placed)-new Date(a.placed));
   const settled=all.filter(b=>b.status!=='pending').sort((a,b)=>new Date(a.settled||a.placed)-new Date(b.settled||b.placed));
@@ -2813,6 +2887,7 @@ $('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]');
 $('#moresheet').addEventListener('click',e=>{ if(e.target.closest('button')||!e.target.closest('.sheetin')) setTimeout(()=>{ $('#moresheet').hidden=true; },0); });
 function route(){
   updNav();
+  if(location.hash==='#results'){ openRS(); return; } else if(!$('#rs').hidden) closeRS();
   if(location.hash==='#today'){ openTP(); return; } else if(!$('#tp').hidden) closeTP();
   if(location.hash==='#combos'){ openCombos(); return; } else if(!$('#cb').hidden) closeCombos();
   if(location.hash==='#schedule'){ openSched(); return; } else if(!$('#sc').hidden) closeSched();
