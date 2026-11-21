@@ -298,6 +298,15 @@ h2.sec{font-size:12px;letter-spacing:.12em;margin:26px 0 12px}
 .brf{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11.5px;color:var(--muted);margin-top:7px;align-items:center}
 .brf b{color:var(--text)} .brf a{margin-left:auto;font-weight:800;color:var(--accent);text-decoration:none;white-space:nowrap}
 .neoff .brg{opacity:.45}
+/* audit: comfortable tap targets on phones */
+.addb{min-height:34px;padding:6px 10px;font-size:12.5px;border-radius:8px}
+.bookchips label{padding:8px 12px;font-size:12.5px}
+.viewtog button{padding:9px 12px}
+.bvfil button{padding:8px 13px}
+.brf a{padding:9px 0 9px 8px;margin-top:-6px;margin-bottom:-6px}
+#cbstake,#bdstake,#tierbank{min-height:34px}
+#bvq,#ppq{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--text);margin-top:10px}
+.brt .tn{cursor:pointer} .brt .tn .st{color:var(--accent)}
 .brt .tn .ab{display:none}
 @media (max-width:520px){ .brh,.brg{grid-template-columns:minmax(0,1fr) repeat(3,58px)} .brt .tn .rc{display:none} .br.sc .brt .tn .fl{display:none} .br.sc .brt .tn .ab{display:inline} .brt{gap:6px} }
 .nebar{font-size:12.5px;font-weight:600;line-height:1.35;margin:8px 0 2px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--live) 12%,transparent);color:var(--live)}
@@ -421,6 +430,7 @@ header .tabs{padding-bottom:10px}
   <div id="picks"></div>
   <div class="record" id="record" hidden></div>
   <div id="nebanner" hidden></div>
+  <input id="bvq" type="search" placeholder="Search teams or leagues" aria-label="Search games" autocomplete="off">
   <div id="list"></div>
   <footer>
     EasyProp estimates each team's chance to win from the pregame betting line (or team records when no line is posted),
@@ -890,7 +900,12 @@ let dayOffset=0;
 function ymd(off){ const d=new Date(); d.setDate(d.getDate()+off); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
 function dayLabel(off){ if(off===0) return 'Today'; if(off===-1) return 'Yesterday'; if(off===1) return 'Tomorrow';
   const d=new Date(); d.setDate(d.getDate()+off); return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
-async function fetchSport(sport, date){
+const FS_CACHE={};
+function fetchSport(sport, date){   // share one request between pages that ask for the same slate within 8 seconds
+  const k=sport.key+'|'+date, c=FS_CACHE[k]; if(c && Date.now()-c.t<8000) return c.p;
+  const p=fetchSportRaw(sport, date); FS_CACHE[k]={t:Date.now(), p}; p.catch(()=>{ delete FS_CACHE[k]; }); return p;
+}
+async function fetchSportRaw(sport, date){
   const url=`https://site.api.espn.com/apis/site/v2/sports/${sport.path}/scoreboard?dates=${date}&limit=200`;
   const j=await getJSON(url); for(const ev of j.events||[]){ try{ neNote(sport.key, ev); }catch(e){} } return (j.events||[]).map(ev=>({sport, ev}));
 }
@@ -1021,18 +1036,29 @@ function renderTabs(counts){
   $('#tabs').innerHTML=items.map(s=>`<button class="tab ${tab===s.key?'on':''}" data-k="${s.key}">${s.key==='all'?'🔥':(SPORT_ICON[s.key]||'')} ${s.label}${counts[s.key]?`<span class="n">${counts[s.key]}</span>`:''}</button>`).join('');
 }
 /* ================= Market board: compact rows by league, with category tabs and filters ================= */
-const BV={view:'board', filt:'all'};
+const BV={view:'board', filt:'all', q:'', fav:[]};
+try{ BV.fav=JSON.parse(localStorage.getItem('wc_fav')||'[]'); }catch(e){}
+const favKey=(sk,t)=>sk+'|'+t.team.id, isFav=(sk,t)=>BV.fav.includes(favKey(sk,t));
+function bvApplyQ(){ const q=BV.q.trim().toLowerCase(); let shown=0, all=0;
+  for(const el of document.querySelectorAll('#list .br, #list .gc')){ all++; const hit=!q || (el.dataset.q||el.innerText.toLowerCase()).includes(q); el.style.display=hit?'':'none'; if(hit) shown++; }
+  for(const g of document.querySelectorAll('#list .blist, #list .grid')){ const any=[...g.children].some(c=>c.style.display!=='none'); g.style.display=any?'':'none'; const hd=g.previousElementSibling; if(hd&&hd.classList.contains('blg')) hd.style.display=any?'':'none'; }
+  let m=document.getElementById('bvqmsg'); if(!m){ m=document.createElement('div'); m.id='bvqmsg'; m.className='empty'; document.getElementById('list').after(m); }
+  m.hidden=!(q && all && !shown); m.textContent=`No games match “${BV.q}”. Try a team name or a league.`;
+}
+document.addEventListener('input',e=>{ if(e.target.id==='bvq'){ BV.q=e.target.value; bvApplyQ(); } });
 try{ BV.view=localStorage.getItem('wc_bview')||'board'; }catch(e){}
 const rankOf=t=>{ const r=t?.curatedRank?.current; return r>0&&r<=25?r:null; };
 function bvBar(games){
   const college=games.some(g=>g.sport.key==='ncaaf'||g.sport.key==='ncaam'), live=games.filter(g=>g.state==='in').length;
   if(BV.filt==='top25'&&!college) BV.filt='all';
+  const nf=games.filter(g=>isFav(g.sport.key,g.home)||isFav(g.sport.key,g.away)).length; if(BV.filt==='fav'&&!BV.fav.length) BV.filt='all';
   const f=(k,l)=>`<button class="${BV.filt===k?'on':''}" data-bvf="${k}">${l}</button>`;
   return `<div class="bvcats"><button class="on">Game lines</button><button data-bvgo="#props">Player props</button><button data-bvgo="#futures">Futures</button><button data-bvgo="#build">Build a bet</button><button data-bvgo="#today">Picks</button><button data-bvgo="#odds">Best odds</button></div>
-    <div class="bvfil">${f('all','All games')}${live?f('live',`🔴 Live · ${live}`):''}${college?f('top25','Top 25'):''}${f('mk','📈 Has market prices')}${f('close','Close games')}<span class="sp"></span><button data-bvview="${BV.view==='board'?'cards':'board'}">${BV.view==='board'?'▦ Cards':'☰ Board'}</button></div>`;
+    <div class="bvfil">${f('all','All games')}${BV.fav.length?f('fav',`★ My teams · ${nf}`):''}${live?f('live',`🔴 Live · ${live}`):''}${college?f('top25','Top 25'):''}${f('mk','📈 Has market prices')}${f('close','Close games')}<span class="sp"></span><button data-bvview="${BV.view==='board'?'cards':'board'}">${BV.view==='board'?'▦ Cards':'☰ Board'}</button></div>`;
 }
 function bvFilter(games){
   if(BV.filt==='live') return games.filter(g=>g.state==='in');
+  if(BV.filt==='fav') return games.filter(g=>isFav(g.sport.key,g.home)||isFav(g.sport.key,g.away));
   if(BV.filt==='top25') return games.filter(g=>rankOf(g.home)||rankOf(g.away));
   if(BV.filt==='mk') return games.filter(g=>g.state!=='post'&&(kalFor(g.sport.key,g.ev)||polyFor(g.sport.key,g.ev)));
   if(BV.filt==='close') return games.filter(g=>g.state!=='post'&&Math.abs(g.out.home-g.out.away)<0.2);
@@ -1046,12 +1072,12 @@ function boardRow(g){
   const neW=fin?null:neWhy(ev.id,'game',live), neI=fin||neW?null:neInfo(ev.id);
   const team=(t,isHome)=>{ const r=rankOf(t), p=isHome?out.home:out.away;
     return `<div class="brt ${fin&&(isHome?g.margin<0:g.margin>0)?'lose':''}"><img src="${esc(t.team.logo||'')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-      <span class="tn">${r?`<small>${r}</small> `:''}<span class="fl">${esc(t.team.shortDisplayName||t.team.displayName)}</span><span class="ab">${esc(t.team.abbreviation||t.team.shortDisplayName)}</span> <small class="rc">${esc((t.records||[])[0]?.summary||'')}</small></span>
+      <span class="tn" data-fav="${esc(favKey(sport.key,t))}" title="Tap to follow this team">${isFav(sport.key,t)?'<span class="st">★</span> ':''}${r?`<small>${r}</small> `:''}<span class="fl">${esc(t.team.shortDisplayName||t.team.displayName)}</span><span class="ab">${esc(t.team.abbreviation||t.team.shortDisplayName)}</span> <small class="rc">${esc((t.records||[])[0]?.summary||'')}</small></span>
       ${state==='pre'?(tbd?'':`<span class="bp">${pct(p)}</span>`):`<span class="bp">${fin?'':pct(p)}</span><span class="ts">${esc(t.score)}</span>`}</div>`; };
   const btns=isHome=>tbd?'<span></span><span></span><span></span>':`${oddsBtn(g,'sp',isHome?'h':'a')}${oddsBtn(g,'tot',isHome?'u':'o')}${oddsBtn(g,'ml',isHome?'h':'a')}`;
   const k=fin||tbd?null:kalFor(sport.key,ev), p=fin||tbd?null:polyFor(sport.key,ev);
   const mk=(nm,x)=>x?`<span>${nm} <b>${esc(away.team.abbreviation)} ${pct(x.pa)} · ${esc(home.team.abbreviation)} ${pct(x.ph)}</b></span>`:'';
-  return `<div class="br ${live?'live':''} ${state!=='pre'?'sc':''} ${neW?'neoff':''}" data-id="${ev.id}">
+  return `<div class="br ${live?'live':''} ${state!=='pre'?'sc':''} ${neW?'neoff':''}" data-q="${esc(`${away.team.displayName} ${home.team.displayName} ${away.team.abbreviation} ${home.team.abbreviation} ${sport.label}`.toLowerCase())}" data-id="${ev.id}">
     <div class="brh"><span class="w">${live?'<span class="lv">● </span>':''}<span class="${live?'lv':''}">${esc(when)}</span>${tv?' · '+esc(tv):''}${note?' · 🏆 '+esc(note):''}</span><i>Spread</i><i>Total</i><i>Money</i></div>
     ${neW?`<div class="nebar" style="margin:0 0 6px">🌽 ${esc(neW)}</div>`:neI?`<div class="nebar ok" style="margin:0 0 6px">🌽 ${esc(neI)}</div>`:''}
     <div class="brg">${team(away,false)}${btns(false)}${team(home,true)}${btns(true)}</div>
@@ -1069,6 +1095,7 @@ function boardSection(title, gs){
 }
 document.addEventListener('click',e=>{
   const go=e.target.closest('[data-bvgo]'); if(go){ location.hash=go.dataset.bvgo; return; }
+  const fv=e.target.closest('[data-fav]'); if(fv){ const k=fv.dataset.fav, i=BV.fav.indexOf(k); if(i>=0) BV.fav.splice(i,1); else BV.fav.push(k); try{ localStorage.setItem('wc_fav',JSON.stringify(BV.fav)); }catch(er){} toast(i>=0?'Unfollowed':'★ Following', i>=0?'Removed from My teams.':'Find it any time under the “★ My teams” filter.'); render(); return; }
   const f=e.target.closest('[data-bvf]'); if(f){ BV.filt=f.dataset.bvf; render(); return; }
   const v=e.target.closest('[data-bvview]'); if(v){ BV.view=v.dataset.bvview; try{ localStorage.setItem('wc_bview',BV.view); }catch(er){} render(); }
 });
@@ -1161,7 +1188,47 @@ function boardCard(g){
 const PK={list:store.get('wc_picks',[]), open:new Set(), busy:false, lastGrade:0};
 const PK_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','wnba','epl','ucl','laliga','mls'];
 const savePicks=()=>store.set('wc_picks',PK.list);
-const PK_KINDS=['single','parlay3','long','top5-1','top5-2','top5-3','top5-4','top5-5','parlay5'];
+const PK_KINDS=['single','parlay3','long','top5-1','top5-2','top5-3','top5-4','top5-5','parlay5','tier-safe','tier-medium','tier-risky'];
+/* ---- Safe / Medium / Risky: three daily paper bets sized from a bankroll you set, graded automatically, and adjusted from results ---- */
+const TIERS=[['safe','🛡 Safe',0.02,0.03],['medium','⚖️ Medium',0.01,0.015],['risky','🎲 Risky',0.005,0.0075]];
+const tierBank=()=>{ const b=+store.get('wc_bank',100); return b>0?b:100; };
+function tierStat(k,n){ const x=PK.list.filter(p=>p.kind==='tier-'+k&&(p.status==='won'||p.status==='lost')).sort((a,b)=>b.day.localeCompare(a.day)).slice(0,n||999);
+  const w=x.filter(p=>p.status==='won').length, staked=x.reduce((t,p)=>t+p.stake,0), profit=x.reduce((t,p)=>t+pickProfit(p),0); return {n:x.length,w,l:x.length-w,profit,roi:staked?profit/staked:null}; }
+// learning 1: stake size follows each tier's own recent results
+function tierFrac(k){ const T=TIERS.find(t=>t[0]===k), x=tierStat(k,20);
+  if(x.n>=8&&x.roi<-0.15) return {f:T[2]/2, why:`halved, because this level is down ${Math.round(-x.roi*100)}% over its last ${x.n} graded bets`};
+  if(x.n>=8&&x.roi>0.10) return {f:T[3], why:`raised, because this level is up ${Math.round(x.roi*100)}% over its last ${x.n} graded bets`};
+  return {f:T[2], why:x.n<8?`standard until 8 bets are graded (${x.n} so far)`:'standard'}; }
+// learning 2: which sports' favorites have actually been winning as often as their prices said
+function sportForm(){ const m={}; for(const p of PK.list){ if(p.kind==='long') continue; for(const l of p.legs){ if(l.res!=='won'&&l.res!=='lost') continue; const x=m[l.sk] ||= {n:0,w:0,exp:0,seen:new Set()}; if(x.seen.has(l.ev)) continue; x.seen.add(l.ev); x.n++; x.w+=l.res==='won'?1:0; x.exp+=l.p||0.6; } } return m; }
+function tierPicks(legs, mk){
+  const form=sportForm(), cold=new Set(Object.entries(form).filter(([,x])=>x.n>=10 && x.w/x.n < x.exp/x.n-0.08).map(([k])=>k));
+  const ok=legs.filter(l=>!cold.has(l.sk)), use=ok.length>=4?ok:legs;
+  const note=cold.size&&ok.length>=4?` Leaving out ${[...cold].map(k=>BY_KEY[k]?.label||k).join(', ')} for now: favorites there have won less often than their prices implied.`:'';
+  const out=[], add=(k,name,ls,why)=>{ const fr=tierFrac(k), bank=tierBank(), p=mk('tier-'+k,name,ls); p.stake=Math.max(1,Math.round(bank*fr.f*2)/2); p.bank=bank; p.frac=fr.f; p.why=why+note+` Stake size is ${fr.why}.`; out.push(p); };
+  const safe=use.find(l=>l.price<=-150&&l.price>=-300)||use.find(l=>l.price<=-150)||use[0]; if(!safe) return out;
+  add('safe','🛡 Safe: one strong favorite',[safe],'The most likely winner on the board that still pays something.');
+  const med=use.filter(l=>l.ev!==safe.ev&&l.price>=-320).slice(0,2); if(med.length===2) add('medium','⚖️ Medium: 2-leg parlay',med,'Two solid favorites from different games. Both must win.');
+  const risky=use.filter(l=>l.price>=-260).slice(0,4); if(risky.length===4) add('risky','🎲 Risky: 4-leg parlay',risky,'Four favorites together for a bigger payout. Expect this one to lose more often than it wins.');
+  return out;
+}
+function tiersHTML(){
+  const day=ymd(0), bank=tierBank(), icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
+  const cards=TIERS.map(([k,nm])=>{ const p=PK.list.find(x=>x.day===day&&x.kind==='tier-'+k), x=tierStat(k), rec=x.n?`${x.w}-${x.l} · <b class="${x.profit>0?'hi':x.profit<0?'lo':''}">${x.profit<0?'−':'+'}$${Math.abs(x.profit).toFixed(2)}</b>`:'no graded bets yet';
+    if(!p) return `<div class="bet"><div class="row"><b>${nm}</b><span>${rec}</span></div><div class="note" style="margin:2px 0 0">${PK.busy?'Making today’s pick…':'No pick today: not enough games with posted prices that haven’t started yet.'}</div></div>`;
+    const dec=decOdds(p.odds), res=p.status==='won'?`<b class="hi">won +$${(p.payout-p.stake).toFixed(2)}</b>`:p.status==='lost'?`<b class="lo">lost −$${p.stake.toFixed(2)}</b>`:p.status==='push'?'push':`pays <b>$${(p.stake*dec).toFixed(2)}</b>`;
+    return `<div class="bet ${p.status==='pending'?'':p.status}"><div class="row"><b>${esc(p.name)}</b><span>${fmtA(p.odds)}</span></div>
+      <div class="note" style="margin:2px 0 4px">Stake <b>$${p.stake}</b> (${+(p.frac*100).toFixed(2)}% of $${p.bank}) · ${res} · ${pct(p.p)} chance when picked</div>
+      ${p.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${icon(l.res)} <b>${esc(l.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[l.sk]?.label||'')} · ${esc(l.game)}</small></span><span>${fmtA(l.price)}${l.final?' · '+esc(l.final):l.live&&!l.res?` · <span style="color:var(--live)">${esc(l.live)}</span>`:' · '+new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span></div>`).join('')}
+      <div class="note" style="margin:6px 0">${esc(p.why||'')}</div>
+      <div class="note" style="margin:0 0 6px">This level's record: ${rec}</div>
+      ${p.status==='pending'?slipBtn('tier:'+p.id, p.legs.map(l=>({label:`${l.team} moneyline`, price:l.price, kind:'ml', ev:l.ev, sk:l.sk, start:l.start, game:l.game}))):''}</div>`; }).join('');
+  return `<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🎚 Today's 3 risk levels</b> <span class="badge">paper bets · graded automatically</span>
+    <div class="note" style="margin:6px 0">My bankroll $<input id="tierbank" type="number" min="10" step="10" value="${bank}" style="width:90px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"> Stakes are a small share of it: safe 2%, medium 1%, risky 0.5%. A level that keeps losing gets its stake cut in half; one that keeps winning gets a little more.</div>
+    ${cards}
+    <div class="note" style="margin-top:8px">The app makes these picks once a day from real DraftKings prices and grades them from final scores. It never places a bet or moves money: you decide and place any bet yourself. Nothing is guaranteed, and the risky level will lose most days.</div></div>`;
+}
+document.addEventListener('change',e=>{ if(e.target.id==='tierbank'){ const v=+e.target.value; if(v>0){ store.set('wc_bank',v); try{ renderTP(); }catch(er){} } } });
 async function ensureDailyPicks(){
   const day=ymd(0), have=new Set(PK.list.filter(p=>p.day===day).map(p=>p.kind));
   if(PK.busy || PK_KINDS.every(k=>have.has(k)) || PK.triedDay===day) return;
@@ -1190,6 +1257,7 @@ async function ensureDailyPicks(){
     const top=legs.slice(0,5);
     top.forEach((l,i)=>picks.push(mk('top5-'+(i+1),`Top 5 #${i+1} · ${l.team}`,[l])));
     if(top.length===5) picks.push(mk('parlay5','Top 5 as a 5-leg parlay',top));
+    try{ picks.push(...tierPicks(legs, mk)); }catch(e){}
     PK.list.push(...picks.filter(p=>!have.has(p.kind))); savePicks();
   }catch(e){}
   PK.busy=false; renderPicks();
@@ -1222,10 +1290,11 @@ function renderPicks(){
   try{ renderRS(); }catch(e){}
   const el=$('#picks'); if(!el) return;
   if(dayOffset!==0 && !PK.list.length){ el.innerHTML=''; return; }
-  const done=PK.list.filter(p=>p.status!=='pending'), w=done.filter(p=>p.status==='won').length, l=done.filter(p=>p.status==='lost').length;
+  const BASE=PK.list.filter(p=>!String(p.kind).startsWith('tier-'));
+  const done=BASE.filter(p=>p.status!=='pending'), w=done.filter(p=>p.status==='won').length, l=done.filter(p=>p.status==='lost').length;
   const staked=done.reduce((t,p)=>t+p.stake,0), profit=done.reduce((t,p)=>t+pickProfit(p),0);
-  const legsDone=PK.list.flatMap(p=>p.kind==='long'?[]:p.legs).filter(x=>x.res==='won'||x.res==='lost'), legW=legsDone.filter(x=>x.res==='won').length;
-  const today=PK.list.filter(p=>p.day===ymd(0)), recent=[...PK.list].filter(p=>p.day!==ymd(0)).sort((a,b)=>b.day.localeCompare(a.day)).slice(0,9);
+  const legsDone=BASE.flatMap(p=>p.kind==='long'?[]:p.legs).filter(x=>x.res==='won'||x.res==='lost'), legW=legsDone.filter(x=>x.res==='won').length;
+  const today=BASE.filter(p=>p.day===ymd(0)), recent=[...BASE].filter(p=>p.day!==ymd(0)).sort((a,b)=>b.day.localeCompare(a.day)).slice(0,9);
   const icon=r=>r==='won'?'✅':r==='lost'?'❌':r==='push'?'➖':'⏳';
   const card=p=>{ const open=PK.open.has(p.id), dec=decOdds(p.odds);
     const res=p.status==='won'?`<b class="hi">+$${(p.payout-p.stake).toFixed(2)}</b>`:p.status==='lost'?`<b class="lo">−$${p.stake.toFixed(2)}</b>`:p.status==='push'?'Push':`$${p.stake} → $${(p.stake*dec).toFixed(2)}`;
@@ -1960,7 +2029,7 @@ function renderTP(){
     +`<button class="tab" data-tpsort="1" style="margin-left:8px">💲 Payout: ${TP.sort==='high'?'biggest first ↓':'smallest first ↑'}</button>`;
   const C=HP.bets?handStat('claude'):null, F=HP.bets?handStat('formula'):null;
   const cl=(HP.bets||[]).filter(b=>b.picker==='claude'), clN=o=>cl.filter(b=>b.day===ymd(o)&&tpKind(b)!=='futures').length, clF=cl.filter(b=>tpKind(b)==='futures').length;
-  let h=`<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🤖 Claude's picks</b><div class="note" style="margin:2px 0 6px">My own picks with reasons, posted ahead and re-checked. Tap a day:</div>
+  let h=tiersHTML()+`<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🤖 Claude's picks</b><div class="note" style="margin:2px 0 6px">My own picks with reasons, posted ahead and re-checked. Tap a day:</div>
     <div class="tabs" style="padding:0;flex-wrap:wrap">${[0,1,2].map(o=>`<button class="tab ${TP.who==='claude'&&TP.off===o&&TP.type!=='futures'?'on':''}" data-cl="${o}">${dayChipLabel(o)} · ${clN(o)}</button>`).join('')}<button class="tab ${TP.who==='claude'&&TP.type==='futures'?'on':''}" data-cl="fut">🏆 Futures · ${clF}</button>${TP.who==='claude'?`<button class="tab" data-cl="all">Show everyone's</button>`:''}</div></div>`;
   h+=`<a href="#build" class="oddsbtn" style="display:inline-flex;margin-top:12px;text-decoration:none">🛠 Build my own bet (pick sports, legs &amp; style)</a><div class="note" style="margin-top:12px">Pick any bet, tap <b>📋 Copy</b>, and paste it into DraftKings, Kalshi or wherever you bet. Or tap <b>➕ Add to slip</b> to compare prices first. 🤖 Claude picks use judgment (injuries, line moves, matchups); 🧮 formula picks follow the market's most likely winners.${C&&F?` Records so far: 🤖 Claude <b>${C.w}-${C.l}</b> (${C.profit<0?'−':'+'}$${Math.abs(C.profit).toFixed(0)}) · 🧮 formula <b>${F.w}-${F.l}</b> (${F.profit<0?'−':'+'}$${Math.abs(F.profit).toFixed(0)}).`:''}</div>`;
   const alerted=all.filter(b=>b.legs.some(l=>l._k&&alertsFor(l._k).some(a=>a.k!=='live')));
@@ -2060,6 +2129,7 @@ function render(){
   }
   html+=sec('Final', games.filter(g=>g.state==='post').sort((a,b)=>new Date(b.ev.date)-new Date(a.ev.date)));
   $('#list').innerHTML = bar + (html || (BV.filt!=='all' ? `<div class="empty">No games match that filter. <a href="#" data-bvf="all" style="color:var(--accent)">Show all games</a></div>` : `<div class="empty">No ${tab==='all'?'':BY_KEY[tab].label+' '}games on ${dayLabel(dayOffset).toLowerCase()}.${errors.length?`<br><span class="err">${esc(errors.join(', '))}</span>`:''}</div>`));
+  bvApplyQ();
   updateSlipFab(); renderPicks();
   if(tab!=='all' && dayOffset===0) loadSeason(BY_KEY[tab]);
   fillWeather($('#list'), id=>allBoardGames().find(g=>g.ev.id===id)?.ev);
@@ -3038,8 +3108,11 @@ function ppDKHTML(){
   h+=`<div class="bookchips">${[['all','All'],...stats.map(x=>[x,x])].map(([k,l])=>`<label style="${PP.dkStat===k?'background:var(--text);color:var(--bg)':''}" data-dkstat="${esc(k)}">${esc(l)}</label>`).join('')}</div>`;
   h+=`<div class="note"><b>Real DraftKings lines and prices</b> (via ESPN) for every player the book lists${PP.dkLeft>0?` · loading ${PP.dkLeft} more game${PP.dkLeft>1?'s':''}…`:''}. “Market” is the chance the price implies with the book's cut removed. ${PP.game==='all'?'Tap a game above to also see how often each player has cleared his line lately.':'Hit rates are from each player’s last 10 games against this exact line.'}</div>`;
   if(NE.on) h+=`<div class="nebar ok">🌽 Nebraska casino mode: prices are DraftKings lines; the casino's will differ, so check the board at the window.</div>`;
-  const list=inCat.filter(l=>PP.dkStat==='all'||statOf(l)===PP.dkStat), onSlip=l=>OB.slip.some(x=>x.label===l.label);
+  h+=`<input id="ppq" type="search" placeholder="Search a player" aria-label="Search players" autocomplete="off" value="${esc(PP.q||'')}">`;
+  const pq=(PP.q||'').trim().toLowerCase();
+  const list=inCat.filter(l=>(PP.dkStat==='all'||statOf(l)===PP.dkStat) && (!pq||l.label.toLowerCase().includes(pq))), onSlip=l=>OB.slip.some(x=>x.label===l.label);
   const tm=l=>new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}), img=id=>`https://a.espncdn.com/i/headshots/${LEAGUE_IMG[PP.sport]||'nba'}/players/full/${id}.png`;
+  if(!list.length && pq) return h+`<div class="empty">No player matches “${esc(PP.q)}” in ${PP.game==='all'?'today’s games':'this game'}.</div>`;
   if(!list.length) return h+(PP.dkLeft>0?skel(2):`<div class="empty">No DraftKings props posted for ${PP.game==='all'?'these games':'this game'} yet. Books usually post them the morning of the game${PP.sport==='nfl'?' (NFL: a day or two before)':''}.</div>`);
   if(PP.dkCat==='prop'){
     const m=new Map(); for(const l of list){ const k=l.ev+'|'+l.player+'|'+l.stat; (m.get(k)||m.set(k,{}).get(k))[l.side]=l; }
@@ -3058,6 +3131,7 @@ function ppDKHTML(){
   }
   return h;
 }
+document.addEventListener('input',e=>{ if(e.target.id!=='ppq') return; PP.q=e.target.value; renderPP(); const el=document.getElementById('ppq'); if(el){ el.focus(); try{ el.setSelectionRange(el.value.length, el.value.length); }catch(er){} } });
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-dkcat]'); if(c){ PP.dkCat=c.dataset.dkcat; PP.dkStat='all'; renderPP(); return; }
   const t=e.target.closest('[data-dkstat]'); if(t){ PP.dkStat=t.dataset.dkstat; renderPP(); return; }
@@ -3710,6 +3784,9 @@ $('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]');
 $('#moresheet').addEventListener('click',e=>{ if(e.target.closest('button')||!e.target.closest('.sheetin')) setTimeout(()=>{ $('#moresheet').hidden=true; },0); });
 function route(){
   updNav();
+  { const H=location.hash, R=[['#betslip','sl',()=>closeSL()],['#nebraska','ne',()=>closeNE()],['#build','bd',()=>closeBD()],['#results','rs',()=>closeRS()],['#today','tp',()=>closeTP()],['#combos','cb',()=>closeCombos()],['#schedule','sc',()=>closeSched()],['#futures','fu',()=>closeFut()],['#best','bb',()=>closeBest()],['#props','pp',()=>closeProps()],['#bets','mb',()=>closeBets()],['#odds','ob',()=>closeOdds()]];
+    for(const [h,id,fn] of R){ const el=document.getElementById(id); if(el && !el.hidden && H!==h){ try{ fn(); }catch(e){} } }
+    if(!/^#g\//.test(H) && !$('#gv').hidden){ try{ closeGame(); }catch(e){} } }
   if(location.hash==='#betslip'){ openSL(); return; } else if($('#sl') && !$('#sl').hidden) closeSL();
   if(location.hash==='#nebraska'){ openNE(); return; } else if(!$('#ne').hidden) closeNE();
   if(location.hash==='#build'){ openBD(); return; } else if(!$('#bd').hidden) closeBD();
