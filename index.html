@@ -298,6 +298,11 @@ h2.sec{font-size:12px;letter-spacing:.12em;margin:26px 0 12px}
 .brf{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11.5px;color:var(--muted);margin-top:7px;align-items:center}
 .brf b{color:var(--text)} .brf a{margin-left:auto;font-weight:800;color:var(--accent);text-decoration:none;white-space:nowrap}
 .neoff .brg{opacity:.45}
+.tn8h{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:14px 0 6px}
+.tn8{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px} .tn8::-webkit-scrollbar{display:none}
+.tn8 a{flex:none;min-width:150px;max-width:220px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 11px;text-decoration:none;color:var(--text);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:2px}
+.tn8 a b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .tn8 a span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn8 a.lv{border-color:var(--live)} .tn8 a.won{border-color:var(--good)} .tn8 a.lost{opacity:.6}
 /* audit: comfortable tap targets on phones */
 .addb{min-height:34px;padding:6px 10px;font-size:12.5px;border-radius:8px}
 .bookchips label{padding:8px 12px;font-size:12.5px}
@@ -1084,6 +1089,54 @@ function boardRow(g){
     <div class="brf">${mk('📈 Kalshi',k)}${mk('🔮 Polymarket',p)}${PROP_SPORTS[sport.key]&&!tbd?`<a href="#g/${sport.key}/${ev.id}">${fin?'Box score':'More markets'} ›</a>`:''}</div>
   </div>`;
 }
+/* "Tonight" strip: today's three risk levels, the teams you follow, and what is on your slip, in one swipeable row */
+function tonightHTML(){
+  if(dayOffset!==0) return '';
+  const items=[], day=ymd(0), tm=d=>new Date(d).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  for(const [k,nm] of TIERS){ const p=PK.list.find(x=>x.day===day&&x.kind==='tier-'+k); if(!p) continue;
+    const st=p.status==='won'?'✅ won':p.status==='lost'?'❌ lost':p.legs.some(l=>l.live&&!l.res)?'● live':'⏳ '+tm(p.legs[0].start);
+    items.push(`<a href="#today" class="${p.status==='won'?'won':p.status==='lost'?'lost':''}"><b>${nm} · ${fmtA(p.odds)}</b><span>${esc(p.legs.map(l=>l.abbr||l.team).join(' + '))}</span><span>$${p.stake} → $${(p.stake*decOdds(p.odds)).toFixed(2)} · ${st}</span></a>`); }
+  for(const g of lastGames){ if(g.state==='post' || !(isFav(g.sport.key,g.home)||isFav(g.sport.key,g.away))) continue; const live=g.state==='in';
+    items.push(`<a href="#g/${g.sport.key}/${g.ev.id}" class="${live?'lv':''}"><b>★ ${esc(g.away.team.abbreviation)} @ ${esc(g.home.team.abbreviation)}</b><span>${live?`${esc(g.away.score)}-${esc(g.home.score)} · ${esc(g.status.type.shortDetail)}`:tm(g.ev.date)}</span><span>${esc(g.home.team.abbreviation)} ${pct(g.out.home)} to win</span></a>`); }
+  if(OB.slip.length){ const m=slipMath(), d=m.rows[0]?.dec; items.push(`<a href="#betslip"><b>🧾 Your slip · ${OB.slip.length} leg${OB.slip.length>1?'s':''}</b><span>${esc(OB.slip.map(l=>l.label).join(' + '))}</span><span>${d?toAmerican(d)+' · $10 pays $'+(10*d).toFixed(2):'open to see the price'}</span></a>`); }
+  if(!items.length) return '';
+  return `<div class="tn8h">Tonight</div><div class="tn8">${items.join('')}</div>`;
+}
+/* Share card: draws a clean image of a bet (legs, price, payout) that can be sent or saved. */
+async function shareCard(title, legs, dec, stake){
+  const W=1080, pad=64, lh=118, H=Math.max(900, 430+legs.length*lh+250), c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d'), F=(w,sz)=>`${w} ${sz}px Inter, -apple-system, 'Segoe UI', Arial, sans-serif`;
+  const fit=(t,max)=>{ t=String(t||''); if(x.measureText(t).width<=max) return t; while(t.length>3 && x.measureText(t+'…').width>max) t=t.slice(0,-1); return t+'…'; };
+  const box=(bx,by,bw,bh,r)=>{ x.beginPath(); x.moveTo(bx+r,by); x.arcTo(bx+bw,by,bx+bw,by+bh,r); x.arcTo(bx+bw,by+bh,bx,by+bh,r); x.arcTo(bx,by+bh,bx,by,r); x.arcTo(bx,by,bx+bw,by,r); x.closePath(); x.fill(); };
+  x.fillStyle='#ffffff'; x.fillRect(0,0,W,H); x.fillStyle='#6d28d9'; x.fillRect(0,0,W,190);
+  x.fillStyle='#fff'; x.font=F(800,62); x.fillText('EasyProp',pad,112); x.font=F(500,30); x.textAlign='right'; x.fillText(new Date().toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}),W-pad,108); x.textAlign='left';
+  x.fillStyle='#14121f'; x.font=F(800,50); x.fillText(fit(title,W-2*pad),pad,280);
+  x.fillStyle='#6b6880'; x.font=F(500,30); x.fillText(legs.length>1?`${legs.length}-leg parlay · every leg must win`:'Single bet',pad,330);
+  let y=410;
+  for(const l of legs){ x.fillStyle='#f4f1fb'; box(pad,y-56,W-2*pad,lh-18,22);
+    x.fillStyle='#14121f'; x.font=F(700,36); x.fillText(fit(l.label,W-2*pad-230),pad+26,y-8);
+    x.fillStyle='#6b6880'; x.font=F(500,26); x.fillText(fit(l.game||'',W-2*pad-230),pad+26,y+28);
+    x.fillStyle='#6d28d9'; x.font=F(800,38); x.textAlign='right'; x.fillText(l.price!=null?fmtA(l.price):'',W-pad-26,y+6); x.textAlign='left'; y+=lh; }
+  y+=20; x.fillStyle='#14121f'; x.font=F(800,58); x.fillText(dec?toAmerican(dec):'',pad,y+40);
+  x.fillStyle='#6b6880'; x.font=F(500,32); if(dec) x.fillText(`$${stake} pays $${(stake*dec).toFixed(2)}`,pad,y+92);
+  x.fillStyle='#9a97ab'; x.font=F(500,24); x.fillText('Prices: DraftKings via ESPN when picked. Your book may differ.',pad,H-84); x.fillText('For entertainment and analysis only. Not betting advice.',pad,H-48);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png')); if(!blob) throw new Error('could not make the image');
+  const file=new File([blob],'easyprop-bet.png',{type:'image/png'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], title:'EasyProp bet'}); return 'shared'; }catch(e){ if(e.name==='AbortError') return 'cancelled'; } }
+  const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download='easyprop-bet.png'; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(u); a.parentNode&&a.parentNode.removeChild(a); },5000); return 'saved';
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('#slipshare,[data-tiershare]'); if(!b) return; e.stopPropagation(); e.preventDefault();
+  const was=b.textContent; b.textContent='Making image…';
+  try{ let res;
+    if(b.dataset.tiershare){ const p=PK.list.find(x=>x.id===b.dataset.tiershare); if(!p) throw new Error('pick not found');
+      res=await shareCard(p.name, p.legs.map(l=>({label:`${l.team} moneyline`, game:l.game, price:l.price})), decOdds(p.odds), p.stake); }
+    else { if(!OB.slip.length) throw new Error('your slip is empty'); const m=slipMath(), r=m.rows[0];
+      res=await shareCard('My bet slip', OB.slip.map(l=>({label:l.label, game:l.game, price:r?l.prices[r.k]:Object.values(l.prices)[0]})), r?.dec, +store.get('wc_stake',10)||10); }
+    b.textContent=res==='shared'?'Shared ✓':res==='saved'?'Saved to downloads ✓':was;
+  }catch(er){ b.textContent='Couldn’t make the image'; }
+  setTimeout(()=>{ if(b.isConnected) b.textContent=was; },2500);
+});
 // a section of games: board rows grouped by league, or the older big cards
 function boardSection(title, gs){
   if(!gs.length) return '';
@@ -1222,7 +1275,7 @@ function tiersHTML(){
       ${p.legs.map(l=>`<div class="leg" style="padding:5px 0"><span>${icon(l.res)} <b>${esc(l.team)}</b> to win <small style="color:var(--muted)">${esc(BY_KEY[l.sk]?.label||'')} · ${esc(l.game)}</small></span><span>${fmtA(l.price)}${l.final?' · '+esc(l.final):l.live&&!l.res?` · <span style="color:var(--live)">${esc(l.live)}</span>`:' · '+new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span></div>`).join('')}
       <div class="note" style="margin:6px 0">${esc(p.why||'')}</div>
       <div class="note" style="margin:0 0 6px">This level's record: ${rec}</div>
-      ${p.status==='pending'?slipBtn('tier:'+p.id, p.legs.map(l=>({label:`${l.team} moneyline`, price:l.price, kind:'ml', ev:l.ev, sk:l.sk, start:l.start, game:l.game}))):''}</div>`; }).join('');
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${p.status==='pending'?slipBtn('tier:'+p.id, p.legs.map(l=>({label:`${l.team} moneyline`, price:l.price, kind:'ml', ev:l.ev, sk:l.sk, start:l.start, game:l.game}))):''}<button class="addb" data-tiershare="${esc(p.id)}">📸 Share image</button></div></div>`; }).join('');
   return `<div class="pc" style="margin-top:12px;border:2px solid var(--accent)"><b style="font-size:16px">🎚 Today's 3 risk levels</b> <span class="badge">paper bets · graded automatically</span>
     <div class="note" style="margin:6px 0">My bankroll $<input id="tierbank" type="number" min="10" step="10" value="${bank}" style="width:90px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"> Stakes are a small share of it: safe 2%, medium 1%, risky 0.5%. A level that keeps losing gets its stake cut in half; one that keeps winning gets a little more.</div>
     ${cards}
@@ -2104,7 +2157,7 @@ function render(){
   const tabGames=lastGames.filter(g=>tab==='all'||g.sport.key===tab), games=bvFilter(tabGames);
   const counts={all:0}; for(const g of lastGames) if(g.state==='in'){ counts[g.sport.key]=(counts[g.sport.key]||0)+1; counts.all++; }
   renderTabs(counts);
-  const sec=boardSection, bar=bvBar(tabGames);
+  const sec=boardSection, bar=tonightHTML()+bvBar(tabGames);
   let html='';
   html+=sec('🔴 Live now', games.filter(g=>g.state==='in').sort((a,b)=>Math.abs(a.out.home-0.5)-Math.abs(b.out.home-0.5)));
   html+=sec(dayOffset===0?'Today':dayLabel(dayOffset), games.filter(g=>g.state==='pre').sort((a,b)=>new Date(a.ev.date)-new Date(b.ev.date)));
@@ -2829,7 +2882,7 @@ function renderSlip(){
     <div class="note">Stake $<input type="number" id="stake" value="${stake}" min="1" step="1" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">
       ${fair&&best?` · Market's fair chance all legs hit: <b>${pct(fair)}</b> · Expected return at ${esc(OB.allBooks[best.k]||best.k)}: <b class="${fair*best.dec>=1?'hi':'lo'}">${fair*best.dec>=1?'+':''}${((fair*best.dec-1)*100).toFixed(1)}%</b> per dollar`:''}</div>
     ${sameGame?'<div class="note lo">Two or more legs are from the same game. Books price same-game parlays differently, so the payout at the book may not match this math.</div>':''}
-    <button class="tbtn" id="slipcopy">Copy slip</button> <button class="tbtn" id="sliplog" style="border-color:var(--accent);color:var(--accent)">Log this bet</button> <span class="note" id="copied"></span>`;
+    <button class="tbtn" id="slipcopy">Copy slip</button> <button class="tbtn" id="slipshare">📸 Share image</button> <button class="tbtn" id="sliplog" style="border-color:var(--accent);color:var(--accent)">Log this bet</button> <span class="note" id="copied"></span>`;
   if(sb) sb.innerHTML=`<div class="pc" style="margin-top:12px">${el.innerHTML}</div><div class="note">Copy the slip, then place it in your sportsbook app or at the casino window. Tap <b>Log this bet</b> after you place it so 📊 Results tracks your money.</div>`;
 }
 function slipText(){
