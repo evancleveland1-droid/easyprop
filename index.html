@@ -3253,6 +3253,17 @@ $('#cb').addEventListener('change',e=>{
   if(e.target.classList.contains('cbmult')){ PP.mult[e.target.dataset.n]=+e.target.value||0; store.set('wc_mult',PP.mult); renderCombos(); }
 });
 
+/* Self-update: if a newer version of the page is published, reload it (phones cache the old one for a while). */
+async function checkForUpdate(){
+  try{
+    if(!/github\.io$/.test(location.hostname)) return;
+    const r=await fetch('./index.html?t='+Date.now(), {method:'HEAD', cache:'no-store'}), lm=r.headers.get('last-modified'); if(!lm) return;
+    const live=+new Date(lm), mine=+new Date(document.lastModified);
+    if(live-mine>90e3 && sessionStorage.getItem('wc_upd')!==String(live)){ sessionStorage.setItem('wc_upd',String(live)); location.replace('./?v='+Math.round(live/1000)+location.hash); }
+  }catch(e){}
+}
+checkForUpdate(); setInterval(checkForUpdate, 5*60e3);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkForUpdate(); });
 /* bottom nav + More sheet */
 function updNav(){ const h=location.hash; document.querySelectorAll('#bnav [data-nav]').forEach(b=>b.classList.toggle('on', b.dataset.nav===h || (b.dataset.nav==='' && (!h||h==='#'||h.startsWith('#g/'))))); }
 $('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]'); if(b){ const h=b.dataset.nav; if(!h){ if(location.hash&&location.hash!=='#') location.hash=''; else window.scrollTo({top:0,behavior:'smooth'}); } else location.hash=h; return; }
