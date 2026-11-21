@@ -1166,7 +1166,7 @@
    "name": "Utah single",
    "verdict": "Good bet",
    "chance": 0.7,
-   "why": "UPDATE (Nov 20): Still on. Price moved from -270 to -290, so the market agrees; no injury news. 10-0 Utah (#2 in the Playoff rankings); money moved the line from -5.5 to -7.5 at TCU.",
+   "why": "UPDATE (Nov 21): moved in its favor. Utah has gone from -270 to -325 since this was posted, so the market agrees; the posted price was the better one. Still a Good bet up to about -330. UPDATE (Nov 20): Still on. Price moved from -270 to -290, so the market agrees; no injury news. 10-0 Utah (#2 in the Playoff rankings); money moved the line from -5.5 to -7.5 at TCU.",
    "legs": [
     {
      "ev": "401856872",
@@ -1238,7 +1238,7 @@
    "name": "Kansas State +7 single",
    "verdict": "Lean",
    "chance": 0.52,
-   "why": "UPDATE (Nov 20): Still on, slightly better number available now: K-State +7.5 (-115). Rain is forecast in Manhattan during the game, which helps the underdog and the points. Money moved this from K-State +10.5 to +7 against #19 Arizona. Taking the points at home.",
+   "why": "UPDATE (Nov 21): you can now get Kansas State +7.5 (-115) instead of +7, a slightly better number; take the +7.5 if your book has it. No injury news, still a Lean. UPDATE (Nov 20): Still on, slightly better number available now: K-State +7.5 (-115). Rain is forecast in Manhattan during the game, which helps the underdog and the points. Money moved this from K-State +10.5 to +7 against #19 Arizona. Taking the points at home.",
    "legs": [
     {
      "ev": "401856865",
@@ -2032,7 +2032,7 @@
    "name": "Knicks -5.5 single",
    "verdict": "Good bet",
    "chance": 0.5,
-   "why": "Portland is listed without Ja Morant and Shaedon Sharpe, and Deni Avdija is day-to-day, on the road. The Knicks are home and ESPN's model has them at 65%. If Avdija also sits, this number should climb, so earlier is better.",
+   "why": "UPDATE (Nov 21): line unchanged at -5.5 and the price is slightly cheaper (-102). Morant and Sharpe still out, Avdija still day-to-day. Still a Good bet. Portland is listed without Ja Morant and Shaedon Sharpe, and Deni Avdija is day-to-day, on the road. The Knicks are home and ESPN's model has them at 65%. If Avdija also sits, this number should climb, so earlier is better.",
    "legs": [
     {
      "ev": "401910024",
@@ -2057,7 +2057,7 @@
    "name": "Mavericks single",
    "verdict": "Lean",
    "chance": 0.64,
-   "why": "The Clippers are 4-10 and missing Brandon Ingram and Bradley Beal. Dallas is home and ESPN's model gives them 72%, a bit better than the price implies. Dallas has its own injuries (Lively out, Washington day-to-day), so only a lean.",
+   "why": "UPDATE (Nov 21): moved in its favor, Dallas is now -217 (was -201). Ingram and Beal are still out for the Clippers. Still a Lean. The Clippers are 4-10 and missing Brandon Ingram and Bradley Beal. Dallas is home and ESPN's model gives them 72%, a bit better than the price implies. Dallas has its own injuries (Lively out, Washington day-to-day), so only a lean.",
    "legs": [
     {
      "ev": "401910025",
@@ -2141,7 +2141,7 @@
    "name": "Jaguars single",
    "verdict": "Good bet",
    "chance": 0.7,
-   "why": "Jacksonville is 7-2 and the Giants lost quarterback Jaxson Dart to injured reserve. The line opened Jaguars -125 and has run to here, so some of the value is gone, but ESPN's model still says 81%, better than the price.",
+   "why": "UPDATE (Nov 21): re-checked. Price is a touch cheaper at -253 (was -263) and Jaxson Dart is still on the Giants injury list. No change, still a Good bet. Jacksonville is 7-2 and the Giants lost quarterback Jaxson Dart to injured reserve. The line opened Jaguars -125 and has run to here, so some of the value is gone, but ESPN's model still says 81%, better than the price.",
    "legs": [
     {
      "ev": "401873069",
@@ -2165,7 +2165,7 @@
    "name": "Steelers -3.5 single",
    "verdict": "Lean",
    "chance": 0.5,
-   "why": "The Eagles are 2-7 and Jalen Hurts is on injured reserve. Pittsburgh is 6-3 and went from an underdog to a favorite once that news hit. Laying more than a field goal on the road is the risk, and the total of 37.5 says points will be scarce.",
+   "why": "UPDATE (Nov 21): re-checked. Still Steelers -3.5 at -111 and Jalen Hurts is still listed as injured. No change, still a Lean. The Eagles are 2-7 and Jalen Hurts is on injured reserve. Pittsburgh is 6-3 and went from an underdog to a favorite once that news hit. Laying more than a field goal on the road is the risk, and the total of 37.5 says points will be scarce.",
    "legs": [
     {
      "ev": "401873076",
@@ -2253,55 +2253,897 @@
      "start": "2026-11-22T18:00Z"
     }
    ]
+  },
+  {
+   "id": "c-20261121-s-gaso",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Georgia Southern single",
+   "verdict": "Good bet",
+   "chance": 0.75,
+   "why": "Georgia Southern has won four straight and Troy has lost four of its last five. ESPN's model gives the Eagles 75%, right in line with the price, and the line has moved their way since it opened (-325 to -355). A solid favorite I would also use in a small parlay.",
+   "legs": [
+    {
+     "ev": "401869953",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "290",
+     "price": -355,
+     "label": "Georgia Southern moneyline",
+     "game": "GASO @ TROY",
+     "start": "2026-11-21T21:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-s-hou",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Houston (football) single",
+   "verdict": "Good bet",
+   "chance": 0.71,
+   "why": "No. 20 Houston is 7-3 and visits a West Virginia team that has lost two straight. ESPN's model gives Houston 74% and money has come in on the Cougars (-230 to -285). Calm weather in Morgantown, so nothing odd to worry about.",
+   "legs": [
+    {
+     "ev": "401856868",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "248",
+     "price": -285,
+     "label": "Houston moneyline",
+     "game": "HOU @ WVU",
+     "start": "2026-11-21T18:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-s-ars",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Arsenal single",
+   "verdict": "Lean",
+   "chance": 0.61,
+   "why": "Arsenal is unbeaten (9 wins, 1 draw) and Newcastle has lost three of its last five. A draw loses this bet, which is why it is only a lean: soccer favorites this size win about 6 times in 10.",
+   "legs": [
+    {
+     "ev": "401879232",
+     "sk": "epl",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "359",
+     "price": -180,
+     "label": "Arsenal moneyline",
+     "game": "ARS @ NEW",
+     "start": "2026-11-21T17:30Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-s-car",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Hurricanes single",
+   "verdict": "Lean",
+   "chance": 0.64,
+   "why": "Carolina is 16-3-3 and at home; Edmonton has a goalie on the injured list and Ryan Nugent-Hopkins is day-to-day. The price moved toward Carolina (-170 to -198). Hockey is streaky, so a lean, not a lock.",
+   "legs": [
+    {
+     "ev": "401892754",
+     "sk": "nhl",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "7",
+     "price": -198,
+     "label": "Hurricanes moneyline",
+     "game": "EDM @ CAR",
+     "start": "2026-11-21T18:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-s-uk",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Kentucky +4.5 single",
+   "verdict": "Lean",
+   "chance": 0.49,
+   "why": "Getting points with the better record: No. 16 Kentucky is 7-3, Missouri is 6-4 and has lost three of five. The line has dropped from 6.5 to 4.5, meaning money is on Kentucky. Underdogs with points are 4-0 for me so far (small sample).",
+   "legs": [
+    {
+     "ev": "401856751",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "spread",
+     "side": "away",
+     "teamId": "96",
+     "line": 4.5,
+     "price": -105,
+     "label": "Kentucky +4.5",
+     "game": "UK @ MIZ",
+     "start": "2026-11-22T00:30Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-s-byu-under",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "BYU/Kansas under 46.5 single",
+   "verdict": "Lean",
+   "chance": 0.49,
+   "why": "Wind in Lawrence is forecast at 17 mph with gusts near 30, which hurts passing and kicking. The total has already dropped from 50.5 to 46.5, so some of the value is gone; that is why it is a lean. My unders are 2-0 so far.",
+   "legs": [
+    {
+     "ev": "401856866",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "total",
+     "side": "under",
+     "line": 46.5,
+     "price": -105,
+     "label": "BYU/KU under 46.5",
+     "game": "BYU @ KU",
+     "start": "2026-11-21T17:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-p2-safe",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "2-leg safest: Georgia Southern + Houston",
+   "verdict": "Good bet",
+   "chance": 0.53,
+   "why": "Two road favorites I like as singles, both rated 74-75% by ESPN's model. Neither team is in any other parlay today, so one upset cannot sink the whole card like the Pistons did Friday.",
+   "legs": [
+    {
+     "ev": "401869953",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "290",
+     "price": -355,
+     "label": "Georgia Southern moneyline",
+     "game": "GASO @ TROY",
+     "start": "2026-11-21T21:00Z"
+    },
+    {
+     "ev": "401856868",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "248",
+     "price": -285,
+     "label": "Houston moneyline",
+     "game": "HOU @ WVU",
+     "start": "2026-11-21T18:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-p3-mix",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "3-leg balanced: Arsenal + Mavericks + UNLV",
+   "verdict": "Lean",
+   "chance": 0.27,
+   "why": "Three sports, three favorites with a reason: unbeaten Arsenal, Dallas at home against a Clippers team missing Ingram and Beal, and UNLV, where the price has jumped from -148 to -245 on heavy betting. All three must win.",
+   "legs": [
+    {
+     "ev": "401879232",
+     "sk": "epl",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "359",
+     "price": -180,
+     "label": "Arsenal moneyline",
+     "game": "ARS @ NEW",
+     "start": "2026-11-21T17:30Z"
+    },
+    {
+     "ev": "401910025",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "6",
+     "price": -217,
+     "label": "Mavericks moneyline",
+     "game": "LAC @ DAL",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401864544",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "2439",
+     "price": -245,
+     "label": "UNLV moneyline",
+     "game": "UNLV @ SJSU",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-cfb3",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "College football 3-leg: BYU + UTSA + UNLV",
+   "verdict": "Lean",
+   "chance": 0.3,
+   "why": "Three road favorites that ESPN's model rates at 70% or better, each a bit higher than the price implies. None are the huge -1000 type, so the payout is real (about 2-to-1). Windy in Kansas, which is the main risk for BYU.",
+   "legs": [
+    {
+     "ev": "401856866",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "252",
+     "price": -218,
+     "label": "BYU moneyline",
+     "game": "BYU @ KU",
+     "start": "2026-11-21T17:00Z"
+    },
+    {
+     "ev": "401862836",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "2636",
+     "price": -225,
+     "label": "UTSA moneyline",
+     "game": "UTSA @ UAB",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401864544",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "2439",
+     "price": -245,
+     "label": "UNLV moneyline",
+     "game": "UNLV @ SJSU",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-nhl2",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "NHL 2-leg: Hurricanes + Senators",
+   "verdict": "Lean",
+   "chance": 0.39,
+   "why": "Two home favorites whose prices both moved in their favor: Carolina (16-3-3) against an Oilers team with goalie trouble, and Ottawa (14-6-3) against the 7-11-2 Kings, who may be without Artemi Panarin.",
+   "legs": [
+    {
+     "ev": "401892754",
+     "sk": "nhl",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "7",
+     "price": -198,
+     "label": "Hurricanes moneyline",
+     "game": "EDM @ CAR",
+     "start": "2026-11-21T18:00Z"
+    },
+    {
+     "ev": "401892761",
+     "sk": "nhl",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "14",
+     "price": -175,
+     "label": "Senators moneyline",
+     "game": "LA @ OTT",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-props-safe",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Props (safer): 2-leg rebound unders",
+   "verdict": "Lean",
+   "chance": 0.42,
+   "why": "Cut to 2 legs because every 6-leg prop parlay so far lost by a single leg. Jaden McDaniels has gone under 6.5 rebounds in 13 of 16 games; Josh Hart is under 6.5 in his last five as his minutes have dipped. Prop unders are 14-3 so far. Lines are estimates, match them in your app.",
+   "legs": [
+    {
+     "ev": "401910026",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4431671",
+     "stat": "REB",
+     "line": 6.5,
+     "price": -110,
+     "label": "Jaden McDaniels under 6.5 rebounds",
+     "game": "MEM @ MIN",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910024",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "3062679",
+     "stat": "REB",
+     "line": 6.5,
+     "price": -110,
+     "label": "Josh Hart under 6.5 rebounds",
+     "game": "POR @ NY",
+     "start": "2026-11-22T00:30Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261121-props-5",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Props: 5-leg NBA long shot",
+   "verdict": "Long shot",
+   "chance": 0.1,
+   "why": "Brunson has hit 3+ threes in 9 of his last 10. Herro is under 4.5 assists in 11 of 15. Cedric Coward's role has grown with five Grizzlies out (over this line five straight). Castle and Kuzma unders have hit in 8-9 of their last 10. Five legs rarely all hit, so keep the stake small. Lines are estimates.",
+   "legs": [
+    {
+     "ev": "401910024",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "3934672",
+     "stat": "3PM",
+     "line": 2.5,
+     "price": -110,
+     "label": "Jalen Brunson over 2.5 threes",
+     "game": "POR @ NY",
+     "start": "2026-11-22T00:30Z"
+    },
+    {
+     "ev": "401910023",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4395725",
+     "stat": "AST",
+     "line": 4.5,
+     "price": -110,
+     "label": "Tyler Herro under 4.5 assists",
+     "game": "MIL @ PHI",
+     "start": "2026-11-21T18:00Z"
+    },
+    {
+     "ev": "401910026",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "4903027",
+     "stat": "PRA",
+     "line": 26.5,
+     "price": -110,
+     "label": "Cedric Coward over 26.5 pts+reb+ast",
+     "game": "MEM @ MIN",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910027",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4845367",
+     "stat": "3PM",
+     "line": 2.5,
+     "price": -110,
+     "label": "Stephon Castle under 2.5 threes",
+     "game": "NO @ SA",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910023",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "3134907",
+     "stat": "REB",
+     "line": 5.5,
+     "price": -110,
+     "label": "Kyle Kuzma under 5.5 rebounds",
+     "game": "MIL @ PHI",
+     "start": "2026-11-21T18:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-s-fsu",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Florida State single (formula)",
+   "verdict": "Favorite",
+   "chance": 0.77,
+   "why": "One of the day's strongest favorites that is not worse than -400.",
+   "legs": [
+    {
+     "ev": "401858304",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "52",
+     "price": -395,
+     "label": "Florida State moneyline",
+     "game": "NCSU @ FSU",
+     "start": "2026-11-21T20:30Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-s-ul",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Louisiana single (formula)",
+   "verdict": "Favorite",
+   "chance": 0.77,
+   "why": "One of the day's strongest favorites that is not worse than -400.",
+   "legs": [
+    {
+     "ev": "401869946",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "309",
+     "price": -395,
+     "label": "Louisiana moneyline",
+     "game": "CCU @ UL",
+     "start": "2026-11-21T20:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-s-utc",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Chattanooga hoops single (formula)",
+   "verdict": "Favorite",
+   "chance": 0.77,
+   "why": "One of the day's strongest favorites that is not worse than -400.",
+   "legs": [
+    {
+     "ev": "401920975",
+     "sk": "ncaam",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "236",
+     "price": -395,
+     "label": "Chattanooga moneyline",
+     "game": "RAD @ UTC",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-p2",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Formula 2-leg: top favorites",
+   "verdict": "Favorite",
+   "chance": 0.59,
+   "why": "The two strongest favorites from different games, both well past the -150 minimum.",
+   "legs": [
+    {
+     "ev": "401858304",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "52",
+     "price": -395,
+     "label": "Florida State moneyline",
+     "game": "NCSU @ FSU",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401869946",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "309",
+     "price": -395,
+     "label": "Louisiana moneyline",
+     "game": "CCU @ UL",
+     "start": "2026-11-21T20:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-p3",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "Formula 3-leg: top favorites",
+   "verdict": "Favorite",
+   "chance": 0.45,
+   "why": "The three strongest favorites from different games (two football, one college hoops), all past the -150 minimum.",
+   "legs": [
+    {
+     "ev": "401858304",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "52",
+     "price": -395,
+     "label": "Florida State moneyline",
+     "game": "NCSU @ FSU",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401869946",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "309",
+     "price": -395,
+     "label": "Louisiana moneyline",
+     "game": "CCU @ UL",
+     "start": "2026-11-21T20:00Z"
+    },
+    {
+     "ev": "401920975",
+     "sk": "ncaam",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "236",
+     "price": -395,
+     "label": "Chattanooga moneyline",
+     "game": "RAD @ UTC",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-nba-props",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "NBA props (formula): 6-leg parlay",
+   "verdict": "Favorite",
+   "chance": 0.1,
+   "why": "The six highest hit-rate props tonight (season, last 10 and last 5 games blended), one per player. Lines are estimates; all six must hit.",
+   "legs": [
+    {
+     "ev": "401910026",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4431671",
+     "stat": "REB",
+     "line": 6.5,
+     "price": -110,
+     "label": "Jaden McDaniels under 6.5 rebounds",
+     "game": "MEM @ MIN",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910024",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "3934672",
+     "stat": "3PM",
+     "line": 2.5,
+     "price": -110,
+     "label": "Jalen Brunson over 2.5 threes",
+     "game": "POR @ NY",
+     "start": "2026-11-22T00:30Z"
+    },
+    {
+     "ev": "401910027",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4845367",
+     "stat": "3PM",
+     "line": 2.5,
+     "price": -110,
+     "label": "Stephon Castle under 2.5 threes",
+     "game": "NO @ SA",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910027",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "4395628",
+     "stat": "PTS",
+     "line": 21.5,
+     "price": -110,
+     "label": "Zion Williamson over 21.5 points",
+     "game": "NO @ SA",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910023",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4395725",
+     "stat": "AST",
+     "line": 4.5,
+     "price": -110,
+     "label": "Tyler Herro under 4.5 assists",
+     "game": "MIL @ PHI",
+     "start": "2026-11-21T18:00Z"
+    },
+    {
+     "ev": "401910026",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "4433083",
+     "stat": "PRA",
+     "line": 20.5,
+     "price": -110,
+     "label": "Cam Spencer over 20.5 pts+reb+ast",
+     "game": "MEM @ MIN",
+     "start": "2026-11-22T01:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-props-2",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "NBA props (formula): top 2",
+   "verdict": "Favorite",
+   "chance": 0.49,
+   "why": "New after two 6-leg misses by one leg each: just the two highest hit-rate props. Lines are estimates.",
+   "legs": [
+    {
+     "ev": "401910026",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "under",
+     "pid": "4431671",
+     "stat": "REB",
+     "line": 6.5,
+     "price": -110,
+     "label": "Jaden McDaniels under 6.5 rebounds",
+     "game": "MEM @ MIN",
+     "start": "2026-11-22T01:00Z"
+    },
+    {
+     "ev": "401910024",
+     "sk": "nba",
+     "d": "20261121",
+     "kind": "prop",
+     "side": "over",
+     "pid": "3934672",
+     "stat": "3PM",
+     "line": 2.5,
+     "price": -110,
+     "label": "Jalen Brunson over 2.5 threes",
+     "game": "POR @ NY",
+     "start": "2026-11-22T00:30Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261122-ahead-bha",
+   "picker": "claude",
+   "day": "20261122",
+   "stake": 10,
+   "name": "Brighton single",
+   "verdict": "Lean",
+   "chance": 0.64,
+   "why": "Brighton (7 wins, 1 draw, 2 losses) has won three straight; Hull has not won in its last five. A draw loses the bet, so it is a lean.",
+   "legs": [
+    {
+     "ev": "401879234",
+     "sk": "epl",
+     "d": "20261122",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "331",
+     "price": -200,
+     "label": "Brighton moneyline",
+     "game": "BHA @ HUL",
+     "start": "2026-11-22T14:00Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261123-ahead-cin",
+   "picker": "claude",
+   "day": "20261123",
+   "stake": 10,
+   "name": "Bengals single (Monday night)",
+   "verdict": "Good bet",
+   "chance": 0.72,
+   "why": "Cincinnati is 7-2 and has won five straight; Washington is 3-5-1 with left tackle Laremy Tunsil hurt. The line opened near even and has run to -298, and ESPN's model gives the Bengals 76%. Most of the value went with the move, so do not chase it past -320.",
+   "legs": [
+    {
+     "ev": "401873078",
+     "sk": "nfl",
+     "d": "20261123",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "4",
+     "price": -298,
+     "label": "Bengals moneyline",
+     "game": "CIN @ WSH",
+     "start": "2026-11-24T01:15Z"
+    }
+   ]
+  },
+  {
+   "id": "c-20261123-ahead-cin6",
+   "picker": "claude",
+   "day": "20261123",
+   "stake": 10,
+   "name": "Bengals -6 single",
+   "verdict": "Lean",
+   "chance": 0.51,
+   "why": "Same game, better payout: Bengals to win by a touchdown or more. Riskier than the moneyline, and a 6-point win is a push (money back).",
+   "legs": [
+    {
+     "ev": "401873078",
+     "sk": "nfl",
+     "d": "20261123",
+     "kind": "spread",
+     "side": "away",
+     "teamId": "4",
+     "line": -6.0,
+     "price": -115,
+     "label": "Bengals -6",
+     "game": "CIN @ WSH",
+     "start": "2026-11-24T01:15Z"
+    }
+   ]
   }
  ],
- "insights": "First graded night (Thu Nov 19): Claude 16-0 (+$264 on $10 stakes), formula 2-1 (+$17). Honest caveat: those 16 bets were built from only 8 different game results (Texans, Knicks, Blazers, Spurs, Florida, Houston, Rice +2.5, two unders) that all hit, so this is one good night, not proof. The only miss was the formula's Temple -142, a coin-flip 'favorite' that Rice beat outright. Today: same approach (solid favorites, one underdog number, small parlays), and the formula now needs -150 or stronger before a team goes in its parlays.",
+ "insights": "Through two graded days Claude is 20-10 (+$196 on $10 stakes) and the formula is 4-5 (-$10). Friday was a losing night: Claude 4-10 (-$68), mostly because one upset (Pistons lost to Toronto by 3) was sitting in five different bets, and the Rockets underdog pick was in four more. What held up: singles (10-2), underdogs with points (4-0, Wyoming and the Kings both covered) and unders (2-0). What did not: every prop parlay lost (0-5) even though the individual prop legs went 20-6, because each 6-leg ticket missed by one leg. Today: no team goes in more than two new bets, the safer prop parlay is cut to 2 legs, no moneyline underdogs, and only one 4+ leg long shot (already posted). It is still a small sample (about 30 different results), so treat these as leanings, not proof.",
  "learning": {
-  "updated": "20261120",
+  "updated": "20261121",
   "claude": {
-   "w": 16,
-   "l": 0,
-   "profit": 263.95
+   "w": 20,
+   "l": 10,
+   "profit": 195.94
   },
   "formula": {
-   "w": 2,
-   "l": 1,
-   "profit": 16.86
+   "w": 4,
+   "l": 5,
+   "profit": -9.93
+  },
+  "lastNight": {
+   "day": "20261120",
+   "claude": "4-10 (-$68.01)",
+   "formula": "2-4 (-$26.79)"
   },
   "byType": {
    "claude": {
-    "singles": "6-0",
-    "2-leg": "4-0",
-    "3-leg": "5-0",
-    "4+ leg": "1-0",
-    "props": "0-0 (first ones grade tonight)"
+    "singles": "10-2 (+$48.95)",
+    "2-leg": "4-2 (+$33.97)",
+    "3-leg": "5-2 (+$92.12)",
+    "4+ leg": "1-1 (+$50.91)",
+    "props": "0-3 (-$30.00)"
    },
    "formula": {
-    "singles": "1-0",
+    "singles": "3-1 (+$4.66)",
+    "2-leg": "0-1",
     "3-leg": "0-1",
-    "4+ leg": "1-0",
-    "props": "0-0"
+    "4+ leg": "1-0 (+$25.41)",
+    "props": "0-2 (-$20.00)"
+   }
+  },
+  "byMarket": {
+   "claude": {
+    "moneyline favorites": "9-2",
+    "moneyline underdogs": "0-1",
+    "spreads": "4-0",
+    "unders": "2-0",
+    "overs": "0-0",
+    "prop overs": "4-3",
+    "prop unders": "6-1"
+   },
+   "formula": {
+    "moneyline favorites": "9-2",
+    "prop overs": "2-0",
+    "prop unders": "8-2"
+   }
+  },
+  "bySport": {
+   "claude": {
+    "nba": "12-5",
+    "college hoops": "9-1",
+    "college football": "2-1",
+    "nfl": "2-0"
+   },
+   "formula": {
+    "nba": "10-1",
+    "college hoops": "8-2",
+    "college football": "0-1",
+    "nfl": "1-0"
    }
   },
   "legs": {
-   "claude": "33-0 (8 different results)",
-   "formula": "7-1"
+   "claude": "53-14 counting repeats, 25-7 different results",
+   "formula": "20-5 counting repeats, 19-4 different results"
   },
   "working": [
-   "NBA favorites (Knicks, Blazers, Spurs)",
-   "Short underdog spreads (Rice +2.5 won outright)",
+   "Singles (Claude 10-2)",
+   "Underdogs getting points (4-0: Rice, Wyoming, Kings +14.5, plus Saint Mary's -1.5)",
    "Unders (2-0)",
-   "2 and 3-leg parlays built from picks liked as singles"
+   "Individual prop legs, especially unders (14-3 across both pickers)",
+   "NBA and college hoops favorites for the formula (18-3 legs)"
   ],
   "notWorking": [
-   "Formula coin-flip favorites closer than -150 (Temple -142 lost)"
+   "Putting the same team in many bets (Pistons loss sank 5 bets, Rockets 4)",
+   "6-leg prop parlays (0-4, each missed by one leg)",
+   "Moneyline underdogs (Rockets +101 lost)",
+   "Formula favorites in the -140 to -180 range (Temple, NC State both lost)"
   ],
   "rules": [
-   "Sample is one night (8 games): do not raise leg counts or stakes because of it",
+   "Sample is two nights (about 30 different results): do not raise stakes or leg counts because of it",
+   "No team in more than 2 new bets per day, so one upset cannot sink the card",
    "Parlay legs must be picks I would bet as singles; no -1000 filler",
    "At most one 4+ leg long shot per day",
-   "Formula: only favorites -150 or stronger go into formula parlays",
-   "Props: no record yet, keep prop parlays as Lean or Long shot until 20+ legs are graded"
+   "No moneyline underdogs in parlays; take underdogs with points instead",
+   "Props: the safer parlay is 2 legs, lean to unders; 5-6 leg prop parlays are always Long shot",
+   "Formula: only favorites -150 or stronger go into formula parlays; also post a 2-leg version of the prop parlay"
   ]
  }
 }
