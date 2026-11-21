@@ -1160,14 +1160,123 @@ function toast(title, body){
 
 /* ================= 🛠 Build my bet: you choose, the app (or Claude) builds ================= */
 const BD={off:0, sports:store.get('wc_bdsp',['all']), type:store.get('wc_bdtype','parlay'), legs:store.get('wc_bdlegs',3), style:store.get('wc_bdstyle','balanced'), stake:store.get('wc_stake',10),
-  cands:null, t:0, busy:false, builds:null, claude:null, claudeBusy:false, claudeErr:null, seed:0, sample:undefined};
+  cands:null, t:0, busy:false, builds:null, claude:null, claudeBusy:false, claudeErr:null, seed:0, sample:undefined,
+  mk:store.get('wc_bdmk',['ml','spread','total','half','teamtot','prop','mile']), only:[], gopen:false, evIds:[], dkLeft:0};
+if(BD.type==='props'){ BD.type='parlay'; BD.mk=['prop','mile']; } if(BD.type==='mix') BD.type='parlay';
+const BD_MK=[['ml','Moneyline'],['spread','Spread'],['total','Over/Under'],['half','1st half'],['period','Quarters & periods'],['teamtot','Team totals'],['prop','Player over/unders'],['mile','Player milestones (15+ pts)'],['scorer','Scorers & specials']];
+const BD_GAME_MK=['ml','spread','total','half','period','teamtot'], BD_PROP_MK=['prop','mile','scorer'];
+
+/* ---- Real DraftKings markets via ESPN: player props, halves/quarters, team totals, and live in-game odds ---- */
+const DKX={}, DKX_SPORTS=['nba','nfl','nhl','mlb','wnba','epl','mls','ucl'];
+const dkId=(r,w)=>(String(r?.$ref||'').match(new RegExp('/'+w+'/(\\d+)'))||[])[1];
+const amN=v=>{ if(v==null||v==='') return null; if(/even/i.test(v)) return 100; const x=parseFloat(String(v).replace('+','')); return isFinite(x)&&x!==0?x:null; };
+const DK_STAT={'points':'PTS','rebounds':'REB','assists':'AST','threes':'3PM','pts+reb+ast':'PRA','passing yards':'Pass Yds','rushing yards':'Rush Yds','receiving yards':'Rec Yds','receptions':'Rec'};
+function dkStat(t){ let x=t.replace(/^Total /,'').replace(/ \(incl\. overtime\)/i,'').replace(/ Milestones$/,'').toLowerCase().replace('3-point field goals','threes').replace('points, rebounds, and assists','pts+reb+ast').replace('points + assists + rebounds','pts+reb+ast');
+  if(/ and | \+ | plus /.test(x)) x=x.replace(/ and | \+ | plus /g,'+').replace('points','pts').replace('rebounds','reb').replace('assists','ast'); return x; }
+async function loadDKX(sk, ev, live){
+  const S=DKX[ev.id] ||= {t:0,busy:false,legs:[]};
+  if(S.busy || Date.now()-S.t<(live?20e3:5*60e3)) return S; S.busy=true;
+  try{
+    const sport=BY_KEY[sk], [sp,lg]=sport.path.split('/'), c=ev.competitions[0], st=(c.status||ev.status).type;
+    const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away');
+    const game=live?`${A.team.abbreviation} ${A.score}-${H.score} ${H.team.abbreviation} · ${st.shortDetail||'live'}`:`${A.team.abbreviation} @ ${H.team.abbreviation}`;
+    const base={ev:ev.id, sk, game, start:ev.date, real:true, live:!!live}, tn={[H.team.id]:H.team, [A.team.id]:A.team}, legs=[];
+    const od=await getJSON(`${CORE}/${sp}/leagues/${lg}/events/${ev.id}/competitions/${ev.id}/odds`,15000);
+    const it=(od.items||[]).find(x=>String(x.provider?.id)===(live?'200':'100'));
+    if(it && live){
+      const h=it.homeTeamOdds?.current||{}, a=it.awayTeamOdds?.current||{}, cu=it.current||{};
+      const mh=amN(h.moneyLine?.american), ma=amN(a.moneyLine?.american), md=amN(cu.draw?.american);
+      if(mh!=null&&ma!=null){ const t=impl(mh)+impl(ma)+(md!=null?impl(md):0);
+        legs.push({...base,id:`${ev.id}|ml|h`,kind:'ml',side:'home',label:`${H.team.displayName} moneyline`,price:mh,p:impl(mh)/t},{...base,id:`${ev.id}|ml|a`,kind:'ml',side:'away',label:`${A.team.displayName} moneyline`,price:ma,p:impl(ma)/t}); }
+      const lh=num(h.pointSpread?.american), la=num(a.pointSpread?.american), ph=amN(h.spread?.american), pa=amN(a.spread?.american);
+      if(lh!=null&&la!=null&&ph!=null&&pa!=null){ const [fh,fa]=pairFair(ph,pa);
+        legs.push({...base,id:`${ev.id}|sp|h`,kind:'spread',side:'home',label:`${H.team.displayName} ${fmtLine(lh)}`,price:ph,p:fh,line:lh},{...base,id:`${ev.id}|sp|a`,kind:'spread',side:'away',label:`${A.team.displayName} ${fmtLine(la)}`,price:pa,p:fa,line:la}); }
+      const tl=num(cu.total?.american), po=amN(cu.over?.american), pu=amN(cu.under?.american), nm=`${A.team.abbreviation} @ ${H.team.abbreviation}`;
+      if(tl!=null&&po!=null&&pu!=null){ const [fo,fu]=pairFair(po,pu);
+        legs.push({...base,id:`${ev.id}|tot|o`,kind:'total',side:'over',label:`${nm} over ${tl}`,price:po,p:fo,line:tl},{...base,id:`${ev.id}|tot|u`,kind:'total',side:'under',label:`${nm} under ${tl}`,price:pu,p:fu,line:tl}); }
+    }
+    if(it?.propBets?.$ref){
+      const u=it.propBets.$ref.replace('http://','https://')+'&limit=1000'; let p1={}; try{ p1=await getJSON(u,20000); }catch(e){} let items=p1.items||[];
+      if((p1.pageCount||1)>1){ try{ items=items.concat((await getJSON(u+'&page=2',20000)).items||[]); }catch(e){} }
+      const names={}; await Promise.all([H,A].map(async t=>{ try{ for(const a of await roster(sport,t.team.id)) names[a.id]={name:a.name, inj:a.inj}; }catch(e){} }));
+      const G=new Map();
+      for(const x of items){ const t=x.type?.name, price=amN(x.odds?.american?.value), po=amN(x.current?.over?.american), pu=amN(x.current?.under?.american); if(!t||(price==null&&po==null&&pu==null)) continue;
+        const ath=dkId(x.athlete,'athletes'), team=dkId(x.team,'teams'), tv=x.current?.target?.value, k=[t,ath||'',team||'',tv??''].join('|');
+        let g=G.get(k); if(!g) G.set(k,g={t,ath,team,tv,disp:x.current?.target?.displayValue,prices:[]});
+        if(price!=null) g.prices.push(price); else { if(po!=null&&g.prices[0]==null) g.prices[0]=po; if(pu!=null){ if(g.prices[0]==null) g.prices[0]=null; g.prices[1]=pu; } } }
+      for(const [k,g] of G) if(g.prices[0]==null) G.delete(k);
+      const byType={}; for(const g of G.values()) (byType[g.t] ||= []).push(g);
+      const closest=gs=>gs.filter(g=>g.prices.length===2&&g.prices[1]!=null&&g.tv!=null).sort((a,b)=>Math.abs(impl(a.prices[0])-impl(a.prices[1]))-Math.abs(impl(b.prices[0])-impl(b.prices[1])))[0];
+      const gm=`${A.team.abbreviation} @ ${H.team.abbreviation}`;
+      const SC={'Anytime Touchdown Scorer':['anytime touchdown',0.88],'Anytime Goalscorer':['anytime goal',0.88],'To Record a Double Double':['double-double',0.9],'To Record a Triple Double':['triple-double',0.85],'First Basket':['first basket',0.8],'First Touchdown Scorer':['first touchdown',0.75],'First Goalscorer':['first goal',0.78],'To Score 2+ Goals':['2+ goals',0.85],'Player to score 2 or more touchdowns':['2+ touchdowns',0.85],'Next Goalscorer':['next goal',0.8]};
+      for(const [t,gs] of Object.entries(byType)){
+        const key=t.replace(/\W+/g,''), per=t.match(/^(1st|2nd|3rd|4th) (Half|Quarter|Period) (Spread|Moneyline|Total)/);
+        if(per){ const cat=per[1]==='1st'&&per[2]==='Half'?'half':'period', nm=`${per[1]} ${per[2].toLowerCase()}`;
+          if(per[3]==='Moneyline'){ const tot=gs.reduce((x,g)=>x+impl(g.prices[0]),0);
+            for(const g of gs) if(g.team&&tn[g.team]) legs.push({...base,id:`${ev.id}|${key}|${g.team}`,kind:'period',cat,label:`${tn[g.team].displayName} ${nm} moneyline`,price:g.prices[0],p:impl(g.prices[0])/tot}); }
+          else if(per[3]==='Spread'){ const tg=gs.filter(g=>g.team&&tn[g.team]&&g.tv!=null);
+            if(tg.length===2){ const f=pairFair(tg[0].prices[0],tg[1].prices[0]); tg.forEach((g,i)=>legs.push({...base,id:`${ev.id}|${key}|${g.team}`,kind:'period',cat,label:`${tn[g.team].displayName} ${nm} ${fmtLine(g.tv)}`,price:g.prices[0],p:f[i],line:g.tv})); } }
+          else { const g=closest(gs.filter(g=>!g.team&&!g.ath)); if(g){ const [fo,fu]=pairFair(g.prices[0],g.prices[1]);
+            legs.push({...base,id:`${ev.id}|${key}|o`,kind:'period',cat,label:`${gm} ${nm} over ${g.tv}`,price:g.prices[0],p:fo,line:g.tv},{...base,id:`${ev.id}|${key}|u`,kind:'period',cat,label:`${gm} ${nm} under ${g.tv}`,price:g.prices[1],p:fu,line:g.tv}); } }
+          continue; }
+        const tt=t.match(/^Team (1st Half )?Total (Points|Goals)(?: \(Excl OT\))?$/);
+        if(tt){ for(const tid of Object.keys(tn)){ const g=closest(gs.filter(g=>g.team===tid)); if(!g) continue; const [fo,fu]=pairFair(g.prices[0],g.prices[1]), nm=`${tn[tid].displayName}${tt[1]?' 1st half':''} team total`;
+            legs.push({...base,id:`${ev.id}|${key}|${tid}|o`,kind:'teamtot',cat:tt[1]?'half':'teamtot',label:`${nm} over ${g.tv}`,price:g.prices[0],p:fo,line:g.tv},{...base,id:`${ev.id}|${key}|${tid}|u`,kind:'teamtot',cat:tt[1]?'half':'teamtot',label:`${nm} under ${g.tv}`,price:g.prices[1],p:fu,line:g.tv}); }
+          continue; }
+        if(!gs[0].ath) continue;
+        const ok=a=>names[a] && !/out|doubt|injured reserve|suspend/i.test(names[a].inj||'');
+        if(/Milestones$/.test(t)){ const stt=dkStat(t);
+          // one type name can hold two ladders (full game and 1st quarter): keep only the full-game ladder, top down
+          const keep=new Set(), byA={}; for(const g of gs) if(g.tv!=null) (byA[g.ath] ||= []).push(g);
+          for(const ag of Object.values(byA)){ ag.sort((x,y)=>y.tv-x.tv); let prev=null;
+            for(const g of ag){ if(g.prices.length>1 || (prev && (impl(g.prices[0])<impl(prev.prices[0]) || prev.tv-g.tv>Math.max(2.01,0.35*prev.tv)))) break; keep.add(g); prev=g; } }
+          for(const g of gs){ const pr=g.prices[0]; if(!keep.has(g)||!ok(g.ath)||pr<-700||pr>350) continue;
+            legs.push({...base,id:`dk|${ev.id}|${g.ath}|${key}|${g.tv}`,kind:'prop',cat:'mile',player:g.ath,stat:stt,line:g.tv-0.5,side:'over',label:`${names[g.ath].name} ${g.disp||g.tv+'+'} ${stt}`,price:pr,p:Math.min(0.95,impl(pr)*0.95)}); }
+          continue; }
+        if(/^Total /.test(t) && !/Quarter|Half|Period/.test(t)){ const stt=dkStat(t), byA={}; for(const g of gs) (byA[g.ath] ||= []).push(g);
+          for(const [a,ag] of Object.entries(byA)){ const g=closest(ag); if(!ok(a)||!g) continue; const [fo,fu]=pairFair(g.prices[0],g.prices[1]);
+            legs.push({...base,id:`dk|${ev.id}|${a}|${key}|o`,kind:'prop',cat:'prop',player:a,stat:stt,line:g.tv,side:'over',label:`${names[a].name} over ${g.tv} ${stt}`,price:g.prices[0],p:fo},
+                      {...base,id:`dk|${ev.id}|${a}|${key}|u`,kind:'prop',cat:'prop',player:a,stat:stt,line:g.tv,side:'under',label:`${names[a].name} under ${g.tv} ${stt}`,price:g.prices[1],p:fu}); }
+          continue; }
+        const sc=SC[t]; if(sc) for(const g of gs){ if(!ok(g.ath)) continue; legs.push({...base,id:`dk|${ev.id}|${g.ath}|${key}`,kind:'prop',cat:'scorer',player:g.ath,label:`${names[g.ath].name} ${sc[0]}`,price:g.prices[0],p:Math.min(0.95,impl(g.prices[0])*sc[1])}); }
+      }
+    }
+    S.legs=legs; S.t=Date.now();
+  }catch(e){ S.t=live?0:Date.now()-4*60e3; }
+  S.busy=false; return S;
+}
+/* How often has this player cleared this exact line lately? (from his game log) */
+async function bdForm(){
+  const can=l=>l.real&&l.player&&l.line!=null&&l.form===undefined&&DK_STAT[l.stat]&&/basketball|football/.test(BY_KEY[l.sk]?.path||'');
+  const P=bdPool().filter(can).map(l=>({l,s:bdScore(l)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,80);
+  const ids=[...new Set(P.map(x=>x.l.sk+'|'+x.l.player))].slice(0,30), logs={};
+  if(!ids.length) return;
+  await Promise.race([pool(ids,6,async k=>{ const [sk,id]=k.split('|'); logs[k]=await gamelog(BY_KEY[sk],id); }), new Promise(r=>setTimeout(r,7000))]);
+  for(const l of bdPool().filter(can)){ const lg=logs[l.sk+'|'+l.player]; if(!lg) continue; const bb=isBB(BY_KEY[l.sk]), f=Object.fromEntries([...BB_PROPS,...FB_PROPS])[DK_STAT[l.stat]];
+    const vals=lg.filter(r=>bb?(r.s.minutes||0)>0:true).map(r=>f(r.s)).filter(v=>v!=null).slice(0,10);
+    if(vals.length>=5){ const hits=vals.filter(v=>l.side==='under'?v<l.line:v>l.line).length; l.hit=`hit ${hits} of last ${vals.length}`; l.form=hits/vals.length-0.5; } else l.form=null; }
+}
+async function loadBDLive(){
+  if(BD.busy==='live') return; BD.busy='live'; BD.req='live'; if(!BD.cands) renderBD();
+  const out=[]; let games=0;
+  await pool(BD_SPORTS,5,async sk=>{ const sport=BY_KEY[sk]; if(!sport) return;
+    const evs=(await fetchSport(sport, ymd(0))).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state==='in');
+    await pool(evs,3,async ev=>{ games++; const S=await loadDKX(sk,ev,true); let pr=null; try{ pr=predict(sport,ev); }catch(e){}
+      for(const l of S.legs){ if(l.kind==='ml'&&pr?.out) l.model=l.side==='home'?pr.out.home:pr.out.away; out.push(l); } }); });
+  if(BD.req!=='live'){ if(BD.busy==='live') BD.busy=false; return; }
+  BD.cands=out; BD.day='live'; BD.liveN=games; BD.t=Date.now(); BD.busy=false; BD.rolled=false; BD.evIds=[];
+  if(BD.builds) BD.builds=BD.builds.map(b=>b.map(l=>out.find(o=>o.id===l.id)||{...l,gone:true}));
+  renderBD();
+}
+setInterval(()=>{ if(BD.off==='live' && !$('#bd').hidden && !document.hidden) loadBDLive(); }, 30e3);
 const BD_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','mlb','wnba','epl','ucl','mls'];
 async function loadBDCands(){
   const want=ymd(BD.off);
-  if(BD.busy || (Date.now()-BD.t<10*60e3 && BD.req===want)) return; BD.busy=true; BD.req=want; renderBD();
-  let out=[], day=want;
-  const scan=async day=>{ const o=[]; await pool(BD_SPORTS,6,async sk=>{ try{ for(const {sport,ev} of await fetchSport(BY_KEY[sk], day)){
+  if(BD.busy===want || (Date.now()-BD.t<10*60e3 && BD.req===want)) return; BD.busy=want; BD.req=want; renderBD();
+  let out=[], day=want, evL=[];
+  const scan=async day=>{ const o=[]; evL=[]; await pool(BD_SPORTS,6,async sk=>{ try{ for(const {sport,ev} of await fetchSport(BY_KEY[sk], day)){
     const c=ev.competitions[0]; if((c.status||ev.status).type.state!=='pre' || new Date(ev.date)<new Date(Date.now()+10*60e3)) continue;
+    evL.push({sk,ev});
     const L=linesOf(ev); if(!L) continue;
     const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'), game=`${A.team.abbreviation} @ ${H.team.abbreviation}`;
     const base={ev:ev.id, sk, game, start:ev.date};
@@ -1183,8 +1292,11 @@ async function loadBDCands(){
   } }catch(e){} }); return o; };
   out=await scan(day);
   // tonight's games are over: build for tomorrow instead
-  if(!out.length && BD.off===0){ day=ymd(1); out=await scan(day); BD.rolled=out.length>0; } else BD.rolled=false;
-  BD.day=day;
+  if(BD.req!==want) return;
+  let rolled=false;
+  if(!out.length && BD.off===0){ day=ymd(1); out=await scan(day); rolled=out.length>0; }
+  if(BD.req!==want) return;
+  BD.rolled=rolled; BD.day=day;
   // where the money moved (spread open vs now), for the games we can check
   const evIds=[...new Set(out.map(x=>x.ev))].slice(0,40);
   await pool(evIds,4,async id=>{ const x=out.find(o=>o.ev===id); try{ const s=await cached('sum'+id,()=>getJSON(`${SITE}/${BY_KEY[x.sk].path}/summary?event=${id}`));
@@ -1192,53 +1304,64 @@ async function loadBDCands(){
     if(o!=null&&c2!=null&&o!==c2){ const towardHome=c2<o; for(const l of out.filter(q=>q.ev===id)){ if(l.kind==='ml'||l.kind==='spread') l.mv=(l.side==='home')===towardHome?Math.abs(c2-o):-Math.abs(c2-o); } }
     const inj=(s.injuries||[]).flatMap(t=>(t.injuries||[]).filter(i=>/out/i.test(i.status||'')).map(i=>t.team.abbreviation+': '+i.athlete?.displayName)); for(const l of out.filter(q=>q.ev===id)) l.inj=inj.slice(0,6);
   }catch(e){} });
-  BD.cands=out; BD.t=Date.now(); BD.busy=false; renderBD();
+  if(BD.req!==want) return;
+  // real DraftKings props, halves/quarters and team totals for the soonest games
+  const dk=evL.filter(x=>DKX_SPORTS.includes(x.sk) && new Date(x.ev.date)-Date.now()<48*3600e3).sort((a,b)=>new Date(a.ev.date)-new Date(b.ev.date)).slice(0,24);
+  BD.evIds=[...new Set([...out.map(x=>x.ev), ...dk.map(x=>x.ev.id)])];
+  BD.cands=out; BD.t=Date.now(); BD.busy=false; BD.dkLeft=dk.length; renderBD();
+  pool(dk,3,async x=>{ try{ await loadDKX(x.sk,x.ev,false); }catch(e){} BD.dkLeft--; if(BD.req===want){ if(BD.builds&&!BD.dkLeft) bdMakeAll(); renderBD(); } });
   ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk, day));
 }
 function bdPropCands(){
   const out=[];
   for(const [key,S] of Object.entries(TPP)){ const [sk,day]=key.split('|'); if(day!==BD.day || !S.rows) continue; const best={};
     for(const r of S.rows){ if(!(COMBO_MIN[r.label]!=null && r.a>=COMBO_MIN[r.label])) continue;
-      const po=clamp(overChance(r),0.25,0.75), side=po>=0.5?'over':'under', p=side==='over'?po:1-po, cur=best[r.p.id];
-      if(!cur||p>cur.p) best[r.p.id]={id:`prop|${r.p.id}|${r.label}`, kind:'prop', ev:r.p.evId, sk, game:`${r.p.team} ${r.p.at} ${r.p.opp}`, start:r.p.start, price:-110, p, player:r.p.id,
+      const po=clamp(overChance(r),0.25,0.75), side=po>=0.5?'over':'under', p=0.5+((side==='over'?po:1-po)-0.5)*0.4, cur=best[r.p.id];   // estimated line, not a real price: stay humble
+      if(!cur||p>cur.p) best[r.p.id]={id:`prop|${r.p.id}|${r.label}`, kind:'prop', cat:'prop', ev:r.p.evId, sk, game:`${r.p.team} ${r.p.at} ${r.p.opp}`, start:r.p.start, price:-110, p, player:r.p.id,
         label:`${r.p.name} ${side} ${f1(r.line)} ${r.label}`, hit:`L10 ${r.vals.slice(0,10).filter(v=>side==='over'?v>r.line:v<r.line).length}/${r.n10}`}; }
     out.push(...Object.values(best)); }
   return out;
 }
-function bdPool(){
+function bdAll(){
+  let c=[...(BD.cands||[])];
+  if(BD.day!=='live'){ for(const id of BD.evIds||[]) c.push(...(DKX[id]?.legs||[])); c.push(...bdPropCands().filter(x=>!(DKX[x.ev]?.legs||[]).some(l=>l.cat==='prop'))); }
   const want=s=>BD.sports.includes('all')||BD.sports.includes(s);
-  let c=[];
-  if(BD.type!=='props') c.push(...(BD.cands||[]).filter(x=>want(x.sk)));
-  if(BD.type==='props'||BD.type==='mix') c.push(...bdPropCands().filter(x=>want(x.sk)));
-  return c;
+  return c.filter(l=>want(l.sk));
 }
-// Claude-style scoring: likely winners, no near-worthless heavy favorites, a nudge toward where sharp money moved.
+function bdPool(){ return bdAll().filter(l=>BD.mk.includes(l.cat||l.kind) && (!BD.only.length||BD.only.includes(l.ev))); }
+// Claude-style scoring: likely winners, no near-worthless heavy favorites, a nudge toward where sharp money moved and players who keep clearing the line.
 function bdScore(l){
+  if(l.gone) return -1;
   if(l.kind==='spread' && Math.abs(l.line)>20) return -1;   // giant college spreads are noise
-  const d=decOdds(l.price), mv=(l.mv||0)>0?0.03:(l.mv||0)<0?-0.03:0;
-  if(BD.style==='safest') return l.price<-450?-1:l.p+mv;
-  if(BD.style==='balanced') return l.price<-260||l.p<0.5?-1:l.p+0.5*(l.p*d-1)+mv;
-  return l.p<0.3||l.price<-160?-1:l.p*d+0.2*l.p+mv;   // big payout
+  const d=decOdds(l.price), mv=(l.mv||0)>0?0.03:(l.mv||0)<0?-0.03:0, form=l.form?0.2*l.form:0, live=l.model!=null?0.3*(l.model-l.p):0, x=mv+form+live-(l.kind==='prop'&&!l.real?0.2:0);   // real prices beat estimated lines
+  if(BD.style!=='payout' && l.form!=null && l.form<-0.1) return -1;   // has missed this line more often than not lately
+  if(BD.style==='safest') return l.price<-450?-1:l.p+x;
+  if(BD.style==='balanced') return l.price<-260||l.p<0.5?-1:l.p+0.5*(l.p*d-1)+x;
+  return l.p<(l.cat==='scorer'?0.1:0.3)||l.price<-160?-1:l.p*d+0.2*l.p+x;   // big payout
 }
 function bdBuild(seed){
   const n=BD.type==='single'?1:BD.legs, P=bdPool().map(l=>({l,s:bdScore(l)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
   let rnd=seed*9301+49297; const r=()=>{ rnd=(rnd*9301+49297)%233280; return rnd/233280; };
   const order=seed===0?P:[...P].sort((a,b)=>(b.s+r()*0.12)-(a.s+r()*0.12));
-  const pick=[], games=new Map(), players=new Set();
-  const maxProps=BD.type==='mix'?Math.floor(n/2):n, maxGame=BD.type==='mix'?Math.ceil(n/2):n; let np=0, ng=0;
-  for(const {l} of order){ const g=games.get(l.ev)||0;
-    if(l.kind==='prop'){ if(players.has(l.player)||g>=2||np>=maxProps) continue; np++; } else { if(g>=1||ng>=maxGame) continue; ng++; }
-    pick.push(l); games.set(l.ev,g+1); if(l.player) players.add(l.player); if(pick.length===n) break; }
-  return pick.length===n?pick:null;
+  const hasP=P.some(x=>x.l.kind==='prop'), hasG=P.some(x=>x.l.kind!=='prop');
+  // few games picked: allow more legs from the same game (a same-game parlay), but never two sides of one market
+  const nGames=new Set(P.map(x=>x.l.ev)).size||1, perP=Math.max(2,Math.ceil(n/nGames)), perG=Math.max(1,Math.ceil(n/nGames));
+  const run=(maxProps,maxGame)=>{ const pick=[], gl=new Map(), pg=new Map(), players=new Set(), mkts=new Set(); let np=0, ng=0;
+    for(const {l} of order){
+      if(l.kind==='prop'){ if(players.has(l.player)||(pg.get(l.ev)||0)>=perP||np>=maxProps) continue; np++; pg.set(l.ev,(pg.get(l.ev)||0)+1); players.add(l.player); }
+      else { const m=l.id.slice(0,l.id.lastIndexOf('|')); if((gl.get(l.ev)||0)>=perG||mkts.has(m)||ng>=maxGame) continue; ng++; gl.set(l.ev,(gl.get(l.ev)||0)+1); mkts.add(m); }
+      pick.push(l); if(pick.length===n) break; }
+    return pick.length===n?pick:null; };
+  return (hasP&&hasG&&n>1 ? run(Math.ceil(n/2),Math.ceil(n/2)) : null) || run(n,n);
 }
-function bdMakeAll(){ const seen=new Set(), out=[]; for(let s=0;s<12&&out.length<3;s++){ const b=bdBuild(s+BD.seed); if(!b) continue; const k=b.map(l=>l.id).sort().join(); if(seen.has(k)) continue; seen.add(k); out.push(b); } BD.builds=out; }
+function bdMakeAll(){ const seen=new Set(), out=[]; for(let s=0;s<24&&out.length<6;s++){ const b=bdBuild(s+BD.seed); if(!b) continue; const k=b.map(l=>l.id).sort().join(); if(seen.has(k)) continue; seen.add(k); out.push(b); } BD.builds=out; }
 async function askClaude(){
   if(!BD.sample) return;
   BD.claudeBusy=true; BD.claudeErr=null; BD.claude=null; renderBD();
   const P=bdPool().sort((a,b)=>b.p-a.p).slice(0,70);
-  const list=P.map(l=>({id:l.id, bet:l.label, game:l.game, sport:SPORT_NAME[l.sk]||l.sk, price:l.price, chance:Math.round(l.p*100), moneyMoved:l.mv?(l.mv>0?'toward':'against'):'', out:(l.inj||[]).join('; '), hit:l.hit||''}));
-  const prompt=`You are Claude, the user's betting analyst inside their app EasyProp. Build bets from ONLY the candidate legs below (today's DraftKings prices via ESPN; "chance" = market no-vig chance; player-prop lines are estimates at -110).
-The user wants: ${BD.type==='single'?'single bets (1 leg each)':BD.type==='props'?`player-prop parlays of ${BD.legs} legs`:BD.type==='mix'?`parlays of ${BD.legs} legs mixing game lines and player props`:`parlays of ${BD.legs} legs`}; style: ${BD.style==='safest'?'SAFEST: highest chance the whole bet wins':BD.style==='balanced'?'BALANCED: good chance and good payout':'BIG PAYOUT: worth it for the price, lower chance'}; sports: ${BD.sports.includes('all')?'any':BD.sports.map(s=>SPORT_NAME[s]).join(', ')}.
+  const list=P.map(l=>({id:l.id, bet:l.label, game:l.game, sport:SPORT_NAME[l.sk]||l.sk, price:l.price, chance:Math.round(l.p*100), moneyMoved:l.mv?(l.mv>0?'toward':'against'):'', out:(l.inj||[]).join('; '), hit:l.hit||'', estLine:l.kind==='prop'&&!l.real?true:undefined, live:l.live||undefined, modelChance:l.model!=null?Math.round(l.model*100):undefined}));
+  const prompt=`You are Claude, the user's betting analyst inside their app EasyProp. Build bets from ONLY the candidate legs below (DraftKings prices via ESPN; "chance" = market no-vig chance; legs with estLine are estimated lines at -110; legs with live are in-game prices that move fast, "modelChance" is the app's own live win estimate).
+The user wants: ${BD.type==='single'?'single bets (1 leg each)':`parlays of ${BD.legs} legs`}; markets allowed: ${BD_MK.filter(m=>BD.mk.includes(m[0])).map(m=>m[1]).join(', ')}; style: ${BD.style==='safest'?'SAFEST: highest chance the whole bet wins':BD.style==='balanced'?'BALANCED: good chance and good payout':'BIG PAYOUT: worth it for the price, lower chance'}; sports: ${BD.sports.includes('all')?'any':BD.sports.map(s=>SPORT_NAME[s]).join(', ')}.
 Use real judgment: injuries (players OUT), where the money moved, mismatches, and avoid -1000 style legs that add nothing. One leg per game for game lines; one prop per player. Be honest: nothing is guaranteed.
 Return ONLY JSON: {"builds":[{"name":"short name","legs":["<id>",...],"verdict":"Good bet|Lean|Long shot","why":"2-3 plain sentences"}]} with 1 to 3 builds.
 Candidates: ${JSON.stringify(list)}`;
@@ -1257,34 +1380,43 @@ function bdCard(legs, title, sub, why, verdict, key){
     <div class="top"><span class="nm">${esc(title)}</span><span class="pay">${toAmerican(dec)}</span></div>
     <div class="sub">${sub} ${verdict?`<span class="badge">${esc(verdict)}</span>`:''} · $${st} pays <b>$${(st*dec).toFixed(2)}</b> · ${pct(p)} chance all hit</div>
     ${why?`<div class="note" style="margin:6px 0">${esc(why)}</div>`:''}
-    ${legs.map(l=>`<div class="leg" style="padding:5px 0"><span><b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(SPORT_NAME[l.sk]||'')} · ${esc(l.game)}${l.hit?' · '+esc(l.hit):''}${l.mv>0?' · money moved this way':''}</small></span><span>${fmtA(l.price)} · ${pct(l.p)}</span></div>`).join('')}
+    ${new Set(legs.map(l=>l.ev)).size<legs.length?`<div class="note" style="margin:6px 0">Same-game legs: your book prices these together, so the real payout will be a bit different.</div>`:''}
+    ${legs.map(l=>`<div class="leg" style="padding:5px 0"><span><b>${l.live?'🔴 ':''}${esc(l.label)}</b> <small style="color:var(--muted)">${esc(SPORT_NAME[l.sk]||'')} · ${esc(l.game)}${l.hit?' · '+esc(l.hit):''}${l.mv>0?' · money moved this way':''}${l.model!=null?` · app's live model ${pct(l.model)}`:''}${l.kind==='prop'&&!l.real?' · est. line':''}${l.gone?' · <b class="lo">⚠ no longer offered</b>':''}</small></span><span>${fmtA(l.price)} · ${pct(l.p)}</span></div>`).join('')}
     <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="addb" data-bdcopy="${key}">📋 Copy</button><button class="addb" data-bdslip="${key}">➕ Add to slip</button><button class="addb" data-bdlog="${key}">📒 Log it</button><span class="note" data-bdmsg="${key}" style="margin:0"></span></div>
   </div>`;
 }
-function openBD(){ $('#bd').hidden=false; document.body.style.overflow='hidden'; BD.t=BD.req===ymd(BD.off)?BD.t:0; loadBDCands(); renderBD();
+function openBD(){ $('#bd').hidden=false; document.body.style.overflow='hidden'; if(BD.off==='live') loadBDLive(); else { BD.t=BD.req===ymd(BD.off)?BD.t:0; loadBDCands(); } renderBD();
   if(BD.sample===undefined){ BD.sample=null; if(window.claude?.use) claude.use('sample').then(s=>{ BD.sample=s; renderBD(); }).catch(()=>{}); } }
 function closeBD(){ $('#bd').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
 function renderBD(){
   if($('#bd').hidden) return;
   const chip=(grp,k,l,on)=>`<button class="tab ${on?'on':''}" data-bd="${grp}" data-v="${k}">${l}</button>`;
-  let h=`<div class="pc" style="margin-top:12px"><div class="mk" style="margin-top:0">Day</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[0,1,2,3,4,5,6].map(o=>chip('day',o,dayChipLabel(o),BD.off===o)).join('')}</div>
+  let h=`<div class="pc" style="margin-top:12px"><div class="mk" style="margin-top:0">Day</div><div class="tabs" style="flex-wrap:wrap;padding:0">${chip('day','live','🔴 Live now',BD.off==='live')}${[0,1,2,3,4,5,6].map(o=>chip('day',o,dayChipLabel(o),BD.off===o)).join('')}</div>
     <div class="mk">Sports</div><div class="tabs" style="flex-wrap:wrap;padding:0">${chip('sp','all','All',BD.sports.includes('all'))}${BD_SPORTS.map(s=>chip('sp',s,`${SPORT_ICON[s]||''} ${SPORT_NAME[s]}`,BD.sports.includes(s))).join('')}</div>
-    <div class="mk">Bet type</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[['single','Single'],['parlay','Parlay'],['props','Player props'],['mix','Games + props']].map(([k,l])=>chip('type',k,l,BD.type===k)).join('')}</div>
+    <div class="mk">Bet type</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[['single','Single'],['parlay','Parlay']].map(([k,l])=>chip('type',k,l,BD.type===k)).join('')}</div>
+    <div class="mk">What can go in it</div><div class="tabs" style="flex-wrap:wrap;padding:0">${chip('mk','ALL','Everything',BD.mk.length===BD_MK.length)}${chip('mk','GAMES','Games only',BD.mk.length&&BD.mk.every(m=>BD_GAME_MK.includes(m))&&BD.mk.length>=3)}${chip('mk','PROPS','Props only',BD.mk.length&&BD.mk.every(m=>BD_PROP_MK.includes(m))&&BD.mk.length>=2)}</div>
+    <div class="tabs" style="flex-wrap:wrap;padding:0;margin-top:6px">${BD_MK.map(([k,l])=>chip('mk',k,(BD.mk.includes(k)?'✓ ':'')+l,BD.mk.includes(k))).join('')}</div>
+    ${(()=>{ const seen=new Map(); for(const l of bdAll()) if(!seen.has(l.ev)) seen.set(l.ev,l); const gs=[...seen.values()].sort((a,b)=>new Date(a.start)-new Date(b.start));
+      if(!gs.length) return ''; const tm=g=>BD.off==='live'?'':' '+new Date(g.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+      return `<div class="mk">Games</div><div class="tabs" style="flex-wrap:wrap;padding:0">${chip('gm','all',`All ${gs.length} games`,!BD.only.length)}${chip('gopen','1',BD.gopen?'Hide list ▴':`Pick games${BD.only.length?` (${BD.only.length})`:''} ▾`,false)}</div>
+        ${BD.gopen?`<div class="tabs" style="flex-wrap:wrap;padding:0;margin-top:6px;max-height:210px;overflow:auto">${gs.map(g=>chip('gm',g.ev,`${SPORT_ICON[g.sk]||''} ${esc(g.game.split(' · ')[0])}${tm(g)}`,BD.only.includes(g.ev))).join('')}</div>`:''}`; })()}
     ${BD.type!=='single'?`<div class="mk">Legs</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[2,3,4,5,6,8,10].map(n=>chip('legs',n,n,BD.legs===n)).join('')}</div>`:''}
     <div class="mk">Style</div><div class="tabs" style="flex-wrap:wrap;padding:0">${[['safest','🛡 Safest'],['balanced','⚖️ Balanced'],['payout','💰 Big payout']].map(([k,l])=>chip('style',k,l,BD.style===k)).join('')}</div>
     <div class="note">Stake $<input type="number" id="bdstake" value="${BD.stake}" min="1" style="width:70px;font:inherit;padding:3px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--text)"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="oddsbtn" id="bdgo">🧮 Build it</button>${BD.sample?`<button class="oddsbtn" id="bdclaude" style="background:#14121f;border-color:#14121f">🤖 Ask Claude to build it</button>`:''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="oddsbtn" id="bdgo">${BD.forming?'Checking player form…':'🧮 Build it'}</button>${BD.sample?`<button class="oddsbtn" id="bdclaude" style="background:#14121f;border-color:#14121f">🤖 Ask Claude to build it</button>`:''}</div>
     ${BD.sample?'':`<div class="note">🤖 <b>Ask Claude</b> works when you open EasyProp inside the Claude app (<a href="https://claude.ai/artifact/UUjVvMYds6UrsWRPeRBmE4" target="_blank" style="color:var(--accent)">open it here</a>), or just message Claude what you want.</div>`}
   </div>`;
-  if(BD.busy) h+=`<div class="note">Loading the day's lines…</div>${skel(2)}`;
-  else if(BD.day) h+=`<div class="note">Building from <b>${BD.day===ymd(0)?'today':BD.day===ymd(1)?'tomorrow':new Date(+BD.day.slice(0,4),+BD.day.slice(4,6)-1,+BD.day.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</b>'s games${BD.rolled?' (tonight’s games are over)':''} · ${(BD.cands||[]).length} lines available.</div>`;
+  if(BD.busy && (BD.off!=='live'||!BD.cands)) h+=`<div class="note">${BD.off==='live'?'Finding live games and live prices…':'Loading the day’s lines…'}</div>${skel(2)}`;
+  else if(BD.off==='live') h+= BD.liveN? `<div class="note">🔴 <b>${BD.liveN} game${BD.liveN>1?'s':''} live</b> · ${bdAll().length} live DraftKings prices · updated ${new Date(BD.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'})}, refreshes every 30 seconds.</div><div class="note">Live prices change every few seconds. Only place it if your book shows the same price or better; if a leg says “no longer offered”, shuffle for a new build.</div>`
+      : `<div class="empty">No games are live right now. Pick Today to build ahead, and come back here once games start.</div>`;
+  else if(BD.day) h+=`<div class="note">Building from <b>${BD.day===ymd(0)?'today':BD.day===ymd(1)?'tomorrow':new Date(+BD.day.slice(0,4),+BD.day.slice(4,6)-1,+BD.day.slice(6)).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}</b>'s games${BD.rolled?' (tonight’s games are over)':''} · <b>${bdPool().length}</b> bets to choose from${BD.dkLeft>0?` · loading real DraftKings props for ${BD.dkLeft} more game${BD.dkLeft>1?'s':''}…`:''}.</div>`;
   if(BD.claudeBusy) h+=`<div class="note">🤖 Claude is building your bet…</div>${skel(1)}`;
   if(BD.claudeErr) h+=`<div class="note err">${esc(BD.claudeErr)}</div>`;
   if(BD.claude?.length) h+=`<h2 class="sec">🤖 Claude's builds</h2>`+BD.claude.map((b,i)=>bdCard(b.legs, b.name||`Claude build ${i+1}`, '🤖 Claude', b.why, b.verdict, 'c'+i)).join('');
   if(BD.builds){ h+=`<h2 class="sec">🧮 Instant builds</h2>`;
     h+= BD.builds.length? BD.builds.map((b,i)=>bdCard(b, `Build ${i+1}${BD.type==='single'?' · single':` · ${b.length}-leg`}`, '🧮 Formula', '', BD.style==='safest'?'Safest':BD.style==='balanced'?'Balanced':'Big payout', 'f'+i)).join('')+`<button class="tbtn" id="bdagain">🔀 Shuffle for different builds</button>`
-      : `<div class="empty">Not enough ${BD.type==='props'?'player props':'games'} today for that. Try fewer legs, more sports${BD.style!=='safest'?' or a different style':''}.</div>`; }
-  h+=`<footer>Builds use today's DraftKings prices via ESPN. Player-prop lines are estimates: match them to your app before betting. Nothing is guaranteed; bet only what you're fine losing.</footer>`;
+      : `<div class="empty">Not enough bets match that${BD.dkLeft>0?' yet (props are still loading)':''}. Try fewer legs, more sports, more markets${BD.style!=='safest'?' or a different style':''}.</div>`; }
+  h+=`<footer>Builds use real DraftKings prices via ESPN, including NBA, NFL and NHL player props, 1st-half lines and live in-game odds. College player props are estimates (marked “est. line”): match them to your app. Prices at your book can differ. Nothing is guaranteed; bet only what you're fine losing.</footer>`;
   const y=$('#bd').scrollTop; $('#bdbody').innerHTML=h; $('#bd').scrollTop=y;
 }
 function bdLegsFor(key){ return key[0]==='c'? BD.claude?.[+key.slice(1)]?.legs : BD.builds?.[+key.slice(1)]; }
@@ -1293,11 +1425,14 @@ $('#bdback').onclick=()=>{ if(location.hash) history.back(); else closeBD(); };
 $('#bdbody').addEventListener('click',async e=>{
   const c=e.target.closest('[data-bd]'); if(c){ const g=c.dataset.bd, v=c.dataset.v;
     if(g==='sp'){ if(v==='all') BD.sports=['all']; else { let s=BD.sports.filter(x=>x!=='all'); s=s.includes(v)?s.filter(x=>x!==v):[...s,v]; BD.sports=s.length?s:['all']; } store.set('wc_bdsp',BD.sports); }
-    if(g==='day'){ BD.off=+v; BD.t=0; BD.builds=null; BD.claude=null; loadBDCands(); }
+    if(g==='day'){ BD.off=v==='live'?'live':+v; BD.t=0; BD.builds=null; BD.claude=null; BD.only=[]; BD.cands=null; BD.day=null; BD.busy=false; BD.off==='live'?loadBDLive():loadBDCands(); }
+    if(g==='mk'){ if(v==='ALL') BD.mk=BD_MK.map(m=>m[0]); else if(v==='GAMES') BD.mk=[...BD_GAME_MK]; else if(v==='PROPS') BD.mk=[...BD_PROP_MK]; else { BD.mk=BD.mk.includes(v)?BD.mk.filter(x=>x!==v):[...BD.mk,v]; if(!BD.mk.length) BD.mk=[v]; } store.set('wc_bdmk',BD.mk); }
+    if(g==='gm'){ if(v==='all') BD.only=[]; else BD.only=BD.only.includes(v)?BD.only.filter(x=>x!==v):[...BD.only,v]; }
+    if(g==='gopen') BD.gopen=!BD.gopen;
     if(g==='type'){ BD.type=v; store.set('wc_bdtype',v); } if(g==='legs'){ BD.legs=+v; store.set('wc_bdlegs',BD.legs); } if(g==='style'){ BD.style=v; store.set('wc_bdstyle',v); }
     if(BD.builds) bdMakeAll(); renderBD(); return; }
 
-  if(e.target.id==='bdgo'){ BD.seed=0; bdMakeAll(); renderBD(); return; }
+  if(e.target.id==='bdgo'){ if(BD.forming) return; BD.seed=0; BD.forming=true; renderBD(); try{ await bdForm(); }catch(er){} BD.forming=false; bdMakeAll(); renderBD(); return; }
   if(e.target.id==='bdagain'){ BD.seed+=13; bdMakeAll(); renderBD(); return; }
   if(e.target.id==='bdclaude'){ askClaude(); return; }
   const k=e.target.closest('[data-bdcopy],[data-bdslip],[data-bdlog]'); if(!k) return;
@@ -1305,7 +1440,7 @@ $('#bdbody').addEventListener('click',async e=>{
   const dec=legs.reduce((t,l)=>t*decOdds(l.price),1);
   if(k.dataset.bdcopy){ const t=[`${legs.length>1?legs.length+'-leg parlay':'Single'} (EasyProp)`,...legs.map((l,i)=>`${legs.length>1?(i+1)+'. ':''}${l.label} (${fmtA(l.price)}) · ${l.game}`),`Odds ${toAmerican(dec)} · $${BD.stake} pays $${(BD.stake*dec).toFixed(2)}`].join('\n');
     try{ await navigator.clipboard.writeText(t); msg.textContent='Copied ✓'; }catch{ msg.textContent=t; } return; }
-  if(k.dataset.bdslip){ addLegsToSlip(legs.map(l=>({label:l.label+(l.kind==='prop'?' (est. line)':''), game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev, fair:l.p}))); msg.textContent='Added to slip ✓'; return; }
+  if(k.dataset.bdslip){ addLegsToSlip(legs.map(l=>({label:l.label+(l.kind==='prop'&&!l.real?' (est. line)':'')+(l.live?' (live)':''), game:l.game.split(' · ')[0], price:l.price, start:l.start, sk:l.sk, ev:l.ev, fair:l.p}))); msg.textContent='Added to slip ✓'; return; }
   if(k.dataset.bdlog){ BT.draft={legs:legs.map(l=>({label:l.label, game:l.game, start:l.start})), book:'DraftKings', odds:+toAmerican(dec).replace('+',''), stake:+BD.stake||10, fair:legs.reduce((t,l)=>t*l.p,1)}; location.hash='#bets'; }
 });
 $('#bdbody').addEventListener('change',e=>{ if(e.target.id==='bdstake'){ BD.stake=+e.target.value||10; store.set('wc_stake',BD.stake); renderBD(); } });
