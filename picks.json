@@ -3053,6 +3053,172 @@
      "start": "2026-11-24T01:15Z"
     }
    ]
+  },
+  {
+   "id": "c-20261121-cfb",
+   "picker": "claude",
+   "day": "20261121",
+   "stake": 10,
+   "name": "College football: 6-leg parlay",
+   "why": "Indiana (9-1) and Utah (10-0) are the two safest favorites here: both are chasing playoff spots, ESPN's model gives each a 72-79% chance, and the betting money moved their way all week (Utah went from -5.5 to -8.5). Northwestern is the value moneyline: ESPN's model has them at 78% while the price only implies about 57%, and Minnesota just lost 41-13 at Purdue. Kentucky +4.5 takes the points with a ranked 7-3 team after the line dropped from 6.5, so a close loss still wins the leg. Texas Tech -5.5 follows the biggest line move on the board (opened -1.5) against a Baylor offense that scored 6 and 24 in its last two losses. BYU/Kansas under 46.5 is the weather play: steady 17 mph wind with gusts near 30 in Lawrence, which hurts passing and kicking. No key injuries were listed for any of these games.",
+   "legs": [
+    {
+     "ev": "401858535",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "84",
+     "price": -340,
+     "label": "Indiana moneyline",
+     "game": "IU @ WASH",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401856872",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "254",
+     "price": -325,
+     "label": "Utah moneyline",
+     "game": "UTAH @ TCU",
+     "start": "2026-11-22T02:00Z"
+    },
+    {
+     "ev": "401858530",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "77",
+     "price": -148,
+     "label": "Northwestern moneyline",
+     "game": "NU @ MINN",
+     "start": "2026-11-21T17:00Z"
+    },
+    {
+     "ev": "401856751",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "spread",
+     "side": "away",
+     "teamId": "96",
+     "line": 4.5,
+     "price": -105,
+     "label": "Kentucky +4.5",
+     "game": "UK @ MIZ",
+     "start": "2026-11-22T00:30Z"
+    },
+    {
+     "ev": "401856871",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "spread",
+     "side": "away",
+     "teamId": "2641",
+     "line": -5.5,
+     "price": -105,
+     "label": "Texas Tech -5.5",
+     "game": "TTU @ BAY",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401856866",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "total",
+     "side": "under",
+     "line": 46.5,
+     "price": -105,
+     "label": "BYU/KU under 46.5",
+     "game": "BYU @ KU",
+     "start": "2026-11-21T17:00Z"
+    }
+   ]
+  },
+  {
+   "id": "f-20261121-cfb",
+   "picker": "formula",
+   "day": "20261121",
+   "stake": 10,
+   "name": "College football: 6-leg parlay",
+   "why": "The formula's 6 most likely winners today, using only the betting market: the moneyline favorite in each game priced no worse than -400, ranked by no-vig chance. Louisiana 76.6%, Florida State 76.6%, Georgia Southern 74.8%, Indiana 74.1%, Iowa 73.4%, Arizona 73.4%. Utah was tied with Iowa and Arizona at 73.4%; the tie went to the earlier kickoffs.",
+   "legs": [
+    {
+     "ev": "401869946",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "309",
+     "price": -395,
+     "label": "Louisiana moneyline",
+     "game": "CCU @ UL",
+     "start": "2026-11-21T20:00Z"
+    },
+    {
+     "ev": "401858304",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "home",
+     "teamId": "52",
+     "price": -395,
+     "label": "Florida State moneyline",
+     "game": "NCSU @ FSU",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401869953",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "290",
+     "price": -355,
+     "label": "Georgia Southern moneyline",
+     "game": "GASO @ TROY",
+     "start": "2026-11-21T21:00Z"
+    },
+    {
+     "ev": "401858535",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "84",
+     "price": -340,
+     "label": "Indiana moneyline",
+     "game": "IU @ WASH",
+     "start": "2026-11-21T20:30Z"
+    },
+    {
+     "ev": "401858527",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "2294",
+     "price": -325,
+     "label": "Iowa moneyline",
+     "game": "IOWA @ ILL",
+     "start": "2026-11-21T19:30Z"
+    },
+    {
+     "ev": "401856865",
+     "sk": "ncaaf",
+     "d": "20261121",
+     "kind": "ml",
+     "side": "away",
+     "teamId": "12",
+     "price": -325,
+     "label": "Arizona moneyline",
+     "game": "ARIZ @ KSU",
+     "start": "2026-11-22T00:00Z"
+    }
+   ]
   }
  ],
  "insights": "Through two graded days Claude is 20-10 (+$196 on $10 stakes) and the formula is 4-5 (-$10). Friday was a losing night: Claude 4-10 (-$68), mostly because one upset (Pistons lost to Toronto by 3) was sitting in five different bets, and the Rockets underdog pick was in four more. What held up: singles (10-2), underdogs with points (4-0, Wyoming and the Kings both covered) and unders (2-0). What did not: every prop parlay lost (0-5) even though the individual prop legs went 20-6, because each 6-leg ticket missed by one leg. Today: no team goes in more than two new bets, the safer prop parlay is cut to 2 legs, no moneyline underdogs, and only one 4+ leg long shot (already posted). It is still a small sample (about 30 different results), so treat these as leanings, not proof.",
