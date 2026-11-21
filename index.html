@@ -270,6 +270,36 @@ h2.sec{font-size:12px;letter-spacing:.12em;margin:26px 0 12px}
 .kbar{flex:1;display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--panel2)}
 .kbar i{display:block;height:100%;transition:width .6s ease}
 .gsrc{font-size:11px;color:var(--muted);margin-top:8px}
+/* market-board layout: category tabs, filters, compact rows grouped by league */
+.bvcats{display:flex;gap:18px;overflow-x:auto;border-bottom:1px solid var(--line);margin:12px 0 0;scrollbar-width:none} .bvcats::-webkit-scrollbar{display:none}
+.bvcats button{background:none;border:0;border-bottom:3px solid transparent;font:inherit;font-weight:800;font-size:14.5px;color:var(--muted);padding:8px 0 9px;white-space:nowrap;cursor:pointer}
+.bvcats button.on{color:var(--text);border-bottom-color:var(--accent)}
+.bvfil{display:flex;gap:6px;overflow-x:auto;margin:10px 0 2px;align-items:center;scrollbar-width:none} .bvfil::-webkit-scrollbar{display:none}
+.bvfil button{border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:6px 12px;white-space:nowrap;cursor:pointer}
+.bvfil button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bvfil .sp{flex:1}
+.blg{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin:16px 0 8px} .blg small{color:var(--muted);font-weight:700}
+.blist{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.blist{grid-template-columns:repeat(2,minmax(0,1fr))} .blist .br:nth-child(odd){border-right:1px solid var(--line)}}
+.br{padding:10px 12px 9px;border-bottom:1px solid var(--line);min-width:0}
+.br.live{background:color-mix(in srgb,var(--live) 4%,transparent)}
+.brh{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,62px);gap:5px;align-items:end;font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:5px}
+.brh .w{white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .brh .lv{color:var(--live);font-weight:800}
+.brh i{font-style:normal;font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;text-align:center;font-weight:800}
+.brg{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,62px);gap:5px;align-items:center}
+.brt{display:flex;align-items:center;gap:8px;min-width:0;height:40px}
+.brt img{width:24px;height:24px;object-fit:contain;flex:none}
+.brt .tn{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.brt .tn small{color:var(--muted);font-weight:700;font-size:11px}
+.brt .bp{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--muted);flex:none}
+.brt .ts{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:800;flex:none;min-width:22px;text-align:right}
+.brt.lose .tn,.brt.lose .ts{opacity:.55}
+.brg .obtn{height:40px;border-radius:10px}
+.brf{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11.5px;color:var(--muted);margin-top:7px;align-items:center}
+.brf b{color:var(--text)} .brf a{margin-left:auto;font-weight:800;color:var(--accent);text-decoration:none;white-space:nowrap}
+.neoff .brg{opacity:.45}
+.brt .tn .ab{display:none}
+@media (max-width:520px){ .brh,.brg{grid-template-columns:minmax(0,1fr) repeat(3,58px)} .brt .tn .rc{display:none} .br.sc .brt .tn .fl{display:none} .br.sc .brt .tn .ab{display:inline} .brt{gap:6px} }
 .nebar{font-size:12.5px;font-weight:600;line-height:1.35;margin:8px 0 2px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--live) 12%,transparent);color:var(--live)}
 .nebar.ok{background:var(--chip);color:var(--text);font-weight:500}
 .neoff .gbody,.neoff .kal,.neoff .gsrc{opacity:.45}
@@ -990,6 +1020,59 @@ function renderTabs(counts){
   const items=[{key:'all',label:'All sports'},...SPORTS];
   $('#tabs').innerHTML=items.map(s=>`<button class="tab ${tab===s.key?'on':''}" data-k="${s.key}">${s.key==='all'?'🔥':(SPORT_ICON[s.key]||'')} ${s.label}${counts[s.key]?`<span class="n">${counts[s.key]}</span>`:''}</button>`).join('');
 }
+/* ================= Market board: compact rows by league, with category tabs and filters ================= */
+const BV={view:'board', filt:'all'};
+try{ BV.view=localStorage.getItem('wc_bview')||'board'; }catch(e){}
+const rankOf=t=>{ const r=t?.curatedRank?.current; return r>0&&r<=25?r:null; };
+function bvBar(games){
+  const college=games.some(g=>g.sport.key==='ncaaf'||g.sport.key==='ncaam'), live=games.filter(g=>g.state==='in').length;
+  if(BV.filt==='top25'&&!college) BV.filt='all';
+  const f=(k,l)=>`<button class="${BV.filt===k?'on':''}" data-bvf="${k}">${l}</button>`;
+  return `<div class="bvcats"><button class="on">Game lines</button><button data-bvgo="#props">Player props</button><button data-bvgo="#futures">Futures</button><button data-bvgo="#build">Build a bet</button><button data-bvgo="#today">Picks</button><button data-bvgo="#odds">Best odds</button></div>
+    <div class="bvfil">${f('all','All games')}${live?f('live',`🔴 Live · ${live}`):''}${college?f('top25','Top 25'):''}${f('mk','📈 Has market prices')}${f('close','Close games')}<span class="sp"></span><button data-bvview="${BV.view==='board'?'cards':'board'}">${BV.view==='board'?'▦ Cards':'☰ Board'}</button></div>`;
+}
+function bvFilter(games){
+  if(BV.filt==='live') return games.filter(g=>g.state==='in');
+  if(BV.filt==='top25') return games.filter(g=>rankOf(g.home)||rankOf(g.away));
+  if(BV.filt==='mk') return games.filter(g=>g.state!=='post'&&(kalFor(g.sport.key,g.ev)||polyFor(g.sport.key,g.ev)));
+  if(BV.filt==='close') return games.filter(g=>g.state!=='post'&&Math.abs(g.out.home-g.out.away)<0.2);
+  return games;
+}
+function boardRow(g){
+  const {sport,ev,status,state,home,away,out}=g, live=state==='in', fin=state==='post', c=ev.competitions[0];
+  const d=new Date(ev.date), today=new Date().toDateString()===d.toDateString();
+  const when= live? status.type.shortDetail : fin? (status.type.shortDetail||'Final') : (today?'':d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})+' · ')+d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  const tv=(c.broadcasts||[]).flatMap(b=>b.names||[])[0], note=(c.notes||[])[0]?.headline, tbd=home.team.abbreviation==='TBD'||away.team.abbreviation==='TBD';
+  const neW=fin?null:neWhy(ev.id,'game',live), neI=fin||neW?null:neInfo(ev.id);
+  const team=(t,isHome)=>{ const r=rankOf(t), p=isHome?out.home:out.away;
+    return `<div class="brt ${fin&&(isHome?g.margin<0:g.margin>0)?'lose':''}"><img src="${esc(t.team.logo||'')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="tn">${r?`<small>${r}</small> `:''}<span class="fl">${esc(t.team.shortDisplayName||t.team.displayName)}</span><span class="ab">${esc(t.team.abbreviation||t.team.shortDisplayName)}</span> <small class="rc">${esc((t.records||[])[0]?.summary||'')}</small></span>
+      ${state==='pre'?(tbd?'':`<span class="bp">${pct(p)}</span>`):`<span class="bp">${fin?'':pct(p)}</span><span class="ts">${esc(t.score)}</span>`}</div>`; };
+  const btns=isHome=>tbd?'<span></span><span></span><span></span>':`${oddsBtn(g,'sp',isHome?'h':'a')}${oddsBtn(g,'tot',isHome?'u':'o')}${oddsBtn(g,'ml',isHome?'h':'a')}`;
+  const k=fin||tbd?null:kalFor(sport.key,ev), p=fin||tbd?null:polyFor(sport.key,ev);
+  const mk=(nm,x)=>x?`<span>${nm} <b>${esc(away.team.abbreviation)} ${pct(x.pa)} · ${esc(home.team.abbreviation)} ${pct(x.ph)}</b></span>`:'';
+  return `<div class="br ${live?'live':''} ${state!=='pre'?'sc':''} ${neW?'neoff':''}" data-id="${ev.id}">
+    <div class="brh"><span class="w">${live?'<span class="lv">● </span>':''}<span class="${live?'lv':''}">${esc(when)}</span>${tv?' · '+esc(tv):''}${note?' · 🏆 '+esc(note):''}</span><i>Spread</i><i>Total</i><i>Money</i></div>
+    ${neW?`<div class="nebar" style="margin:0 0 6px">🌽 ${esc(neW)}</div>`:neI?`<div class="nebar ok" style="margin:0 0 6px">🌽 ${esc(neI)}</div>`:''}
+    <div class="brg">${team(away,false)}${btns(false)}${team(home,true)}${btns(true)}</div>
+    <div class="brf">${mk('📈 Kalshi',k)}${mk('🔮 Polymarket',p)}${PROP_SPORTS[sport.key]&&!tbd?`<a href="#g/${sport.key}/${ev.id}">${fin?'Box score':'More markets'} ›</a>`:''}</div>
+  </div>`;
+}
+// a section of games: board rows grouped by league, or the older big cards
+function boardSection(title, gs){
+  if(!gs.length) return '';
+  if(BV.view!=='board') return `<h2 class="sec">${title} · ${gs.length}</h2><div class="grid">${gs.map(boardCard).join('')}</div>`;
+  let h=`<h2 class="sec">${title} · ${gs.length}</h2>`;
+  for(const sp of SPORTS){ const x=gs.filter(g=>g.sport.key===sp.key); if(!x.length) continue;
+    h+=`<div class="blg">${SPORT_ICON[sp.key]||''} ${esc(sp.label)} <small>${x.length} game${x.length>1?'s':''}</small></div><div class="blist">${x.map(boardRow).join('')}</div>`; }
+  return h;
+}
+document.addEventListener('click',e=>{
+  const go=e.target.closest('[data-bvgo]'); if(go){ location.hash=go.dataset.bvgo; return; }
+  const f=e.target.closest('[data-bvf]'); if(f){ BV.filt=f.dataset.bvf; render(); return; }
+  const v=e.target.closest('[data-bvview]'); if(v){ BV.view=v.dataset.bvview; try{ localStorage.setItem('wc_bview',BV.view); }catch(er){} render(); }
+});
+
 /* ================= Sportsbook-style board ================= */
 const SPORT_ICON={nba:'🏀',nfl:'🏈',nhl:'🏒',mlb:'⚾',ncaaf:'🏈',ncaam:'🏀',wnba:'🏀',epl:'⚽',ucl:'⚽',laliga:'⚽',mls:'⚽'};
 // ESPN's DraftKings line for a game, as tappable markets. Kept per game so live games still show the pregame line.
@@ -1949,15 +2032,15 @@ function allBoardGames(){
 }
 
 function render(){
-  const games=lastGames.filter(g=>tab==='all'||g.sport.key===tab);
+  const tabGames=lastGames.filter(g=>tab==='all'||g.sport.key===tab), games=bvFilter(tabGames);
   const counts={all:0}; for(const g of lastGames) if(g.state==='in'){ counts[g.sport.key]=(counts[g.sport.key]||0)+1; counts.all++; }
   renderTabs(counts);
-  const sec=(t,gs)=>gs.length?`<h2 class="sec">${t} · ${gs.length}</h2><div class="grid">${gs.map(boardCard).join('')}</div>`:'';
+  const sec=boardSection, bar=bvBar(tabGames);
   let html='';
   html+=sec('🔴 Live now', games.filter(g=>g.state==='in').sort((a,b)=>Math.abs(a.out.home-0.5)-Math.abs(b.out.home-0.5)));
   html+=sec(dayOffset===0?'Today':dayLabel(dayOffset), games.filter(g=>g.state==='pre').sort((a,b)=>new Date(a.ev.date)-new Date(b.ev.date)));
   // the rest of the season for a single sport
-  if(tab!=='all' && dayOffset===0){
+  if(tab!=='all' && dayOffset===0 && BV.filt==='all'){
     const S=SEASON[tab];
     if(S){
       const todayIds=new Set(lastGames.map(g=>g.ev.id));
@@ -1966,7 +2049,7 @@ function render(){
       const shown=S.gs.slice(0,S.show); let lastDay='';
       if(shown.length) html+=`<h2 class="sec">Coming up · rest of the season</h2>`;
       let block=[];
-      const flush=()=>{ if(block.length){ html+=`<div class="grid">${block.map(boardCard).join('')}</div>`; block=[]; } };
+      const flush=()=>{ if(block.length){ html+= BV.view==='board' ? `<div class="blist">${block.map(boardRow).join('')}</div>` : `<div class="grid">${block.map(boardCard).join('')}</div>`; block=[]; } };
       for(const g of shown){ const d=new Date(g.ev.date).toDateString();
         if(d!==lastDay){ flush(); lastDay=d; html+=`<div class="dayh">${new Date(g.ev.date).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'})}${hol[d]?`<span class="hol">${esc(hol[d])}</span>`:''}</div>`; }
         block.push(g); }
@@ -1976,7 +2059,7 @@ function render(){
     }
   }
   html+=sec('Final', games.filter(g=>g.state==='post').sort((a,b)=>new Date(b.ev.date)-new Date(a.ev.date)));
-  $('#list').innerHTML = html || `<div class="empty">No ${tab==='all'?'':BY_KEY[tab].label+' '}games on ${dayLabel(dayOffset).toLowerCase()}.${errors.length?`<br><span class="err">${esc(errors.join(', '))}</span>`:''}</div>`;
+  $('#list').innerHTML = bar + (html || (BV.filt!=='all' ? `<div class="empty">No games match that filter. <a href="#" data-bvf="all" style="color:var(--accent)">Show all games</a></div>` : `<div class="empty">No ${tab==='all'?'':BY_KEY[tab].label+' '}games on ${dayLabel(dayOffset).toLowerCase()}.${errors.length?`<br><span class="err">${esc(errors.join(', '))}</span>`:''}</div>`));
   updateSlipFab(); renderPicks();
   if(tab!=='all' && dayOffset===0) loadSeason(BY_KEY[tab]);
   fillWeather($('#list'), id=>allBoardGames().find(g=>g.ev.id===id)?.ev);
