@@ -560,6 +560,7 @@ async function loadKalshi(){
   if(Date.now()-KAL.t<4*60e3) return; KAL.t=Date.now();
   try{ const r=await fetch(KAL.url+'?t='+Math.floor(Date.now()/3e5), {cache:'no-store'}); if(!r.ok) return; const j=await r.json(), by={};
     for(const g of j.games||[]) (by[g.lg+'|'+g.date] ||= []).push(g);
+    const pol={}; for(const g of j.poly||[]) (pol[g.lg] ||= []).push(g); KAL.poly=pol;
     KAL.by=by; KAL.updated=+new Date(j.updated)||0; try{ if(typeof render==='function') render(); }catch(e){} }catch(e){}
 }
 function kalFor(sk, ev){
@@ -575,6 +576,22 @@ function kalFor(sk, ev){
   const px=k=>k.bid!=null&&k.ask!=null&&k.ask>k.bid&&k.ask-k.bid<=0.10 ? (k.bid+k.ask)/2 : (k.last>0&&k.vol>0&&k.bid!=null&&k.ask!=null&&k.last>=k.bid&&k.last<=k.ask ? k.last : null);
   const {g,th,ta}=found[0], ph=px(th), pa=px(ta), tie=g.teams.find(k=>/^tie$/i.test(k.n)), pt=tie?px(tie):0;
   if(ph==null||pa==null||(tie&&pt==null)||Math.abs(ph+pa+pt-1)>0.12) return null;   // thin or inconsistent market: skip
+  return {ph, pa, pt:tie?pt:null, ev:g.ev};
+}
+/* Polymarket (same saved file): match on league, start time within 3 hours and BOTH teams; otherwise show nothing. */
+const polyNorm=x=>kalNorm(String(x||'').replace(/\b(fc|cf|afc|sc|sk|cd|ac|club)\b/gi,' '));
+function polyFor(sk, ev){
+  if(!KAL.updated || Date.now()-KAL.updated>45*60e3) return null;
+  const c=ev.competitions?.[0]; if(!c) return null;
+  const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'); if(!H||!A) return null;
+  const t0=+new Date(ev.date);
+  const hit=(t,k)=>{ const ab=String(t.team.abbreviation||'').toUpperCase(); if(k.a && k.a.length<=4 && (k.a===ab || k.a===KAL_AB[ab])) return true;
+    const kn=polyNorm(k.n); return !!kn && [t.team.name,t.team.location,t.team.shortDisplayName,t.team.displayName].some(x=>x&&polyNorm(x)===kn); };
+  const found=[]; for(const g of KAL.poly?.[sk]||[]){ if(Math.abs(+new Date(g.start)-t0)>3*3600e3) continue; const th=g.teams.find(k=>hit(H,k)), ta=g.teams.find(k=>hit(A,k)); if(th&&ta&&th!==ta) found.push({g,th,ta}); }
+  if(found.length!==1) return null;
+  const px=k=>k.p!=null&&k.bid!=null&&k.ask!=null&&k.ask-k.bid<=0.10&&k.ask-k.bid>=0 ? k.p : null;
+  const {g,th,ta}=found[0], ph=px(th), pa=px(ta), tie=g.teams.find(k=>k.n==='Tie'), pt=tie?px(tie):0;
+  if(ph==null||pa==null||(tie&&pt==null)||Math.abs(ph+pa+pt-1)>0.12) return null;
   return {ph, pa, pt:tie?pt:null, ev:g.ev};
 }
 loadKalshi(); setInterval(loadKalshi, 5*60e3); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadKalshi(); });
@@ -1046,7 +1063,9 @@ function boardCard(g){
       ${tbd?`<div class="gtbd">Matchup set when the bracket is decided</div>`:`<div class="gmk"><span>Spread</span><span>Total</span><span>Money</span>${odds(false)}${odds(true)}</div>`}
     </div>
     ${chance}
-    ${(()=>{ if(fin||tbd) return ''; const k=kalFor(sport.key,ev); return k?`<div class="gsrc">📈 <b>Kalshi market price:</b> ${esc(away.team.abbreviation)} ${pct(k.pa)} · ${esc(home.team.abbreviation)} ${pct(k.ph)}${k.pt!=null?` · Tie ${pct(k.pt)}`:''} <span style="opacity:.8">· as of ${new Date(KAL.updated).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span></div>`:''; })()}
+    ${(()=>{ if(fin||tbd) return ''; const k=kalFor(sport.key,ev), p=polyFor(sport.key,ev); if(!k&&!p) return '';
+      const ln=(nm,x)=>x?`<div>${nm} ${esc(away.team.abbreviation)} ${pct(x.pa)} · ${esc(home.team.abbreviation)} ${pct(x.ph)}${x.pt!=null?` · Tie ${pct(x.pt)}`:''}</div>`:'';
+      return `<div class="gsrc">${ln('📈 <b>Kalshi market price:</b>',k)}${ln('🔮 <b>Polymarket market price:</b>',p)}<div style="opacity:.8">Prediction-market prices, not sportsbook odds · as of ${new Date(KAL.updated).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</div></div>`; })()}
     ${L&&!fin&&!tbd?`<div class="gsrc">${live?'Pregame lines · ':''}${esc(L.book)} via ESPN · tap a price to add it to your slip</div>`:''}
     ${WX_SPORTS.has(sport.key)&&!fin&&!tbd?`<div class="wx" data-wx="${sport.key}|${ev.id}"></div>`:''}
     <div class="gact">${PROP_SPORTS[sport.key]&&!tbd?`<a href="#g/${sport.key}/${ev.id}">Props, stats &amp; 1st-half lines ›</a>`:''}</div>
