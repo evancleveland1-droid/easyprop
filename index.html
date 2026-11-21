@@ -2807,7 +2807,7 @@ $('#mb').addEventListener('click',e=>{
 /* ================= Player props tab =================
    Every player prop for a sport's slate: season/L5/L10 averages and hit rates from ESPN game logs,
    matched to sportsbook lines (The Odds API) when a key is saved. */
-const PP_SPORTS=['nba','nfl','ncaaf','ncaam','wnba'];
+const PP_SPORTS=['nba','nfl','nhl','ncaaf','ncaam','wnba'];
 const BOOK_MK={PTS:'player_points',REB:'player_rebounds',AST:'player_assists','3PM':'player_threes',PRA:'player_points_rebounds_assists',
   'Pass Yds':'player_pass_yds','Pass TD':'player_pass_tds','Comp':'player_pass_completions','Pass Att':'player_pass_attempts','INT':'player_pass_interceptions',
   'Rush Yds':'player_rush_yds','Carries':'player_rush_attempts','Rec':'player_receptions','Rec Yds':'player_reception_yds','Rush+Rec Yds':'player_rush_reception_yds'};
@@ -2824,9 +2824,12 @@ async function loadPPGames(){
   try{ PP.games=(await fetchSport(ppSport(), ymd(dayOffset))).map(x=>x.ev).filter(ev=>(ev.competitions[0].status||ev.status).type.state!=='post'); }
   catch(e){ PP.games=[]; PP.msg=`Couldn't load ${ppSport().label} games (${e.message}).`; }
   if(PP.game!=='all' && !PP.games.some(g=>g.id===PP.game)) PP.game='all';
+  loadPPDK();
+  if(PP.sport==='nhl'){ PP.players=[]; PP.loading=false; renderPP(); return; }
   await loadPPPlayers();
 }
 async function loadPPPlayers(){
+  if(PP.sport==='nhl'){ PP.players=[]; PP.loading=false; renderPP(); return; }
   const sport=ppSport(), bb=isBB(sport); PP.loading=true; PP.players=[]; renderPP();
   const games=PP.game==='all'?PP.games:PP.games.filter(g=>g.id===PP.game);
   const seen=new Set(), list=[];
@@ -2874,6 +2877,66 @@ function bookFor(p,label){
   const over=os.find(o=>o.name==='Over'), under=os.find(o=>o.name==='Under');
   return over?{ev, mk, over, under, point:over.point}:null;
 }
+/* ---- Real DraftKings player props (via ESPN) for every player the book lists, not just team leaders ---- */
+async function loadPPDK(){
+  if(!DKX_SPORTS.includes(PP.sport)) return; const sk=PP.sport, games=PP.games.filter(ev=>(ev.competitions[0].status||ev.status).type.state==='pre');
+  PP.dkLeft=games.length; renderPP();
+  await pool(games,3,async ev=>{ try{ await loadDKX(sk,ev,false); }catch(e){} if(PP.sport===sk){ PP.dkLeft--; renderPP(); } });
+  if(PP.sport===sk){ PP.dkLeft=0; renderPP(); }
+}
+const ppDKAll=()=>PP.games.filter(ev=>PP.game==='all'||ev.id===PP.game).flatMap(ev=>(DKX[ev.id]?.legs||[]).filter(l=>l.kind==='prop'));
+const DK_ORDER=['points','pts+reb+ast','rebounds','assists','threes','pts+reb','pts+ast','ast+reb','passing yards','rushing yards','receiving yards','receptions','shots on goal'];
+// hit rate vs the real line, for the game you tapped (one game = few enough players to load their logs)
+async function ppDKForm(){
+  if(PP.game==='all' || !/basketball|football/.test(ppSport().path)) return; const sk=PP.sport, gid=PP.game;
+  const legs=ppDKAll().filter(l=>l.line!=null&&l.form===undefined&&DK_STAT[l.stat]), ids=[...new Set(legs.map(l=>l.player))].slice(0,40); if(!ids.length||PP.dkForming===gid) return;
+  PP.dkForming=gid; const logs={}, fns=Object.fromEntries([...BB_PROPS,...FB_PROPS]), bb=isBB(ppSport());
+  await pool(ids,5,async id=>{ try{ logs[id]=await gamelog(BY_KEY[sk],id); }catch(e){} });
+  for(const l of legs){ const lg=logs[l.player]; if(!lg){ continue; } const vals=lg.filter(r=>bb?(r.s.minutes||0)>0:true).map(r=>fns[DK_STAT[l.stat]](r.s)).filter(v=>v!=null).slice(0,10);
+    if(vals.length>=5){ const hits=vals.filter(v=>l.side==='under'?v<l.line:v>l.line).length; l.hit=`hit ${hits} of last ${vals.length}`; l.form=hits/vals.length-0.5; } else l.form=null; }
+  PP.dkForming=null; if(PP.sport===sk&&PP.game===gid) renderPP();
+}
+function ppDKHTML(){
+  const all=ppDKAll(), cnt=c=>all.filter(l=>l.cat===c).length;
+  let h=`<div class="bookchips" style="margin-top:10px">${[['prop','Over / under'],['mile','Milestones (15+ pts)'],['scorer','Scorers & specials']].map(([k,l])=>`<label style="${PP.dkCat===k?'background:var(--text);color:var(--bg)':''}" data-dkcat="${k}">${l} · ${cnt(k)}</label>`).join('')}</div>`;
+  const inCat=all.filter(l=>l.cat===PP.dkCat), stats=[...new Set(inCat.map(l=>l.stat||l.label.split(' ').slice(-2).join(' ')))].sort((a,b)=>((DK_ORDER.indexOf(a)+1)||99)-((DK_ORDER.indexOf(b)+1)||99));
+  const statOf=l=>l.stat||l.label.split(' ').slice(-2).join(' ');
+  if(PP.dkStat!=='all' && !stats.includes(PP.dkStat)) PP.dkStat='all';
+  h+=`<div class="bookchips">${[['all','All'],...stats.map(x=>[x,x])].map(([k,l])=>`<label style="${PP.dkStat===k?'background:var(--text);color:var(--bg)':''}" data-dkstat="${esc(k)}">${esc(l)}</label>`).join('')}</div>`;
+  h+=`<div class="note"><b>Real DraftKings lines and prices</b> (via ESPN) for every player the book lists${PP.dkLeft>0?` · loading ${PP.dkLeft} more game${PP.dkLeft>1?'s':''}…`:''}. “Market” is the chance the price implies with the book's cut removed. ${PP.game==='all'?'Tap a game above to also see how often each player has cleared his line lately.':'Hit rates are from each player’s last 10 games against this exact line.'}</div>`;
+  if(NE.on) h+=`<div class="nebar ok">🌽 Nebraska casino mode: prices are DraftKings lines; the casino's will differ, so check the board at the window.</div>`;
+  const list=inCat.filter(l=>PP.dkStat==='all'||statOf(l)===PP.dkStat), onSlip=l=>OB.slip.some(x=>x.label===l.label);
+  const tm=l=>new Date(l.start).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}), img=id=>`https://a.espncdn.com/i/headshots/${LEAGUE_IMG[PP.sport]||'nba'}/players/full/${id}.png`;
+  if(!list.length) return h+(PP.dkLeft>0?skel(2):`<div class="empty">No DraftKings props posted for ${PP.game==='all'?'these games':'this game'} yet. Books usually post them the morning of the game${PP.sport==='nfl'?' (NFL: a day or two before)':''}.</div>`);
+  if(PP.dkCat==='prop'){
+    const m=new Map(); for(const l of list){ const k=l.ev+'|'+l.player+'|'+l.stat; (m.get(k)||m.set(k,{}).get(k))[l.side]=l; }
+    const cards=[...m.values()].filter(c=>c.over&&c.under).sort((a,b)=>((DK_ORDER.indexOf(a.over.stat)+1)||99)-((DK_ORDER.indexOf(b.over.stat)+1)||99)||b.over.line-a.over.line);
+    h+=`<div class="pkgrid">${cards.slice(0,150).map(c=>{ const o=c.over, u=c.under, name=o.label.split(' over ')[0], sel=onSlip(o)||onSlip(u);
+      return `<div class="pk ${sel?'sel':''}"><img src="${img(o.player)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <div class="nm">${esc(name)}</div><div class="mt">${esc(o.game)} · ${tm(o)}</div>
+        <div class="ln">${o.line}</div><div class="st">${esc(o.stat)}</div>
+        <div class="hr">Market: over <b>${pct(o.p)}</b>${o.hit?` · over ${esc(o.hit)}`:''}</div>
+        <div class="ml"><button class="less ${onSlip(u)?'on':''}" data-dkadd="${esc(u.id)}">Under ${fmtA(u.price)}</button><button class="more ${onSlip(o)?'on':''}" data-dkadd="${esc(o.id)}">Over ${fmtA(o.price)}</button></div></div>`; }).join('')}</div>
+      ${cards.length>150?`<div class="note">Showing 150 of ${cards.length}. Pick a stat or a game to narrow it.</div>`:''}`;
+  } else {
+    const rows=[...list].sort((a,b)=>b.p-a.p);
+    h+=`<div class="pc">${rows.slice(0,200).map(l=>`<div class="leg" style="padding:7px 0"><span><b>${esc(l.label)}</b> <small style="color:var(--muted)">${esc(l.game)} · ${tm(l)}${l.hit?' · '+esc(l.hit):''}</small></span><span style="white-space:nowrap">${pct(l.p)} <button class="addb ${onSlip(l)?'on':''}" data-dkadd="${esc(l.id)}">${onSlip(l)?'✓ ':''}${fmtA(l.price)}</button></span></div>`).join('')}</div>
+      ${rows.length>200?`<div class="note">Showing the 200 most likely of ${rows.length}. Pick a stat or a game to narrow it.</div>`:''}`;
+  }
+  return h;
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-dkcat]'); if(c){ PP.dkCat=c.dataset.dkcat; PP.dkStat='all'; renderPP(); return; }
+  const t=e.target.closest('[data-dkstat]'); if(t){ PP.dkStat=t.dataset.dkstat; renderPP(); return; }
+  const a=e.target.closest('[data-dkadd]'); if(!a) return; e.stopPropagation();
+  const l=ppDKAll().find(x=>x.id===a.dataset.dkadd); if(!l) return;
+  const i=OB.slip.findIndex(x=>x.label===l.label);
+  if(i>=0){ OB.slip.splice(i,1); store.set('wc_slip',OB.slip); renderSlip(); updateSlipFab(); }
+  else { // one side per player prop: swap if the other side is already on the slip
+    const other=ppDKAll().find(x=>x!==l&&x.cat==='prop'&&l.cat==='prop'&&x.ev===l.ev&&x.player===l.player&&x.stat===l.stat), j=other?OB.slip.findIndex(x=>x.label===other.label):-1; if(j>=0) OB.slip.splice(j,1);
+    addLegsToSlip([{label:l.label, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev, fair:l.p, kind:'prop'}]); }
+  renderPP();
+});
 function ppRows(){
   const rows=[], props=ppProps().filter(([l])=>!PP.prop||l===PP.prop);
   for(const p of PP.players){
@@ -2904,9 +2967,11 @@ function renderPP(){
       <label style="margin-left:8px"><input type="checkbox" id="pponlybook" ${PP.onlyBook?'checked':''}> only props with a book line</label></div>`;
   else h+=`<div class="note">Lines below are each player's season average (an estimate) until you add your odds key in <a href="#odds" style="color:var(--accent)">Best odds &amp; parlay</a>; then real sportsbook lines and prices show here.</div>`;
   if(PP.msg) h+=`<div class="empty">${esc(PP.msg)}</div>`;
-  const rows=ppRows();
-  h=h.replace('<div class="bookchips" style="margin-top:12px">',`<div style="margin-top:12px"><span class="viewtog"><button data-ppv="cards" class="${PP.view!=='table'?'on':''}">Cards</button><button data-ppv="table" class="${PP.view==='table'?'on':''}">Table</button></span></div><div class="bookchips">`);
-  if(rows.length && PP.view!=='table'){
+  const rows=ppRows(), hasDK=DKX_SPORTS.includes(PP.sport), view=PP.view==='dk'&&!hasDK?'cards':PP.view;
+  const togg=`<span class="viewtog">${hasDK?`<button data-ppv="dk" class="${view==='dk'?'on':''}">DraftKings lines</button>`:''}<button data-ppv="cards" class="${view==='cards'?'on':''}">${hasDK?'Hit-rate cards':'Cards'}</button><button data-ppv="table" class="${view==='table'?'on':''}">Table</button></span>`;
+  h=h.replace('<div class="bookchips" style="margin-top:12px">',`<div style="margin-top:12px">${togg}</div><div class="bookchips">`);
+  if(view==='dk'){ /* built below */ }
+  else if(rows.length && view!=='table'){
     h+=`<div class="pkgrid">${rows.slice(0,150).map(pkCard).join('')}</div>${rows.length>150?`<div class="note">Showing 150 of ${rows.length}. Pick a stat or a game to narrow it.</div>`:''}`;
   } else if(rows.length){
     h+=`<div class="pc"><div class="tscroll"><table class="pt"><tr><th>Player</th><th>Prop</th><th>Line</th><th>Over L5</th><th>L10</th><th>Season</th><th>Avg</th><th>L5 avg</th><th>Best over</th><th>Best under</th></tr>
@@ -2919,16 +2984,17 @@ function renderPP(){
           <td>${un?`${fmtA(un.best.p)} <small>${esc(OB.allBooks[un.best.k]||un.best.k)}</small> <button class="addb ${onU?'on':''}" data-ppadd="${esc(un.id)}">${onU?'✓':'+'}</button>`:(()=>{ const on=OB.slip.some(l=>l.id==='pp|'+pickKey(r)&&l.side==='less'); return `<button class="addb ${on?'on':''}" data-pk="${esc(pickKey(r))}" data-side="less">${on?'✓ Under':'+ Under'}</button>`; })()}</td></tr>`; }).join('')}
     </table></div></div>${rows.length>300?`<div class="note">Showing the top 300 of ${rows.length}. Pick a prop or a game to narrow it.</div>`:''}`;
   } else if(!PP.msg && !PP.loading) h+=`<div class="empty">No props match.</div>`;
-  if(PP.loading) h+=`<div class="note">Loading player game logs (${PP.players.filter(p=>p.log!==undefined).length}/${PP.players.length})…</div>${skel(2)}`;
+  if(PP.loading && view!=='dk') h+=`<div class="note">Loading player game logs (${PP.players.filter(p=>p.log!==undefined).length}/${PP.players.length})…</div>${skel(2)}`;
   if(Object.keys(PP.book).length) h+=`<div class="note">Want a combo? Lines loaded here are now in the <a href="#odds" style="color:var(--accent)">combo shuffler</a> under Best odds &amp; parlay (pick the same sport there).</div>`;
   h+=`<footer>Hit rates describe past games against today's line; they don't predict the next one, and books set lines knowing these numbers. Player stats: ESPN. Lines: The Odds API. Not betting advice.</footer>`;
+  if(view==='dk'){ h=`<div style="margin-top:12px">${togg}</div>`+ppDKHTML()+`<footer>Lines and prices: DraftKings via ESPN, refreshed every 5 minutes. Your book's price can differ. Hit rates describe past games; they don't predict the next one. For entertainment and analysis only, not betting advice.</footer>`; ppDKForm(); }
   h+=entryTray()+'<div style="height:30vh"></div>';
   const y=$('#pp').scrollTop; $('#ppbody').innerHTML=h; $('#pp').scrollTop=y;
   if(PP.loading && !PP._tick){ PP._tick=setTimeout(()=>{ PP._tick=null; if(PP.loading) renderPP(); },1500); }
 }
 /* ---------- Pick'em cards + entry ---------- */
-PP.view=store.get('wc_ppview','cards'); PP.entry=store.get('wc_entry',[]); PP.mult=store.get('wc_mult',{});
-const LEAGUE_IMG={nba:'nba',wnba:'wnba',nfl:'nfl',ncaaf:'college-football',ncaam:'mens-college-basketball'};
+PP.view=store.get('wc_ppview2','dk'); PP.dkCat='prop'; PP.dkStat='all'; PP.dkLeft=0; PP.entry=store.get('wc_entry',[]); PP.mult=store.get('wc_mult',{});
+const LEAGUE_IMG={nba:'nba',wnba:'wnba',nfl:'nfl',nhl:'nhl',ncaaf:'college-football',ncaam:'mens-college-basketball'};
 const headOf=p=>(typeof p.head==='string'&&p.head)||p.head?.href||`https://a.espncdn.com/i/headshots/${LEAGUE_IMG[PP.sport]||'nba'}/players/full/${p.id}.png`;
 // Chance of going over: the market's fair chance when a sportsbook line is loaded, otherwise his hit rates
 // (season 50%, last 10 30%, last 5 20%) pulled toward 50% when he has few games.
@@ -3006,7 +3072,7 @@ $('#ppgames').addEventListener('click',e=>{ const b=e.target.closest('[data-ppg]
 $('#pp').addEventListener('click',e=>{
   const pr=e.target.closest('[data-ppp]'); if(pr){ PP.prop=pr.dataset.ppp||null; renderPP(); return; }
   if(e.target.id==='ppbook'){ loadPPBook(); return; }
-  const v=e.target.closest('[data-ppv]'); if(v){ PP.view=v.dataset.ppv; store.set('wc_ppview',PP.view); renderPP(); return; }
+  const v=e.target.closest('[data-ppv]'); if(v){ PP.view=v.dataset.ppv; store.set('wc_ppview2',PP.view); renderPP(); return; }
   const pk=e.target.closest('[data-pk]'); if(pk){ togglePick(pk.dataset.pk, pk.dataset.side); return; }
   if(e.target.id==='entryslip'){ addLegsToSlip(PP.entry.map(x=>({label:`${x.name} ${x.side==='more'?'over':'under'} ${f1(x.line)} ${x.label} (est. line)`, game:x.game, price:-110, start:x.start, sk:PP.sport, fair:x.side==='more'?x.pOver:1-x.pOver}))); $('#entrycopied').textContent='Added to slip ✓'; return; }
   if(e.target.id==='entryclear'){ PP.entry=[]; store.set('wc_entry',PP.entry); renderPP(); return; }
