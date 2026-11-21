@@ -1,0 +1,27 @@
+name: Kalshi prices
+# Saves Kalshi's public game-market prices to the kalshi-data branch so the site can read them.
+# Uses no API keys and no stored secrets; the only credential is GitHub's own short-lived token for this repo.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: kalshi-prices
+  cancel-in-progress: true
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch public Kalshi prices
+        run: python3 .github/scripts/fetch_kalshi.py
+      - name: Publish to the kalshi-data branch
+        run: |
+          mkdir out && cp kalshi.json out/ && cd out
+          git init -q -b kalshi-data
+          git add kalshi.json
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Kalshi prices $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" kalshi-data
