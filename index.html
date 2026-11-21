@@ -405,7 +405,8 @@ header .tabs{padding-bottom:10px}
     <div class="sheeth">More</div>
     <button id="bdopen">🛠 <span>Build my bet (Claude &amp; formula)</span></button>
     <button id="futopen">🏆 <span>Futures (Super Bowl, titles, MVPs)</span></button>
-    <button id="oddsopen">🧾 <span>Bet slip &amp; best odds</span><span class="n" id="slipcount" hidden></span></button>
+    <button id="slipopen2" onclick="location.hash='#betslip'">🧾 <span>My bet slip</span><span class="n" id="slipcount" hidden></span></button>
+    <button id="oddsopen">💲 <span>Best odds across books</span></button>
     <button id="betsopen">📒 <span>My bets</span></button>
     <button id="combosopen">🎲 <span>Suggested combos</span></button>
     <button id="bestopen">💡 <span>Best bets (edge finder)</span></button>
@@ -457,6 +458,13 @@ header .tabs{padding-bottom:10px}
     <div class="tabs" id="tpwho"></div>
   </div></div>
   <div class="wrap" id="tpbody"></div>
+</div>
+
+<div class="gv" id="sl" hidden>
+  <div class="gvh"><div class="wrap">
+    <div class="gvtop"><button class="back" id="slback">‹ Back</button><b style="font-size:16px">🧾 Your bet slip</b></div>
+  </div></div>
+  <div class="wrap" id="slbody"></div>
 </div>
 
 <div class="gv" id="bd" hidden>
@@ -885,7 +893,7 @@ function toggleBoardLeg(id){
 }
 function updateSlipFab(){
   const f=$('#slipfab'), n=OB.slip.length; if(!f) return;
-  f.hidden=!n; if(!n) return;
+  f.hidden=!n || !$('#sl')?.hidden; if(f.hidden) return;
   const books=new Set(OB.slip.flatMap(l=>Object.keys(l.prices)));
   let best=0; for(const k of books){ if(OB.slip.every(l=>l.prices[k]!=null)) best=Math.max(best, OB.slip.reduce((t,l)=>t*decOdds(l.prices[k]),1)); }
   f.innerHTML=`<span class="c">${n}</span> Bet slip${best?` <b>${toAmerican(best)}</b>`:''}<span style="opacity:.8">›</span>`;
@@ -1414,6 +1422,66 @@ function autoPropBets(){
         legs:P.map(x=>({kind:'prop', sk, ev:x.r.p.evId, label:`${x.r.p.name} ${x.side==='more'?'over':'under'} ${f1(x.r.line)} ${x.r.label}`, game:`${x.r.p.team} ${x.r.p.at} ${x.r.p.opp}`, price:-110, start:x.r.p.start}))}); } }
   return out;
 }
+/* All of a day's game lines (moneyline, spread, total, both sides) for building combos. */
+const TPX={d:{}};
+async function loadTPLines(day){
+  day=day||tpDay(); const S=TPX.d[day] ||= {c:null,t:0,busy:false};
+  if(S.busy || Date.now()-S.t<10*60e3) return; S.busy=true;
+  const o=[];
+  await pool(PK_SPORTS,6,async sk=>{ try{ for(const {ev} of await fetchSport(BY_KEY[sk], day)){
+    const c=ev.competitions[0]; if((c.status||ev.status).type.state!=='pre' || new Date(ev.date)<new Date(Date.now()+10*60e3)) continue;
+    const L=linesOf(ev); if(!L) continue;
+    const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'), game=`${A.team.abbreviation} @ ${H.team.abbreviation}`, base={ev:ev.id, sk, game, start:ev.date};
+    if(L.ml.h&&L.ml.a){ const [ph,pa]=pairFair(L.ml.h,L.ml.a);
+      o.push({...base, kind:'ml', label:`${H.team.displayName} moneyline`, price:L.ml.h, p:ph}, {...base, kind:'ml', label:`${A.team.displayName} moneyline`, price:L.ml.a, p:pa}); }
+    if(L.sp.h[0]!=null && Math.abs(L.sp.h[0])<=20){ const [ph,pa]=pairFair(L.sp.h[1]??-110,L.sp.a[1]??-110);
+      o.push({...base, kind:'spread', label:`${H.team.displayName} ${fmtLine(L.sp.h[0])}`, price:L.sp.h[1]??-110, p:ph}, {...base, kind:'spread', label:`${A.team.displayName} ${fmtLine(L.sp.a[0])}`, price:L.sp.a[1]??-110, p:pa}); }
+    if(L.tot.line!=null){ const [po,pu]=pairFair(L.tot.o??-110,L.tot.u??-110);
+      o.push({...base, kind:'over', label:`${game} over ${L.tot.line}`, price:L.tot.o??-110, p:po}, {...base, kind:'under', label:`${game} under ${L.tot.line}`, price:L.tot.u??-110, p:pu}); }
+  } }catch(e){} });
+  S.c=o; S.t=Date.now(); S.busy=false; renderTP();
+}
+function lineCombos(){
+  const C=TPX.d[tpDay()]?.c||[], out=[], seen=new Set(), day=tpDay();
+  const add=(code,name,legs,why)=>{ if(!legs||legs.length<2) return; const k=legs.map(l=>l.label).sort().join('~'); if(seen.has(k)) return; seen.add(k);
+    const p=legs.reduce((t,l)=>t*l.p,1);
+    out.push({id:`auto:${day}:x:${code}`, picker:'formula', auto:true, gen:true, day, stake:10, name, chance:p, verdict:p>=0.45?'Safer':p>=0.25?'Balanced':'Long shot', why,
+      legs:legs.map(l=>({kind:l.kind==='over'||l.kind==='under'?'total':l.kind, label:l.label, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev}))}); };
+  const oneEach=list=>{ const r=[], g=new Set(); for(const l of list){ if(g.has(l.ev)) continue; g.add(l.ev); r.push(l); } return r; };
+  // per game: the side the market leans to
+  const lean=kinds=>{ const by={}; for(const l of C.filter(x=>kinds.includes(x.kind))){ const k=l.ev+'|'+(l.kind==='ml'?'ml':l.kind==='spread'?'sp':'tot'); if(!by[k]||l.p>by[k].p) by[k]=l; } return Object.values(by).sort((a,b)=>b.p-a.p); };
+  const windows=(list,n)=>{ const r=[]; for(let i=0;i+n<=list.length && i<7;i++) r.push([i,list.slice(i,i+n)]); return r; };
+  const groups=[...new Set(C.map(l=>l.sk))].map(sk=>[sk, `${SPORT_ICON[sk]||''} ${SPORT_NAME[sk]||sk}`, C.filter(l=>l.sk===sk)]);
+  groups.push(['all','🔀 Mixed sports', C]);
+  for(const [sk,label,G] of groups){
+    const inG=l=>sk==='all'||l.sk===sk;
+    const fav=oneEach(C.filter(l=>l.kind==='ml'&&inG(l)&&l.price>=-450&&l.p>=0.5).sort((a,b)=>b.p-a.p));
+    const dogs=oneEach(C.filter(l=>l.kind==='ml'&&inG(l)&&l.price>=100&&l.price<=260).sort((a,b)=>b.p-a.p));
+    const sp=oneEach(lean(['spread']).filter(inG));
+    const ov=oneEach(C.filter(l=>l.kind==='over'&&inG(l)).sort((a,b)=>b.p-a.p));
+    const un=oneEach(C.filter(l=>l.kind==='under'&&inG(l)).sort((a,b)=>b.p-a.p));
+    const tag=sk==='all'?'mix':sk;
+    for(const n of [2,3,4,5,6]){
+      for(const [i,w] of windows(sp,n)) add(`${tag}sp${n}w${i}`, `${label} · ${n} spreads${i?` (set ${i+1})`:''}`, w, `${n} point spreads, taking the side the market leans to in each game.`);
+      for(const [i,w] of windows(ov,n)) add(`${tag}ov${n}w${i}`, `${label} · ${n} overs${i?` (set ${i+1})`:''}`, w, `${n} game totals to go OVER. Best when pace and weather are fine.`);
+      for(const [i,w] of windows(un,n)) add(`${tag}un${n}w${i}`, `${label} · ${n} unders${i?` (set ${i+1})`:''}`, w, `${n} game totals to stay UNDER. Wind, rain and injuries to scorers help.`);
+      if(fav.length>=n){ // favorite + total from the same game, as a same-game style mix across games
+        const mix=[]; for(const f of fav){ if(mix.length>=n) break; mix.push(f); const t=ov.find(x=>x.ev===f.ev); if(t && mix.length<n) mix.push(t); }
+        add(`${tag}mlov${n}`, `${label} · ${n}-leg favorites + overs`, mix.length===n?mix:null, `Favorites to win, paired with overs in their games: a high-scoring night for the better teams.`);
+        const mixU=[]; for(const f of fav){ if(mixU.length>=n) break; mixU.push(f); const t=un.find(x=>x.ev===f.ev); if(t && mixU.length<n) mixU.push(t); }
+        add(`${tag}mlun${n}`, `${label} · ${n}-leg favorites + unders`, mixU.length===n?mixU:null, `Favorites to win in slower, lower-scoring games.`);
+      }
+      // spread + total mix, different games
+      if(sp.length&&un.length){ const m=[]; let a=0,b=0; while(m.length<n && (a<sp.length||b<un.length)){ if(a<sp.length&&!m.some(x=>x.ev===sp[a].ev)) m.push(sp[a]); a++; if(m.length<n&&b<un.length&&!m.some(x=>x.ev===un[b].ev)) m.push(un[b]); b++; }
+        add(`${tag}spun${n}`, `${label} · ${n}-leg spreads + unders`, m.length===n?m:null, `Point spreads mixed with unders from other games.`); }
+      if(sp.length&&ov.length){ const m=[]; let a=0,b=0; while(m.length<n && (a<sp.length||b<ov.length)){ if(a<sp.length&&!m.some(x=>x.ev===sp[a].ev)) m.push(sp[a]); a++; if(m.length<n&&b<ov.length&&!m.some(x=>x.ev===ov[b].ev)) m.push(ov[b]); b++; }
+        add(`${tag}spov${n}`, `${label} · ${n}-leg spreads + overs`, m.length===n?m:null, `Point spreads mixed with overs from other games.`); }
+      if(n<=3) for(const [i,w] of windows(dogs,n)) add(`${tag}dog${n}w${i}`, `${label} · ${n} underdogs${i?` (set ${i+1})`:''}`, w, `Underdogs to win outright: small chance, big payout. Only the closest dogs on the board.`);
+      if(n<=4 && fav.length>=n-1 && dogs.length){ add(`${tag}favdog${n}`, `${label} · ${n-1} favorite${n-1>1?'s':''} + 1 underdog`, oneEach([...fav.slice(0,n-1),dogs[0]]).length===n?oneEach([...fav.slice(0,n-1),dogs[0]]):null, `Safe favorites with one live underdog to boost the payout.`); }
+    }
+  }
+  return out;
+}
 function autoBets(){
   const L=(TPA.d[tpDay()]?.legs||[]).filter(l=>l.price>=-400 && l.price<=150), out=[];
   const leg=l=>({kind:'ml', label:`${l.team} moneyline`, game:l.game, price:l.price, start:l.start, sk:l.sk, ev:l.ev});
@@ -1429,7 +1497,7 @@ function autoBets(){
   for(const sk of [...new Set(L.map(l=>l.sk))]){ const S=L.filter(l=>l.sk===sk);
     for(let n=2;n<=Math.min(5,S.length);n++) bet(`${sk}${n}`, `${SPORT_NAME[sk]} top ${n} parlay`, pickDistinct(S,n,l=>l.ev), `The ${n} most likely ${SPORT_NAME[sk]} winners today.`);
     const Sm=S.filter(l=>l.p>=0.55&&l.p<=0.72); for(let n=2;n<=Math.min(3,Sm.length);n++) bet(`${sk}mid${n}`, `${SPORT_NAME[sk]} bigger payout ${n}-leg`, pickDistinct(Sm,n,l=>l.ev), `Solid ${SPORT_NAME[sk]} favorites (55–72% each) at better prices.`); }
-  return [...out, ...autoPropBets()];
+  return [...out, ...lineCombos(), ...autoPropBets()];
 }
 const tpKind=b=>{ const ls=b.legs||[]; if(ls.some(l=>l.kind==='future')) return 'futures'; if(ls.some(l=>l.kind==='prop')) return 'props'; return ls.length===1?'singles':'parlays'; };
 /* 🔗 Combos built from Claude's own singles for a day: pairs, triples and an all-in parlay. */
@@ -1510,7 +1578,7 @@ function addLegsToSlip(legs){
   for(const l of legs){ const id=`x|${l.ev||''}|${l.label}`; if(!OB.slip.some(x=>x.id===id || x.label===l.label)) OB.slip.push({id, ev:l.ev||'', game:l.game||'', sport:l.sk||'', label:l.label, prices:{draftkings:l.price??-110}, fair:l.fair??null, start:l.start||''}); }
   store.set('wc_slip',OB.slip); renderSlip(); updateSlipFab();
 }
-function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk,tpDay())); liveWatch(true); }
+function openTP(){ $('#tp').hidden=false; document.body.style.overflow='hidden'; renderTP(); loadHandPicks(); ensureDailyPicks(); loadTPGames(); loadTPLines(); ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk,tpDay())); liveWatch(true); }
 function closeTP(){ $('#tp').hidden=true; if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
 function renderTP(){
   if($('#tp').hidden) return;
@@ -1538,7 +1606,8 @@ function renderTP(){
     if(k==='parlays'||k==='props'){
       h+=`<h2 class="sec" style="font-size:14px;color:var(--text)">${title[k]} · ${bs.length}</h2>`;
       for(const g of SPORT_ORDER){ const gb=sortPay(bs.filter(b=>groupOf(b)===g)); if(!gb.length) continue;
-        h+=`<div class="dayh">${g==='mixed'?'🔀 Mixed sports':`${SPORT_ICON[g]||''} ${SPORT_NAME[g]||g}`} <span class="note" style="margin:0">${gb.length}</span></div>${gb.map(tpCard).join('')}`; }
+        const key=k+'|'+g, cap=TP.more?.[key]?9999:30;
+        h+=`<div class="dayh">${g==='mixed'?'🔀 Mixed sports':`${SPORT_ICON[g]||''} ${SPORT_NAME[g]||g}`} <span class="note" style="margin:0">${gb.length}</span></div>${gb.slice(0,cap).map(tpCard).join('')}${gb.length>cap?`<button class="tbtn morebtn" data-tpmore="${key}">Show all ${gb.length} ${g==='mixed'?'mixed':SPORT_NAME[g]||g} ${k==='props'?'prop parlays':'parlays'}</button>`:''}`; }
     } else h+=`<h2 class="sec">${title[k]} · ${bs.length}</h2>${sortPay(bs).map(tpCard).join('')}`; }
   if(!list.length) h+=`<div class="empty">${HP.busy||PK.busy||TPA.d[tpDay()]?.busy?'Loading picks…':TP.off>1?'No lines posted for this day yet. Sportsbooks post most lines a day or two ahead (football about a week ahead), so check back.':'No picks here yet. Claude\'s picks post every morning around 8:30, and the formula\'s once lines are posted.'}</div>`;
   if(TP.type==='futures'||TP.type==='all') h+=`<div class="note">Full futures boards (every team's price for the Super Bowl, NBA title, college championships and more) are in <a href="#futures" style="color:var(--accent)">Futures</a>.</div>`;
@@ -1549,10 +1618,11 @@ function renderTP(){
 $('#tpopen').onclick=()=>{ location.hash='#today'; };
 $('#tpback').onclick=()=>{ if(location.hash) history.back(); else closeTP(); };
 $('#tptabs').addEventListener('click',e=>{ const b=e.target.closest('[data-tpt]'); if(!b) return; TP.type=b.dataset.tpt; store.set('wc_tptype',TP.type); renderTP(); });
-$('#tpday').addEventListener('click',e=>{ const b=e.target.closest('[data-tpd]'); if(!b) return; TP.off=+b.dataset.tpd; TP.open=new Set(); renderTP(); loadTPGames(); ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk,tpDay())); });
+$('#tpday').addEventListener('click',e=>{ const b=e.target.closest('[data-tpd]'); if(!b) return; TP.off=+b.dataset.tpd; TP.open=new Set(); renderTP(); loadTPGames(); loadTPLines(); ['nba','nfl','ncaaf','ncaam'].forEach(sk=>loadTPProps(sk,tpDay())); });
 $('#tpwho').addEventListener('click',e=>{ if(e.target.closest('[data-tpsort]')){ TP.sort=TP.sort==='high'?'low':'high'; store.set('wc_tpsort',TP.sort); renderTP(); return; }
   const b=e.target.closest('[data-tpw]'); if(!b) return; TP.who=b.dataset.tpw; store.set('wc_tpwho',TP.who); renderTP(); });
 $('#tp').addEventListener('click',async e=>{
+  const mo=e.target.closest('[data-tpmore]'); if(mo){ (TP.more ||= {})[mo.dataset.tpmore]=true; renderTP(); return; }
   const cb=e.target.closest('[data-cl]'); if(cb){ const v=cb.dataset.cl;
     if(v==='all'){ TP.who='all'; TP.type='all'; } else if(v==='fut'){ TP.who='claude'; TP.type='futures'; } else { TP.who='claude'; TP.type='all'; TP.off=+v; loadTPGames(); }
     store.set('wc_tpwho',TP.who); store.set('wc_tptype',TP.type); TP.open=new Set(); renderTP(); $('#tp').scrollTop=0; return; }
@@ -2302,9 +2372,9 @@ function slipMath(){
 }
 function renderSlip(){
   updateSlipFab();
-  const el=$('#slip'), n=OB.slip.length;
+  const el=$('#slip'), n=OB.slip.length, sb=$('#slbody');
   $('#slipcount').hidden=!n; $('#slipcount').textContent=n;
-  if(!n){ el.hidden=true; return; }
+  if(!n){ el.hidden=true; if(sb) sb.innerHTML=`<div class="empty" style="margin-top:16px">Your slip is empty.<br>Tap any price on the Games tab, or <b>➕ Add to slip</b> on a pick or combo in ⭐ Picks.</div>`; return; }
   el.hidden=false;
   const {rows,fair,sameGame}=slipMath(), best=rows[0], stake=+OB.stake||0;
   const bestOf=l=>{ let b=null; for(const [k,p] of Object.entries(l.prices)) if((!OB.books||OB.books.includes(k))&&(!b||decOdds(p)>decOdds(b.p))) b={k,p}; return b; };
@@ -2318,6 +2388,7 @@ function renderSlip(){
       ${fair&&best?` · Market's fair chance all legs hit: <b>${pct(fair)}</b> · Expected return at ${esc(OB.allBooks[best.k]||best.k)}: <b class="${fair*best.dec>=1?'hi':'lo'}">${fair*best.dec>=1?'+':''}${((fair*best.dec-1)*100).toFixed(1)}%</b> per dollar`:''}</div>
     ${sameGame?'<div class="note lo">Two or more legs are from the same game. Books price same-game parlays differently, so the payout at the book may not match this math.</div>':''}
     <button class="tbtn" id="slipcopy">Copy slip</button> <button class="tbtn" id="sliplog" style="border-color:var(--accent);color:var(--accent)">Log this bet</button> <span class="note" id="copied"></span>`;
+  if(sb) sb.innerHTML=`<div class="pc" style="margin-top:12px">${el.innerHTML}</div><div class="note">Copy the slip, then place it in your sportsbook app or at the casino window. Tap <b>Log this bet</b> after you place it so 📊 Results tracks your money.</div>`;
 }
 function slipText(){
   const {rows}=slipMath(), stake=+OB.stake||0;
@@ -2673,7 +2744,18 @@ function entryTray(){
     <button class="tbtn" id="entrycopy">Copy entry</button> <button class="tbtn" id="entryslip" style="border-color:var(--accent);color:var(--accent)">➕ Add to slip</button> <span class="note" id="entrycopied"></span></div>`;
 }
 $('#propsopen').onclick=()=>{ location.hash='#props'; };
-$('#slipfab').onclick=()=>{ location.hash='#odds'; };
+$('#slipfab').onclick=()=>{ location.hash='#betslip'; };
+function openSL(){ $('#sl').hidden=false; document.body.style.overflow='hidden'; renderSlip(); updateSlipFab(); }
+function closeSL(){ $('#sl').hidden=true; updateSlipFab(); if([...document.querySelectorAll('.gv')].every(x=>x.hidden)) document.body.style.overflow=''; }
+$('#slback').onclick=()=>{ if(location.hash) history.back(); else closeSL(); };
+$('#sl').addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.id==='slipclear'){ OB.slip=[]; store.set('wc_slip',OB.slip); renderSlip(); return; }
+  if(t.id==='sliplog'){ startLogFromSlip(); return; }
+  if(t.id==='slipcopy'){ const c=$('#sl').querySelector('#copied'); try{ await navigator.clipboard.writeText(slipText()); c.textContent='Copied ✓'; }catch{ c.textContent=slipText(); } return; }
+  const rm=t.closest('[data-rm]'); if(rm){ const i=OB.slip.findIndex(l=>l.id===rm.dataset.rm); if(i>=0) OB.slip.splice(i,1); store.set('wc_slip',OB.slip); renderSlip(); return; }
+});
+$('#sl').addEventListener('change',e=>{ if(e.target.id==='stake'){ OB.stake=+e.target.value||0; store.set('wc_stake',OB.stake); renderSlip(); } });
 $('#picks').addEventListener('click',e=>{ const sr=e.target.closest('[data-showrec]'); if(sr){ PK.showAll=sr.dataset.showrec==='1'; render(); return; }
   const h=e.target.closest('[data-hp]'); if(h){ if(e.target.closest('.leg')) return; const id=h.dataset.hp; HP.open.has(id)?HP.open.delete(id):HP.open.add(id); renderPicks(); return; }
   const b=e.target.closest('[data-pk2]'); if(!b||e.target.closest('.leg')) return; const id=b.dataset.pk2; PK.open.has(id)?PK.open.delete(id):PK.open.add(id); renderPicks(); });
@@ -3176,6 +3258,7 @@ $('#bnav').addEventListener('click',e=>{ const b=e.target.closest('[data-nav]');
 $('#moresheet').addEventListener('click',e=>{ if(e.target.closest('button')||!e.target.closest('.sheetin')) setTimeout(()=>{ $('#moresheet').hidden=true; },0); });
 function route(){
   updNav();
+  if(location.hash==='#betslip'){ openSL(); return; } else if($('#sl') && !$('#sl').hidden) closeSL();
   if(location.hash==='#build'){ openBD(); return; } else if(!$('#bd').hidden) closeBD();
   if(location.hash==='#results'){ openRS(); return; } else if(!$('#rs').hidden) closeRS();
   if(location.hash==='#today'){ openTP(); return; } else if(!$('#tp').hidden) closeTP();
