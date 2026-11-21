@@ -329,6 +329,8 @@ main.wrap{padding-bottom:150px}
 .sheetin button:hover{background:var(--chip)}
 .sheetin button .n{margin-left:auto;background:var(--accent);color:#fff;border-radius:999px;padding:1px 8px;font-size:12px}
 .sheetin .sheetx{justify-content:center;color:var(--muted);font-size:14px}
+/* Bet slip button: always above the bottom tab bar and tappable */
+button#slipfab{position:fixed;left:50%;right:auto;transform:translateX(-50%);animation:none;bottom:calc(78px + env(safe-area-inset-bottom));z-index:45;background:var(--accent);min-height:48px;padding:13px 24px;font-size:16px}
 header .wrap,.gvh .wrap{padding-bottom:0}
 header .tabs{padding-bottom:10px}
 .rsgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 4px}
