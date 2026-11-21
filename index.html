@@ -549,6 +549,36 @@ const SPORTS = [
 ];
 const BY_KEY = Object.fromEntries(SPORTS.map(s=>[s.key,s]));
 
+/* ================= 📈 Kalshi market prices =================
+   Kalshi blocks browsers from calling its API, so a scheduled GitHub job saves its PUBLIC prices (no key) to the
+   kalshi-data branch about every 10 minutes and the app reads that file. A game shows a Kalshi line only when the
+   league, the date and BOTH teams match exactly one Kalshi game; otherwise nothing is shown. */
+const KAL={url:'https://raw.githubusercontent.com/evancleveland1-droid/easyprop/kalshi-data/kalshi.json', t:0, by:{}, updated:0};
+const KAL_AB={GS:'GSW',NY:'NYK',SA:'SAS',NO:'NOP',UTAH:'UTA',WSH:'WAS',TB:'TBL',LA:'LAK',NJ:'NJD',SJ:'SJS'};
+const kalNorm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g,'');
+async function loadKalshi(){
+  if(Date.now()-KAL.t<4*60e3) return; KAL.t=Date.now();
+  try{ const r=await fetch(KAL.url+'?t='+Math.floor(Date.now()/3e5), {cache:'no-store'}); if(!r.ok) return; const j=await r.json(), by={};
+    for(const g of j.games||[]) (by[g.lg+'|'+g.date] ||= []).push(g);
+    KAL.by=by; KAL.updated=+new Date(j.updated)||0; try{ if(typeof render==='function') render(); }catch(e){} }catch(e){}
+}
+function kalFor(sk, ev){
+  if(!KAL.updated || Date.now()-KAL.updated>45*60e3) return null;   // stale file: show nothing rather than old prices
+  const c=ev.competitions?.[0]; if(!c) return null;
+  const H=c.competitors.find(x=>x.homeAway==='home'), A=c.competitors.find(x=>x.homeAway==='away'); if(!H||!A) return null;
+  const d=new Date(ev.date), day=o=>new Date(+d+o*864e5).toLocaleDateString('en-CA',{timeZone:'America/New_York'});
+  const days=BY_KEY[sk]?.soccer?[day(0),day(-1),day(1)]:[day(0)];
+  const hit=(t,k)=>{ const ab=String(t.team.abbreviation||'').toUpperCase(); if(k.a && (k.a===ab || k.a===KAL_AB[ab])) return true;
+    const kn=kalNorm(k.n); return !!kn && [t.team.location,t.team.shortDisplayName,t.team.displayName,t.team.name].some(x=>x&&kalNorm(x)===kn); };
+  const found=[]; for(const dd of days) for(const g of KAL.by[sk+'|'+dd]||[]){ const th=g.teams.find(k=>hit(H,k)), ta=g.teams.find(k=>hit(A,k)); if(th&&ta&&th!==ta) found.push({g,th,ta}); }
+  if(found.length!==1) return null;   // no match, or more than one: never guess
+  const px=k=>k.bid!=null&&k.ask!=null&&k.ask>k.bid&&k.ask-k.bid<=0.10 ? (k.bid+k.ask)/2 : (k.last>0&&k.vol>0&&k.bid!=null&&k.ask!=null&&k.last>=k.bid&&k.last<=k.ask ? k.last : null);
+  const {g,th,ta}=found[0], ph=px(th), pa=px(ta), tie=g.teams.find(k=>/^tie$/i.test(k.n)), pt=tie?px(tie):0;
+  if(ph==null||pa==null||(tie&&pt==null)||Math.abs(ph+pa+pt-1)>0.12) return null;   // thin or inconsistent market: skip
+  return {ph, pa, pt:tie?pt:null, ev:g.ev};
+}
+loadKalshi(); setInterval(loadKalshi, 5*60e3); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadKalshi(); });
+
 /* ================= 🌽 Nebraska casino mode =================
    For bets placed in person at a Nebraska racetrack casino. Rules checked against the Nebraska Racing and Gaming
    Commission's sports betting page and Authorized Sports Wagering Menu (nrgc.nebraska.gov), Nov 21 2026:
@@ -1016,6 +1046,7 @@ function boardCard(g){
       ${tbd?`<div class="gtbd">Matchup set when the bracket is decided</div>`:`<div class="gmk"><span>Spread</span><span>Total</span><span>Money</span>${odds(false)}${odds(true)}</div>`}
     </div>
     ${chance}
+    ${(()=>{ if(fin||tbd) return ''; const k=kalFor(sport.key,ev); return k?`<div class="gsrc">📈 <b>Kalshi market price:</b> ${esc(away.team.abbreviation)} ${pct(k.pa)} · ${esc(home.team.abbreviation)} ${pct(k.ph)}${k.pt!=null?` · Tie ${pct(k.pt)}`:''} <span style="opacity:.8">· as of ${new Date(KAL.updated).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span></div>`:''; })()}
     ${L&&!fin&&!tbd?`<div class="gsrc">${live?'Pregame lines · ':''}${esc(L.book)} via ESPN · tap a price to add it to your slip</div>`:''}
     ${WX_SPORTS.has(sport.key)&&!fin&&!tbd?`<div class="wx" data-wx="${sport.key}|${ev.id}"></div>`:''}
     <div class="gact">${PROP_SPORTS[sport.key]&&!tbd?`<a href="#g/${sport.key}/${ev.id}">Props, stats &amp; 1st-half lines ›</a>`:''}</div>
