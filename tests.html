@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EasyProp tests</title>
+<style>
+  body{font:15px/1.5 -apple-system,Segoe UI,Arial,sans-serif;margin:16px;color:#14121f;background:#fff}
+  h1{font-size:20px} .p{color:#0a7d38} .f{color:#c0262d;font-weight:700} li{margin:3px 0} #sum{font-weight:800;font-size:17px;margin:10px 0}
+  iframe{position:absolute;left:-9999px;width:400px;height:800px}
+</style>
+</head>
+<body>
+<h1>EasyProp tests</h1>
+<p>Open this page from the same local server as the app (for example <code>python3 -m http.server 8124</code>, then <code>/tests.html</code>). It loads the real app in a hidden frame and checks its odds, matching and grading rules. No keys or paid feeds are needed: multi-book cases use fixtures.</p>
+<div id="sum">Running…</div>
+<ul id="out"></ul>
+<iframe id="app" src="index.html?tests=1"></iframe>
+<script>
+const out=document.getElementById('out'); let pass=0, fail=0;
+function t(name, fn){ try{ const r=fn(); if(r===false) throw new Error('returned false'); pass++; out.insertAdjacentHTML('beforeend',`<li class="p">PASS · ${name}</li>`); }
+  catch(e){ fail++; out.insertAdjacentHTML('beforeend',`<li class="f">FAIL · ${name} — ${String(e.message||e)}</li>`); } }
+const eq=(a,b,m)=>{ if(JSON.stringify(a)!==JSON.stringify(b)) throw new Error((m||'')+' expected '+JSON.stringify(b)+' got '+JSON.stringify(a)); };
+const ok=(v,m)=>{ if(!v) throw new Error(m||'not true'); };
+document.getElementById('app').addEventListener('load',()=>{
+  const w=document.getElementById('app').contentWindow, E=x=>w.eval(x);
+  const NOW=1700000000000, fresh=NOW-60e3;
+  const want={ev:'1',player:'10',stat:'points',period:'game',side:'over',line:24.5};
+  const q=(o)=>Object.assign({book:'A',kind:'sportsbook',ev:'1',player:'10',stat:'points',period:'game',side:'over',line:24.5,price:-110,checked:fresh,status:'ok'},o);
+  const best=(qs)=>w.bestQuote(qs,want,NOW);
+
+  // --- exact-line matching
+  t('same line: +105 beats -110', ()=>{ const r=best([q({book:'A',price:-110}),q({book:'B',price:105})]); eq(r.best.book,'B'); eq(r.eligible.length,2); });
+  t('a different line (25.5) is never the best price for 24.5', ()=>{ const r=best([q({book:'A',price:-110}),q({book:'B',line:25.5,price:150})]); eq(r.best,null); eq(r.excluded[0].why,'different line (25.5)'); });
+  t('other side, other stat, other player, other game, other period are excluded', ()=>{
+    const r=best([q({book:'A'}),q({book:'B',side:'under',price:200}),q({book:'C',stat:'rebounds',price:200}),q({book:'D',player:'11',price:200}),q({book:'E',ev:'2',price:200}),q({book:'F',period:'1h',price:200})]);
+    eq(r.eligible.length,1); eq(r.excluded.length,5); eq(r.best,null); });
+  // --- best-price ranking
+  t('ranking: +120 > +105 > -105 > -110 > -125', ()=>{ const r=best([q({book:'a',price:-110}),q({book:'b',price:120}),q({book:'c',price:-125}),q({book:'d',price:105}),q({book:'e',price:-105})]); eq(r.eligible.map(x=>x.price),[120,105,-105,-110,-125]); eq(r.best.book,'b'); });
+  t('one book alone gets no "best price" label', ()=>{ const r=best([q({book:'A'})]); eq(r.best,null); eq(r.eligible.length,1); });
+  // --- stale / suspended / no price / other kinds
+  t('stale quote is excluded even if it is the highest price', ()=>{ const r=best([q({book:'A',price:-110}),q({book:'B',price:-108}),q({book:'OLD',price:300,checked:NOW-30*60e3})]); eq(r.best.book,'B'); ok(r.excluded.some(x=>x.book==='OLD'&&x.why==='stale')); });
+  t('suspended quote is excluded', ()=>{ const r=best([q({book:'A'}),q({book:'B',price:-105}),q({book:'S',price:250,status:'suspended'})]); eq(r.best.book,'B'); ok(r.excluded.some(x=>x.why==='suspended')); });
+  t('quote with no price or no fetch time is excluded', ()=>{ const r=best([q({book:'A'}),q({book:'N',price:null}),q({book:'T',checked:0,price:500})]); eq(r.eligible.length,1); });
+  t('exchange and pick-em prices stay out of the sportsbook comparison', ()=>{ const r=best([q({book:'A'}),q({book:'B',price:-108}),q({book:'Kalshi',kind:'exchange',price:140}),q({book:'PrizePicks',kind:'dfs',price:200})]); eq(r.best.book,'B'); eq(r.excluded.length,2); });
+  // --- duplicate player names
+  const roster=[{id:1,name:'Jalen Williams'},{id:2,name:'Jalen Williams'},{id:3,name:'Jaylin Williams'},{id:4,name:'Luka Dončić'},{id:5,name:'Gary Trent Jr.'}];
+  t('two players with the same name are ambiguous, not guessed', ()=>{ const m=w.matchPlayerByName('Jalen Williams',roster); eq(m.ambiguous,true); eq(m.id,null); });
+  t('unique name matches by id; accents and Jr. are ignored', ()=>{ eq(w.matchPlayerByName('Luka Doncic',roster).id,'4'); eq(w.matchPlayerByName('Gary Trent Jr',roster).id,'5'); eq(w.matchPlayerByName('Jaylin Williams',roster).id,'3'); });
+  t('unknown name returns no match', ()=>{ eq(w.matchPlayerByName('Nobody Here',roster),null); });
+  t('an ambiguous player can never carry the best price', ()=>{ const r=best([q({book:'A'}),q({book:'B',price:-105}),q({book:'C',price:400,ambiguous:true})]); eq(r.best.book,'B'); });
+  // --- multi-book adapter on a fixture (no key needed)
+  const fixture={id:'x',bookmakers:[
+    {key:'fanduel',title:'FanDuel',markets:[{key:'player_points',last_update:'2026-11-21T18:00:00Z',outcomes:[{name:'Over',description:'Luka Doncic',point:24.5,price:105},{name:'Under',description:'Luka Doncic',point:24.5,price:-130},{name:'Over',description:'Jalen Williams',point:18.5,price:-110}]}]},
+    {key:'betmgm',title:'BetMGM',markets:[{key:'player_points',last_update:'2026-11-21T18:01:00Z',outcomes:[{name:'Over',description:'Luka Doncic',point:25.5,price:120}]},{key:'made_up_market',outcomes:[{name:'Over',description:'Luka Doncic',point:1.5,price:100}]}]}]};
+  t('adapter maps a fixture to quotes with book, line, side, price and time', ()=>{ const qs=w.oddsApiQuotes(fixture,'77',roster,NOW); const l=qs.filter(x=>x.player==='4'); eq(l.length,3); eq(l[0].book,'FanDuel'); eq(l[0].line,24.5); eq(l[0].side,'over'); eq(l[0].price,105); ok(l[0].qt>0); eq(l[0].ev,'77'); });
+  t('adapter flags the duplicate-name player as ambiguous and skips unknown markets', ()=>{ const qs=w.oddsApiQuotes(fixture,'77',roster,NOW); ok(qs.some(x=>x.ambiguous&&x.pname==='Jalen Williams')); ok(!qs.some(x=>x.line===1.5)); });
+  t('fixture end to end: FanDuel 24.5 and BetMGM 25.5 are not compared', ()=>{ const qs=w.oddsApiQuotes(fixture,'1',roster,fresh).concat([q({book:'DraftKings',player:'4',price:-110})]); const r=w.bestQuote(qs,{...want,player:'4'},NOW); eq(r.best.book,'FanDuel'); eq(r.eligible.length,2); ok(r.excluded.some(x=>x.book==='BetMGM'&&/different line/.test(x.why))); });
+  // --- missing credentials
+  t('with no odds key the feed reports "no-key" and the adapter returns nothing', ()=>{ const k=E('OB.key'); E('OB.key=""'); try{ eq(E('oddsFeedStatus')().state,'no-key'); eq(w.oddsApiQuotes(null,'1',roster,NOW),[]); eq(w.oddsApiQuotes({},'1',roster,NOW),[]); } finally{ w.__k=k; E('OB.key=window.__k'); } });
+  // --- unverified news
+  t('an unverified post cannot set a player status', ()=>{ eq(E('statusFromNews')([{source:'x.com/somefan',status:'Out'},{source:'reddit',status:'Out'}]),null); });
+  t('credible reporting alone does not set status either; an official report does', ()=>{ eq(E('statusFromNews')([{source:'ESPN story',status:'Doubtful'}]),null); eq(E('statusFromNews')([{source:'x.com/fan',status:'Active'},{source:'NBA injury report',official:true,status:'Out'}]),'Out'); });
+  t('news tiers: official / reporting / unverified', ()=>{ eq(w.newsTier({source:'Team injury report'}),'official'); eq(w.newsTier({source:'ESPN'}),'reporting'); eq(w.newsTier({source:'random blog'}),'unverified'); });
+  // --- paper grading: wins, losses, pushes, voids
+  const pick={side:'over',line:24.5,price:-110};
+  t('grading: over wins above the line, loses below', ()=>{ eq(w.gradePaperPick(pick,{final:true,played:true,value:25}),'won'); eq(w.gradePaperPick(pick,{final:true,played:true,value:24}),'lost'); eq(w.gradePaperPick({...pick,side:'under'},{final:true,played:true,value:24}),'won'); });
+  t('grading: landing exactly on a whole-number line is a push', ()=>{ eq(w.gradePaperPick({side:'over',line:25,price:-110},{final:true,played:true,value:25}),'push'); eq(w.gradePaperPick({side:'under',line:25,price:-110},{final:true,played:true,value:25}),'push'); });
+  t('grading: did not play or cancelled game is void; unfinished game stays pending', ()=>{ eq(w.gradePaperPick(pick,{final:true,played:false,value:null}),'void'); eq(w.gradePaperPick(pick,{final:true,cancelled:true,played:true,value:30}),'void'); eq(w.gradePaperPick(pick,{final:false,played:true,value:30}),'pending'); eq(w.gradePaperPick(pick,null),'pending'); });
+  t('paper ROI counts only wins and losses; pushes and voids return the stake', ()=>{ const x=w.paperStats([{status:'won',price:100},{status:'lost',price:-110},{status:'push',price:-110},{status:'void',price:-110},{status:'pending',price:-110}]); eq(x.n,2); eq(x.won,1); eq(x.lost,1); eq(x.push,1); eq(x.void,1); eq(x.pending,1); eq(x.profit,0); eq(x.roi,0); });
+  // --- odds math
+  t('American odds convert correctly', ()=>{ eq(+w.eval('decOdds(-110)').toFixed(4),1.9091); eq(w.eval('decOdds(150)'),2.5); eq(w.eval('toAmerican(2.5)'),'+150'); });
+  t('no-vig pair sums to 100%', ()=>{ const [a,b]=w.pairFair(-110,-110); eq(+(a+b).toFixed(6),1); eq(+a.toFixed(3),0.5); });
+  t('displayed chance is never above 99% or below 1%', ()=>{ eq(w.eval('pct(1)'),'>99%'); eq(w.eval('pct(0)'),'<1%'); eq(w.eval('pct(0.5)'),'50%'); });
+  // --- Kalshi / Polymarket matching never guesses
+  t('market match needs both teams and exactly one game', ()=>{ w.eval('KAL.updated=Date.now(); KAL.by={"nba|2026-11-21":[{lg:"nba",date:"2026-11-21",ev:"K1",teams:[{n:"Boston",a:"BOS",bid:0.6,ask:0.62,last:0.61,vol:10},{n:"Miami",a:"MIA",bid:0.38,ask:0.40,last:0.39,vol:10}]}]}');
+    const ev=(h,a)=>({date:'2026-11-22T00:30Z',competitions:[{competitors:[{homeAway:'home',team:{abbreviation:h,location:h==='BOS'?'Boston':'Chicago',name:'x'}},{homeAway:'away',team:{abbreviation:a,location:a==='MIA'?'Miami':'Dallas',name:'y'}}]}]});
+    ok(w.kalFor('nba',ev('BOS','MIA'))); eq(w.kalFor('nba',ev('BOS','DAL')),null); eq(w.kalFor('nba',ev('CHI','MIA')),null); eq(w.kalFor('nhl',ev('BOS','MIA')),null); });
+  t('stale market file shows nothing', ()=>{ w.eval('KAL.updated=Date.now()-60*60e3'); const ev={date:'2026-11-22T00:30Z',competitions:[{competitors:[{homeAway:'home',team:{abbreviation:'BOS',location:'Boston'}},{homeAway:'away',team:{abbreviation:'MIA',location:'Miami'}}]}]}; eq(w.kalFor('nba',ev),null); });
+
+  document.getElementById('sum').innerHTML=`<span class="${fail?'f':'p'}">${pass} passed, ${fail} failed</span>`;
+  document.title=`EasyProp tests: ${pass} passed, ${fail} failed`; window.__tests={pass,fail,done:true};
+});
+</script>
+</body>
+</html>
