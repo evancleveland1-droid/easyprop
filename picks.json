@@ -4015,7 +4015,7 @@
    "name": "Eastern Michigan single (Tuesday)",
    "verdict": "Lean",
    "chance": 0.66,
-   "why": "UPDATE (Nov 23): re-checked. Moneyline unchanged at -225; the spread slipped from 6.5 to 5.5, a small move toward Kent State. Still a Lean. Tuesday night MAC football. ESPN's model gives Eastern Michigan 75.5% at home and the price asks for about 66%. Both teams are bad (4-7 vs 3-8) and Eastern has lost four straight, which is why it is only a lean.",
+   "why": "UPDATE (Nov 24): still -225, spread 6.5 to 5.5, no injury news, cold and calm in Ypsilanti. Kent State has scored 2, 10 and 3 points in three of its last five. Still a Lean. UPDATE (Nov 23): re-checked. Moneyline unchanged at -225; the spread slipped from 6.5 to 5.5, a small move toward Kent State. Still a Lean. Tuesday night MAC football. ESPN's model gives Eastern Michigan 75.5% at home and the price asks for about 66%. Both teams are bad (4-7 vs 3-8) and Eastern has lost four straight, which is why it is only a lean.",
    "legs": [
     {
      "ev": "401866470",
@@ -4037,9 +4037,9 @@
    "day": "20261124",
    "stake": 10,
    "name": "Western Michigan single (Tuesday)",
-   "verdict": "Lean",
+   "verdict": "Skip",
    "chance": 0.72,
-   "why": "UPDATE (Nov 23): re-checked. Price has drifted from -298 to -270, so some money has come in on Miami (Ohio) and the spread went from 7.5 to 6.5. That makes it a bit cheaper for you but the market is a little less sure. ESPN's model still says 71%. Still a Lean, will check again Tuesday. Western Michigan is 8-3 and has won four of five, at home against 7-4 Miami (Ohio). ESPN's model (71%) agrees with the price, so this is a fair bet rather than a bargain. Will be re-checked Monday and Tuesday.",
+   "why": "UPDATE (Nov 24): Western Michigan moved from -298 to -258 and the spread from -7.5 to -6.5 toward Miami (OH), which has won four straight. That is a 40-cent move against the pick, so by my rule it is a Skip. UPDATE (Nov 23): re-checked. Price has drifted from -298 to -270, so some money has come in on Miami (Ohio) and the spread went from 7.5 to 6.5. That makes it a bit cheaper for you but the market is a little less sure. ESPN's model still says 71%. Still a Lean, will check again Tuesday. Western Michigan is 8-3 and has won four of five, at home against 7-4 Miami (Ohio). ESPN's model (71%) agrees with the price, so this is a fair bet rather than a bargain. Will be re-checked Monday and Tuesday.",
    "legs": [
     {
      "ev": "401866471",
@@ -4061,9 +4061,9 @@
    "day": "20261124",
    "stake": 10,
    "name": "MAC 2-leg: Eastern Michigan + Western Michigan (Tuesday)",
-   "verdict": "Lean",
+   "verdict": "Skip",
    "chance": 0.48,
-   "why": "UPDATE (Nov 23): re-checked. Eastern Michigan unchanged at -225, Western Michigan now about -270 (was -298), so the parlay pays slightly more. Still a Lean. Both Tuesday home favorites together for close to even money. Midweek MAC games are famously unpredictable, so keep it small.",
+   "why": "UPDATE (Nov 24): one leg (Western Michigan) is now a Skip after a 40-cent move against it, so this parlay is a Skip too. Eastern Michigan on its own still stands. UPDATE (Nov 23): re-checked. Eastern Michigan unchanged at -225, Western Michigan now about -270 (was -298), so the parlay pays slightly more. Still a Lean. Both Tuesday home favorites together for close to even money. Midweek MAC games are famously unpredictable, so keep it small.",
    "legs": [
     {
      "ev": "401866470",
@@ -4852,7 +4852,7 @@
    "name": "Creighton +4.5 single (Tuesday)",
    "verdict": "Lean",
    "chance": 0.49,
-   "why": "Neutral-court game against No. 18 Michigan. ESPN's model gives Michigan only about 60%, which fits a spread near 2.5 or 3, and Creighton gets 4.5. Michigan is 3-2 and lost two of its last five; Creighton is 4-1. Will be re-checked Tuesday morning.",
+   "why": "UPDATE (Nov 24): moved in our favor, Creighton is now +5.5 at -105 (was +4.5). Still a Lean. Neutral-court game against No. 18 Michigan. ESPN's model gives Michigan only about 60%, which fits a spread near 2.5 or 3, and Creighton gets 4.5. Michigan is 3-2 and lost two of its last five; Creighton is 4-1. Will be re-checked Tuesday morning.",
    "legs": [
     {
      "ev": "401909495",
@@ -4875,9 +4875,9 @@
    "day": "20261124",
    "stake": 10,
    "name": "Texas Tech single (Tuesday)",
-   "verdict": "Lean",
+   "verdict": "Skip",
    "chance": 0.66,
-   "why": "No. 9 Texas Tech is 5-0 and ESPN's model has it at 71% over No. 23 Louisville, about what the price asks. A fair bet rather than a bargain, and a neutral court, so only a lean. Will be re-checked Tuesday morning.",
+   "why": "UPDATE (Nov 24): Texas Tech moved from -225 to -148 and the spread from -5.5 to -2.5, a 77-cent move against the pick on a neutral floor. The price is cheaper but the market no longer sees Tech as a clear favorite; I am on Louisville +2.5 instead today. Skip. No. 9 Texas Tech is 5-0 and ESPN's model has it at 71% over No. 23 Louisville, about what the price asks. A fair bet rather than a bargain, and a neutral court, so only a lean. Will be re-checked Tuesday morning.",
    "legs": [
     {
      "ev": "401915942",
@@ -4901,7 +4901,7 @@
    "name": "Rams single (Wednesday night)",
    "verdict": "Lean",
    "chance": 0.57,
-   "why": "Green Bay is listed without Josh Jacobs and Micah Parsons, its best runner and best defender, and ESPN's model gives the Rams 67% at home against a price asking about 58%. The caution: money has moved toward the Packers anyway (Rams opened near -198) because Puka Nacua and Davante Adams are hurt for Los Angeles and Kyren Williams is questionable. Will be re-checked Tuesday and Wednesday.",
+   "why": "UPDATE (Nov 24): Rams now -134 (was -147) and the total dropped 5 points to 44.5; the spread drifted to -2.5. Small moves toward Green Bay, inside my tolerance, so still a Lean, but check the Rams injury report Wednesday before betting. Green Bay is listed without Josh Jacobs and Micah Parsons, its best runner and best defender, and ESPN's model gives the Rams 67% at home against a price asking about 58%. The caution: money has moved toward the Packers anyway (Rams opened near -198) because Puka Nacua and Davante Adams are hurt for Los Angeles and Kyren Williams is questionable. Will be re-checked Tuesday and Wednesday.",
    "legs": [
     {
      "ev": "401873079",
@@ -4925,7 +4925,7 @@
    "name": "Rams -3 single (Wednesday night)",
    "verdict": "Lean",
    "chance": 0.48,
-   "why": "Same game at close to even money: Rams to win by more than a field goal. A 3-point win is a push (money back). Riskier than the moneyline; pick one or the other, not both.",
+   "why": "UPDATE (Nov 24): the number is now Rams -2.5 at -109 (was -3 at +101), a better number for a slightly worse price. Total dropped 5 points to 44.5. Still a Lean; check the Wednesday injury report. Same game at close to even money: Rams to win by more than a field goal. A 3-point win is a push (money back). Riskier than the moneyline; pick one or the other, not both.",
    "legs": [
     {
      "ev": "401873079",
@@ -4941,124 +4941,1030 @@
      "start": "2026-11-26T01:00Z"
     }
    ]
+  },
+  {
+   "id": "c-20261124-lou",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Louisville +2.5 single (vs Texas Tech, Vegas)",
+   "verdict": "Good bet",
+   "chance": 0.5,
+   "why": "Texas Tech opened -5.5 and has been bet down to -2.5 on a neutral floor, a 3-point move toward Louisville. Tech is 5-0 but has not played anyone (76-42, 88-37, 86-41 type scores); Louisville is ranked and has already been tested. Underdogs getting points is my best market (5-2-1), and I would rather have the points than lay them here.",
+   "legs": [
+    {
+     "ev": "401915942",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "home",
+     "price": -110,
+     "label": "Louisville +2.5",
+     "game": "TTU VS LOU",
+     "start": "2026-11-25T01:00Z",
+     "teamId": "97",
+     "line": 2.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-md",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Maryland +3.5 single (vs Tennessee, Vegas)",
+   "verdict": "Lean",
+   "chance": 0.489,
+   "why": "Tennessee opened -5.5 and is down to -3.5, and the moneyline went from -225 to -130: real money on Maryland. The Terps just beat someone 96-67 and the Vols have played a soft schedule. Following the move with the points.",
+   "legs": [
+    {
+     "ev": "401906853",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "home",
+     "price": -105,
+     "label": "Maryland +3.5",
+     "game": "TENN VS MD",
+     "start": "2026-11-24T20:00Z",
+     "teamId": "120",
+     "line": 3.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-stan",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Stanford single (vs Colorado, Palm Springs)",
+   "verdict": "Lean",
+   "chance": 0.622,
+   "why": "Stanford is 5-1 and the line moved from -2.5 to -4.5 in its favor. Colorado is 2-3 and has lost three of its last four, including a 67-53 game. A -185 favorite that the market keeps backing.",
+   "legs": [
+    {
+     "ev": "401909763",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "away",
+     "price": -185,
+     "label": "Stanford moneyline",
+     "game": "STAN VS COLO",
+     "start": "2026-11-25T04:59Z",
+     "teamId": "24"
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-edm",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Oilers single (vs Vegas)",
+   "verdict": "Lean",
+   "chance": 0.483,
+   "why": "Edmonton is 17-5-4 and at home at even money (-102) against a Vegas team on a four-game losing streak, three of them in overtime or a shootout. Nugent-Hopkins and Hyman are day-to-day, which is why the price is this good; if both are out, pass. Only NHL game tonight.",
+   "legs": [
+    {
+     "ev": "401892780",
+     "sk": "nhl",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -102,
+     "label": "Oilers moneyline",
+     "game": "VGK @ EDM",
+     "start": "2026-11-25T01:00Z",
+     "teamId": "6"
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-kent-under",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Kent State/Eastern Michigan under 46.5",
+   "verdict": "Lean",
+   "chance": 0.496,
+   "why": "Kent State has scored 2, 10 and 3 points in three of its last five games, and Eastern Michigan has lost four of five. Kickoff is below 30 degrees in Ypsilanti with light wind, so no weather help for either offense. A total this high needs both teams to score, and one of them cannot.",
+   "legs": [
+    {
+     "ev": "401866470",
+     "sk": "ncaaf",
+     "d": "20261124",
+     "kind": "total",
+     "side": "under",
+     "price": -108,
+     "label": "KENT/EMU under 46.5",
+     "game": "KENT @ EMU",
+     "start": "2026-11-25T00:00Z",
+     "line": 46.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-p2-safe",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Safest 2-leg: Nuggets + Old Dominion",
+   "verdict": "Lean",
+   "chance": 0.543,
+   "why": "Denver is 10-5 at home, won four of five, and Dallas is missing Lively with P.J. Washington day-to-day after back-to-back losses by 10 and 37. Old Dominion (5-1) hosts Hampton (1-3, lost four of five). Two favorites priced where a 2-leg still pays about $7.",
+   "legs": [
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -310,
+     "label": "Nuggets moneyline",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "teamId": "7"
+    },
+    {
+     "ev": "401926827",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -355,
+     "label": "Old Dominion moneyline",
+     "game": "HAMP @ ODU",
+     "start": "2026-11-25T00:00Z",
+     "teamId": "295"
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-p3-bal",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Balanced 3-leg: Stanford + Oilers + Furman",
+   "verdict": "Lean",
+   "chance": 0.223,
+   "why": "Three picks I like on their own: Stanford (market moving its way), the Oilers at home at even money against a slumping Vegas, and Furman (6-1) at home against a 3-3 Elon team that has lost three of five. Pays about $29 on $10.",
+   "legs": [
+    {
+     "ev": "401909763",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "away",
+     "price": -185,
+     "label": "Stanford moneyline",
+     "game": "STAN VS COLO",
+     "start": "2026-11-25T04:59Z",
+     "teamId": "24"
+    },
+    {
+     "ev": "401892780",
+     "sk": "nhl",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -102,
+     "label": "Oilers moneyline",
+     "game": "VGK @ EDM",
+     "start": "2026-11-25T01:00Z",
+     "teamId": "6"
+    },
+    {
+     "ev": "401921142",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -340,
+     "label": "Furman moneyline",
+     "game": "ELON @ FUR",
+     "start": "2026-11-24T23:30Z",
+     "teamId": "231"
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-p5-pay",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Payout 5-leg: college dogs + a MAC under",
+   "verdict": "Long shot",
+   "chance": 0.031,
+   "why": "Five underdogs-with-points or unders, the markets that have carried the card (dogs 5-2-1): Maryland, DePaul (5-0, line moved 2 points its way), Creighton (now +5.5), TCU (line moved 3 points its way) and the Kent State under. Each leg is near a coin flip, so this pays about $250 on $10 and should be treated as a lottery ticket.",
+   "legs": [
+    {
+     "ev": "401906853",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "home",
+     "price": -105,
+     "label": "Maryland +3.5",
+     "game": "TENN VS MD",
+     "start": "2026-11-24T20:00Z",
+     "teamId": "120",
+     "line": 3.5
+    },
+    {
+     "ev": "401909505",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "away",
+     "price": -115,
+     "label": "DePaul +3.5",
+     "game": "DEP VS PUR",
+     "start": "2026-11-24T23:00Z",
+     "teamId": "305",
+     "line": 3.5
+    },
+    {
+     "ev": "401909495",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "away",
+     "price": -105,
+     "label": "Creighton +5.5",
+     "game": "CREI VS MICH",
+     "start": "2026-11-24T22:30Z",
+     "teamId": "156",
+     "line": 5.5
+    },
+    {
+     "ev": "401915941",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "home",
+     "price": -118,
+     "label": "TCU +5.5",
+     "game": "MIA VS TCU",
+     "start": "2026-11-24T20:00Z",
+     "teamId": "2628",
+     "line": 5.5
+    },
+    {
+     "ev": "401866470",
+     "sk": "ncaaf",
+     "d": "20261124",
+     "kind": "total",
+     "side": "under",
+     "price": -108,
+     "label": "KENT/EMU under 46.5",
+     "game": "KENT @ EMU",
+     "start": "2026-11-25T00:00Z",
+     "line": 46.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-cbb2",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "College hoops 2-leg: Louisville +2.5 + DePaul +3.5",
+   "verdict": "Lean",
+   "chance": 0.256,
+   "why": "Two neutral-court underdogs the market has been moving toward. Louisville went from +5.5 to +2.5 against an untested Texas Tech; DePaul is 5-0 and Purdue has been bet from -4.5 to -2.5 at DraftKings (scoreboard shows -3.5). Pays about $26.",
+   "legs": [
+    {
+     "ev": "401915942",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "home",
+     "price": -110,
+     "label": "Louisville +2.5",
+     "game": "TTU VS LOU",
+     "start": "2026-11-25T01:00Z",
+     "teamId": "97",
+     "line": 2.5
+    },
+    {
+     "ev": "401909505",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "spread",
+     "side": "away",
+     "price": -115,
+     "label": "DePaul +3.5",
+     "game": "DEP VS PUR",
+     "start": "2026-11-24T23:00Z",
+     "teamId": "305",
+     "line": 3.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-props-safe",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Safer prop 2-leg: Anthony Black + Wendell Carter unders",
+   "verdict": "Lean",
+   "chance": 0.4,
+   "why": "Both Orlando, both healthy, and both logs already reflect Banchero being out. Black has made 2 or fewer threes in 6 of his last 8 (under 2.5 hit 80% of the last 10). Carter has been under 22.5 points+rebounds+assists in 4 of his last 5 (18, 18, 26, 14, 20). Lines are estimates; match them in your app.",
+   "legs": [
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Anthony Black under 2.5 threes",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 2.5,
+     "pid": "4712849",
+     "stat": "3PM"
+    },
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Wendell Carter Jr. under 22.5 pts+reb+ast",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 22.5,
+     "pid": "4277847",
+     "stat": "PRA"
+    }
+   ]
+  },
+  {
+   "id": "c-20261124-props-5",
+   "picker": "claude",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Prop 5-leg long shot",
+   "verdict": "Long shot",
+   "chance": 0.09,
+   "why": "Five healthy players with 60-80% hit rates on these numbers: Trae Young under 28.5 PRA (under in 5 straight), Murray over 5.5 assists (7 and 7 his last two), Gordon under 5.5 rebounds, Queta over 18.5 PRA (more minutes with Mitchell Robinson out), Paul Reed under 21.5 PRA. Yesterday's version hit for $244; most days it will not. Lines are estimates.",
+   "legs": [
+    {
+     "ev": "401909315",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Trae Young under 28.5 pts+reb+ast",
+     "game": "BOS @ WSH",
+     "start": "2026-11-25T01:00Z",
+     "line": 28.5,
+     "pid": "4277905",
+     "stat": "PRA"
+    },
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "over",
+     "price": -110,
+     "label": "Jamal Murray over 5.5 assists",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "line": 5.5,
+     "pid": "3936299",
+     "stat": "AST"
+    },
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Aaron Gordon under 5.5 rebounds",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "line": 5.5,
+     "pid": "3064290",
+     "stat": "REB"
+    },
+    {
+     "ev": "401909315",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "over",
+     "price": -110,
+     "label": "Neemias Queta over 18.5 pts+reb+ast",
+     "game": "BOS @ WSH",
+     "start": "2026-11-25T01:00Z",
+     "line": 18.5,
+     "pid": "4397424",
+     "stat": "PRA"
+    },
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Paul Reed under 21.5 pts+reb+ast",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 21.5,
+     "pid": "4278562",
+     "stat": "PRA"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-fiu",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "FIU single",
+   "verdict": "Favorite",
+   "chance": 0.766,
+   "why": "Biggest home favorite on the board under -400: FIU (4-1) hosts Southern Utah (3-4) at -395.",
+   "legs": [
+    {
+     "ev": "401928358",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -395,
+     "label": "FIU moneyline",
+     "game": "SUU @ FIU",
+     "start": "2026-11-24T18:00Z",
+     "teamId": "2229"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-leh",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Lehigh single",
+   "verdict": "Favorite",
+   "chance": 0.766,
+   "why": "Lehigh (4-2) at home against Binghamton (4-3) at -395, inside the -400 limit.",
+   "legs": [
+    {
+     "ev": "401911279",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -395,
+     "label": "Lehigh moneyline",
+     "game": "BING @ LEH",
+     "start": "2026-11-25T00:00Z",
+     "teamId": "2329"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-odu",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Old Dominion single",
+   "verdict": "Favorite",
+   "chance": 0.748,
+   "why": "Old Dominion (5-1) at home against Hampton (1-3) at -355.",
+   "legs": [
+    {
+     "ev": "401926827",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -355,
+     "label": "Old Dominion moneyline",
+     "game": "HAMP @ ODU",
+     "start": "2026-11-25T00:00Z",
+     "teamId": "295"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-p2",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Formula 2-leg: Nuggets + FIU",
+   "verdict": "Favorite",
+   "chance": 0.556,
+   "why": "Top pro favorite (Denver -310) plus one home college favorite (FIU -395), both -150 or stronger, no neutral courts.",
+   "legs": [
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -310,
+     "label": "Nuggets moneyline",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "teamId": "7"
+    },
+    {
+     "ev": "401928358",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -395,
+     "label": "FIU moneyline",
+     "game": "SUU @ FIU",
+     "start": "2026-11-24T18:00Z",
+     "teamId": "2229"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-p3",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Formula 3-leg: Nuggets + Celtics + Lehigh",
+   "verdict": "Favorite",
+   "chance": 0.438,
+   "why": "Denver -310, Boston -453 (line jumped from -5.5 to -10.5 with Washington short-handed) and one home college favorite, Lehigh -395. Formula parlays are 0-8 so far; this stays small.",
+   "legs": [
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -310,
+     "label": "Nuggets moneyline",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "teamId": "7"
+    },
+    {
+     "ev": "401909315",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "away",
+     "price": -453,
+     "label": "Celtics moneyline",
+     "game": "BOS @ WSH",
+     "start": "2026-11-25T01:00Z",
+     "teamId": "2"
+    },
+    {
+     "ev": "401911279",
+     "sk": "ncaam",
+     "d": "20261124",
+     "kind": "ml",
+     "side": "home",
+     "price": -395,
+     "label": "Lehigh moneyline",
+     "game": "BING @ LEH",
+     "start": "2026-11-25T00:00Z",
+     "teamId": "2329"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-props6",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Formula prop 6-leg",
+   "verdict": "Favorite",
+   "chance": 0.077,
+   "why": "Six highest hit-rate props tonight (season/last-10/last-5 weighted): Ausar Thompson under 5.5 assists, Trae Young under 28.5 PRA, Anthony Black under 2.5 threes, Wendell Carter under 12.5 points, Paul Reed under 21.5 PRA, Jamal Murray over 5.5 assists. Lines are estimates.",
+   "legs": [
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Ausar Thompson under 5.5 assists",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 5.5,
+     "pid": "4684742",
+     "stat": "AST"
+    },
+    {
+     "ev": "401909315",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Trae Young under 28.5 pts+reb+ast",
+     "game": "BOS @ WSH",
+     "start": "2026-11-25T01:00Z",
+     "line": 28.5,
+     "pid": "4277905",
+     "stat": "PRA"
+    },
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Anthony Black under 2.5 threes",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 2.5,
+     "pid": "4712849",
+     "stat": "3PM"
+    },
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Wendell Carter Jr. under 12.5 points",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 12.5,
+     "pid": "4277847",
+     "stat": "PTS"
+    },
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Paul Reed under 21.5 pts+reb+ast",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 21.5,
+     "pid": "4278562",
+     "stat": "PRA"
+    },
+    {
+     "ev": "401909316",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "over",
+     "price": -110,
+     "label": "Jamal Murray over 5.5 assists",
+     "game": "DAL @ DEN",
+     "start": "2026-11-25T03:00Z",
+     "line": 5.5,
+     "pid": "3936299",
+     "stat": "AST"
+    }
+   ]
+  },
+  {
+   "id": "f-20261124-props2",
+   "picker": "formula",
+   "day": "20261124",
+   "stake": 10,
+   "name": "Formula prop 2-leg",
+   "verdict": "Favorite",
+   "chance": 0.472,
+   "why": "The two highest hit-rate props: Ausar Thompson under 5.5 assists (80% of last 10) and Trae Young under 28.5 PRA (under in 5 straight). Note Cade Cunningham is day-to-day; if he sits, Thompson handles the ball more.",
+   "legs": [
+    {
+     "ev": "401909314",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Ausar Thompson under 5.5 assists",
+     "game": "DET @ ORL",
+     "start": "2026-11-25T00:00Z",
+     "line": 5.5,
+     "pid": "4684742",
+     "stat": "AST"
+    },
+    {
+     "ev": "401909315",
+     "sk": "nba",
+     "d": "20261124",
+     "kind": "prop",
+     "side": "under",
+     "price": -110,
+     "label": "Trae Young under 28.5 pts+reb+ast",
+     "game": "BOS @ WSH",
+     "start": "2026-11-25T01:00Z",
+     "line": 28.5,
+     "pid": "4277905",
+     "stat": "PRA"
+    }
+   ]
+  },
+  {
+   "id": "c-20261125-ahead-nyk",
+   "picker": "claude",
+   "day": "20261125",
+   "stake": 10,
+   "name": "Knicks single (Wednesday)",
+   "verdict": "Lean",
+   "chance": 0.664,
+   "why": "New York has won five straight and hosts a Cleveland team without Evan Mobley. The line has not moved from -5.5 / -224, so the market is comfortable too. Priced in the -150 to -300 window where singles still pay.",
+   "legs": [
+    {
+     "ev": "401909319",
+     "sk": "nba",
+     "d": "20261125",
+     "kind": "ml",
+     "side": "home",
+     "price": -224,
+     "label": "Knicks moneyline",
+     "game": "CLE @ NY",
+     "start": "2026-11-26T00:30Z",
+     "teamId": "18"
+    }
+   ]
+  },
+  {
+   "id": "c-20261125-ahead-mia",
+   "picker": "claude",
+   "day": "20261125",
+   "stake": 10,
+   "name": "Heat +3.5 single (Wednesday)",
+   "verdict": "Lean",
+   "chance": 0.5,
+   "why": "Miami has won five straight by an average of 15 and gets 3.5 at a Philadelphia team whose last three wins were by 5, 7 and 3. Embiid is day-to-day for Philly. Giannis is day-to-day for Miami: if he is ruled out Wednesday, skip this one.",
+   "legs": [
+    {
+     "ev": "401909317",
+     "sk": "nba",
+     "d": "20261125",
+     "kind": "spread",
+     "side": "away",
+     "price": -110,
+     "label": "Heat +3.5",
+     "game": "MIA @ PHI",
+     "start": "2026-11-25T22:00Z",
+     "teamId": "14",
+     "line": 3.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261125-ahead-p2",
+   "picker": "claude",
+   "day": "20261125",
+   "stake": 10,
+   "name": "NBA 2-leg: Knicks + Rockets (Wednesday)",
+   "verdict": "Lean",
+   "chance": 0.512,
+   "why": "Knicks at home without Mobley on the other side, plus Houston (13-5) at home as a -406 favorite over Phoenix, which has Mark Williams out. Two favorites, pays about $8.",
+   "legs": [
+    {
+     "ev": "401909319",
+     "sk": "nba",
+     "d": "20261125",
+     "kind": "ml",
+     "side": "home",
+     "price": -224,
+     "label": "Knicks moneyline",
+     "game": "CLE @ NY",
+     "start": "2026-11-26T00:30Z",
+     "teamId": "18"
+    },
+    {
+     "ev": "401909323",
+     "sk": "nba",
+     "d": "20261125",
+     "kind": "ml",
+     "side": "home",
+     "price": -406,
+     "label": "Rockets moneyline",
+     "game": "PHX @ HOU",
+     "start": "2026-11-26T01:30Z",
+     "teamId": "10"
+    }
+   ]
+  },
+  {
+   "id": "c-20261126-ahead-buf",
+   "picker": "claude",
+   "day": "20261126",
+   "stake": 10,
+   "name": "Bills single (Thanksgiving night)",
+   "verdict": "Lean",
+   "chance": 0.576,
+   "why": "Buffalo is 9-1, has won five straight by double digits, and hosts a Kansas City team that has lost two straight. Thursday night in Orchard Park calls for 19 mph wind gusting near 40 with rain, which favors the home team that runs the ball. -150 is fair for that.",
+   "legs": [
+    {
+     "ev": "401873082",
+     "sk": "nfl",
+     "d": "20261126",
+     "kind": "ml",
+     "side": "home",
+     "price": -150,
+     "label": "Bills moneyline",
+     "game": "KC @ BUF",
+     "start": "2026-11-27T01:20Z",
+     "teamId": "2"
+    }
+   ]
+  },
+  {
+   "id": "c-20261126-ahead-kcbuf-under",
+   "picker": "claude",
+   "day": "20261126",
+   "stake": 10,
+   "name": "Chiefs/Bills under 47.5 (Thanksgiving night)",
+   "verdict": "Lean",
+   "chance": 0.495,
+   "why": "Forecast for Orchard Park Thursday evening: wind 15-19 mph with gusts over 40 and rain around kickoff. The total has already dropped from 49.5 to 47.5; wind that strong is the clearest weather edge on the holiday slate. Re-check the forecast Thursday morning.",
+   "legs": [
+    {
+     "ev": "401873082",
+     "sk": "nfl",
+     "d": "20261126",
+     "kind": "total",
+     "side": "under",
+     "price": -107,
+     "label": "KC/BUF under 47.5",
+     "game": "KC @ BUF",
+     "start": "2026-11-27T01:20Z",
+     "line": 47.5
+    }
+   ]
+  },
+  {
+   "id": "c-20261126-ahead-p2",
+   "picker": "claude",
+   "day": "20261126",
+   "stake": 10,
+   "name": "Thanksgiving 2-leg: Bills + Bears",
+   "verdict": "Lean",
+   "chance": 0.324,
+   "why": "Bills at home in bad weather, plus Chicago, which has won five straight and went from a 2.5-point underdog at Detroit to a 2.5-point favorite, a 5-point move toward the Bears. Pays about $18.",
+   "legs": [
+    {
+     "ev": "401873082",
+     "sk": "nfl",
+     "d": "20261126",
+     "kind": "ml",
+     "side": "home",
+     "price": -150,
+     "label": "Bills moneyline",
+     "game": "KC @ BUF",
+     "start": "2026-11-27T01:20Z",
+     "teamId": "2"
+    },
+    {
+     "ev": "401873081",
+     "sk": "nfl",
+     "d": "20261126",
+     "kind": "ml",
+     "side": "away",
+     "price": -142,
+     "label": "Bears moneyline",
+     "game": "CHI @ DET",
+     "start": "2026-11-26T18:00Z",
+     "teamId": "3"
+    }
+   ]
   }
  ],
- "insights": "Through four graded days Claude is 39-32 with one push (+$134 on $10 stakes) and the formula is 7-17 (-$98). Sunday was a losing day for both: Claude 6-12 (-$80), formula 1-6 (-$57). Being honest: all of Claude's profit came on day one (16-0); the three days since are 23-32-1 (-$130). What still works: college hoops legs (11-3), underdogs getting points (4-1-1), and 3-leg parlays (7-6, +$89). What does not: prop parlays (Claude 0-7, formula 1-5) even though single prop legs hit about 64%, soccer (0-2), and formula favorites near -400 (singles 5-5, parlays 0-6), with neutral-court college favorites 0-3. Today: a smaller card (12 Claude bets instead of 18-24), only two Good bet tags, more underdogs with points, no soccer, one 2-leg prop parlay plus one long shot, and the formula skips neutral-court college favorites. Two legs on Sunday were tagged with the wrong home/away side and showed as wins; both actually lost and are corrected. Four days is still a small sample.",
+ "insights": "Through five days Claude is 45-40-1 (+$354 on $10 stakes) and the formula is 10-21 (-$106). Monday Claude went 6-8 but made +$219 because the 5-leg prop long shot hit for $244 (its single prop legs went 6-1); the 2-leg 'safer' prop parlay lost again (0-5), the Bengals lost outright, and both Islanders bets lost. The formula went 3-4 (-$8): its two -395 college home favorites won, the Cavaliers lost, and its 2-leg prop parlay cashed. Today is a thin pro slate (3 NBA games, 1 NHL), so the card leans on college hoops underdogs getting points (5-2-1), keeps props to one 2-leg plus one 5-leg long shot, skips soccer, and three earlier picks (Western Michigan, the MAC 2-leg, Texas Tech) are marked Skip after lines moved against them. Five days is still a small sample.",
  "learning": {
-  "updated": "20261123",
+  "updated": "20261124",
   "claude": {
-   "w": 39,
-   "l": 32,
+   "w": 45,
+   "l": 40,
    "push": 1,
-   "profit": 134.36
+   "profit": 353.54
   },
   "formula": {
-   "w": 7,
-   "l": 17,
-   "profit": -98.4
+   "w": 10,
+   "l": 21,
+   "profit": -106.48
   },
   "lastNight": {
-   "day": "20261122",
-   "claude": "6-12 (-$80.11)",
-   "formula": "1-6 (-$57.44)"
+   "day": "20261123",
+   "claude": "6-8 (+$219.18)",
+   "formula": "3-4 (-$8.08)"
   },
   "byDay": {
    "claude": {
     "20261119": "16-0 (+$263.95)",
     "20261120": "4-10 (-$68.01)",
     "20261121": "13-10-1 (+$18.54)",
-    "20261122": "6-12 (-$80.11)"
+    "20261122": "6-12 (-$80.11)",
+    "20261123": "6-8 (+$219.18)"
    },
    "formula": {
     "20261119": "2-1 (+$16.86)",
     "20261120": "2-4 (-$26.79)",
     "20261121": "2-6 (-$31.02)",
-    "20261122": "1-6 (-$57.44)"
+    "20261122": "1-6 (-$57.44)",
+    "20261123": "3-4 (-$8.08)"
    }
   },
   "byType": {
    "claude": {
-    "singles": "23-11-1 (+$25.42)",
-    "2-leg": "7-5 (+$32.85)",
-    "3-leg": "7-6 (+$89.20)",
-    "4+ leg": "2-3 (+$56.89)",
-    "props": "0-7 (-$70.00)"
+    "singles": "26-15-1 (+$7.48)",
+    "2-leg": "8-7 (+$21.26)",
+    "3-leg": "8-6 (+$114.32)",
+    "4+ leg": "2-4 (+$46.89)",
+    "props": "1-8 (+$163.59)"
    },
    "formula": {
-    "singles": "5-5 (-$30.25)",
-    "2-leg": "0-3 (-$30.00)",
-    "3-leg": "0-3 (-$30.00)",
+    "singles": "7-6 (-$34.78)",
+    "2-leg": "0-4 (-$40.00)",
+    "3-leg": "0-4 (-$40.00)",
     "4+ leg": "1-1 (+$15.41)",
-    "props": "1-5 (-$23.55)"
+    "props": "2-6 (-$7.10)"
    }
   },
   "byMarket": {
    "claude": {
-    "moneyline favorites": "31-12",
+    "moneyline favorites": "37-15",
     "moneyline underdogs": "0-1",
-    "spreads, underdog getting points": "4-1-1",
-    "spreads, favorite giving points": "2-2",
+    "spreads, underdog getting points": "5-2-1",
+    "spreads, favorite giving points": "2-3",
     "unders": "2-2",
     "overs": "0-0",
-    "prop overs": "9-4",
-    "prop unders": "9-6"
+    "prop overs": "12-4",
+    "prop unders": "12-7"
    },
    "formula": {
-    "moneyline favorites": "14-8",
-    "prop overs": "4-2",
-    "prop unders": "11-6"
+    "moneyline favorites": "16-10",
+    "prop overs": "6-2",
+    "prop unders": "14-7"
    }
   },
   "bySport": {
    "claude": {
-    "nba": "25-13",
+    "nba": "28-14",
     "college football": "13-5-1",
-    "college hoops": "11-3",
-    "nfl": "5-3",
-    "nhl": "3-2",
+    "college hoops": "13-4",
+    "nfl": "5-5",
+    "nhl": "5-3",
     "soccer": "0-2"
    },
    "formula": {
-    "nba": "15-8",
-    "college hoops": "8-5",
+    "nba": "15-9",
+    "college hoops": "10-5",
     "college football": "4-3",
-    "nfl": "2-0"
+    "nfl": "2-1"
    }
   },
   "legs": {
-   "claude": "103-43 counting repeats, 57-28-1 different results (67%)",
-   "formula": "38-24 counting repeats, 29-16 different results (64%)"
+   "claude": "116-49 counting repeats, 70-34-1 different results (67%)",
+   "formula": "45-27 counting repeats, 36-19 different results (65%)"
   },
   "working": [
-   "College hoops legs (Claude 11-3 different results)",
-   "Underdogs getting points (4-1-1)",
-   "3-leg parlays of stand-alone picks (7-6, +$89), though all of that profit is from day one",
-   "Single prop legs (33-18 across both pickers, about 64%)",
-   "NBA and NFL legs (30-16 combined on different results), enough to win singles but not long parlays"
+   "Single prop legs (about 67% across both pickers); the 5-leg prop long shot finally hit (+$244)",
+   "Underdogs getting points (5-2-1)",
+   "College hoops legs (Claude 13-4, formula 10-5), especially home favorites for the formula",
+   "3-leg parlays of stand-alone picks (8-6, +$114)",
+   "NBA legs (Claude 28-14)"
   ],
   "notWorking": [
-   "The last three days overall: Claude 23-32-1 (-$130) after a 16-0 first day",
-   "Prop parlays (Claude 0-7, formula 1-5): one leg keeps missing",
-   "Formula parlays of 2 and 3 legs (0-6) and formula favorites near -400 (singles 5-5, -$30)",
-   "Neutral-court college favorites for the formula (0-3)",
+   "The 2-leg \"safer\" prop parlay (Claude 0-5): one leg keeps missing even when the 5-leg hits",
+   "Formula 2- and 3-leg parlays (0-8)",
+   "NFL for Claude (5-5 after the Bengals lost outright as a -298 favorite)",
+   "Good bet tags: 1-2 on Monday (Suns won; Bengals, Islanders lost)",
+   "Singles on favorites: 26-15-1 but only +$7, the juice eats the wins",
    "Soccer moneylines (0-2)",
-   "Singles on short favorites: 23-11-1 but only +$25",
-   "Totals (2-2) and favorites giving points (2-2): no edge shown"
+   "Monday profit came from one long shot; the record was still 6-8"
   ],
   "rules": [
-   "Sample is four days (about 85 different results): do not raise stakes or leg counts because of it",
-   "After three losing days in a row, post about 12 Claude bets a day instead of 18-24 until there is a winning day",
-   "At most two Good bet tags a day, and none on parlays until parlays have a winning day",
-   "No team in more than 2 bets per day, so one upset cannot sink the card",
+   "Sample is five days (about 105 different results): do not raise stakes or leg counts because of it",
+   "Keep the card around 12-14 Claude bets until there is a day that wins on record, not just profit",
+   "At most two Good bet tags a day, none on parlays; a Good bet needs a line move or injury edge, not just a favorite",
+   "No team in more than 2 bets per day per picker",
    "Parlay legs must be picks I would bet as singles; no -1000 filler",
-   "At most one 4+ leg long shot per day",
+   "At most one 4+ leg long shot per day, plus the one 5-6 leg prop long shot",
    "No moneyline underdogs in parlays; take underdogs with points instead",
    "No soccer moneylines (0-2, a draw loses the bet)",
-   "Singles: prefer prices of -300 or better so a win pays something; put heavier favorites into 2-leg parlays instead",
-   "Totals only when there is a clear reason beyond the line move; otherwise skip them",
-   "Props: one 2-leg parlay leaning to unders plus one 5-6 leg Long shot per day; skip players under 15 minutes or with any injury tag",
-   "Formula: only favorites -150 or stronger in formula parlays, at most one college team per parlay, and no neutral-court college favorites; also post a 2-leg version of the prop parlay",
-   "Every leg's home/away side must be checked against the team id before posting (two were wrong on Nov 22)"
+   "Singles: prefer prices of -300 or better; put heavier favorites into 2-leg parlays instead",
+   "Totals only when there is a clear reason (bad weather, a team that cannot score); otherwise skip them",
+   "Props: one 2-leg leaning unders plus one 5-6 leg long shot; skip players under 20 minutes, with any injury tag, or whose role changes if a day-to-day teammate sits",
+   "Ahead picks: if the line moves 25+ cents or 1.5+ points against the pick, mark it Skip and say why (done Nov 24 for Western Michigan and Texas Tech)",
+   "Formula: only favorites -150 or stronger in parlays, at most one college team per parlay, no neutral-court college favorites; if formula parlays reach 0-10, cut to one parlay a day",
+   "Every leg's home/away side is checked against the team id by script before posting"
   ]
  }
 }
